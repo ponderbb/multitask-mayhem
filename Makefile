@@ -8,7 +8,7 @@ PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 BUCKET = [OPTIONAL] your-bucket-for-syncing-data (do not include 's3://')
 PROFILE = default
 PROJECT_NAME = multitask-mayhem
-PYTHON_INTERPRETER = python3
+PYTHON_INTERPRETER = python3.9
 
 ifeq (,$(shell which conda))
 HAS_CONDA=False
