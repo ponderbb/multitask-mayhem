@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 from pathlib import Path
@@ -8,6 +9,8 @@ import open3d as o3d
 import rosbag
 from numpy_pc2 import pointcloud2_to_xyz_array
 from tqdm import tqdm
+
+import src.utils as utils
 
 
 class unPackROSBag:
@@ -20,10 +23,11 @@ class unPackROSBag:
             "/synchronized_l515_image",
             "/synchronized_l515_depth_image",
         ]
-        self.signal_topics = [
-            "/synchronized_gyro_sample",
-            "/synchronized_accel_sample",
-        ]
+        self.imu_topics = {
+            "gyro": "/synchronized_gyro_sample",
+            "accel": "/synchronized_accel_sample",
+        }
+
         self.pcl_topics = ["/synchronized_velodyne"]
 
         self.collect_bags()
@@ -41,8 +45,10 @@ class unPackROSBag:
             if Path(file_).suffix == self.extension
         ]
 
+        self.bags_list.sort()
+
         if self.bags_list:
-            print("{} bag(s) found".format(len(self.bags_list)))
+            logging.info("{} bag(s) found".format(len(self.bags_list)))
         else:
             raise FileNotFoundError("No files with .bag extension on the following path: {}".format(self.root_dir))
 
@@ -52,15 +58,16 @@ class unPackROSBag:
         - output folders are named <bag_name>/<topic_name>/...
         """
 
-        for bag_path in self.bags_list:
+        for i, bag_path in enumerate(self.bags_list[-1:]):
 
             # create a folder with bag name in data/raw
             bag_name = Path(bag_path).stem
             os.makedirs(os.path.join(self.export_dir, bag_name), exist_ok=True)
+            logging.info("{}/{}: unpacking {} ".format(i + 1, len(self.bags_list), bag_name))
 
             bag = rosbag.Bag(bag_path)
             self._write_images(bag, bag_name)
-            # self._write_signal(bag, bag_name)
+            self._write_imu(bag, bag_name)
             self._write_pcl(bag, bag_name)
 
             bag.close()
@@ -79,7 +86,8 @@ class unPackROSBag:
             os.makedirs(topic_dir, exist_ok=True)
 
             topic_read = bag.read_messages(topic)
-            print("reading topic <-- {}".format(topic))
+            check_topic(topic, topic_read)
+            logging.info(topic)
 
             for i, msg in enumerate(tqdm(topic_read)):
 
@@ -90,7 +98,7 @@ class unPackROSBag:
                     dtype = np.dtype("uint8")  # hardcode 8bits
                 elif msg.encoding == "16UC1":
                     channels = 1
-                    dtype = np.dtype("uint8")
+                    dtype = np.dtype("uint16")
                 else:
                     raise TypeError("image encoding problem, found {}".format(msg.encoding))
 
@@ -115,33 +123,37 @@ class unPackROSBag:
 
                 cv2.imwrite(os.path.join(topic_dir, "{}.png".format(i)), image)
 
-    def _write_signal(self, bag, bag_name):
+    def _write_imu(self, bag, bag_name):
 
-        for topic in self.signal_topics:
+        gyro_topic = bag.read_messages(self.imu_topics["gyro"])
+        accel_topic = bag.read_messages(self.imu_topics["accel"])
+        check_topic(self.imu_topics["gyro"], gyro_topic)
+        check_topic(self.imu_topics["accel"], accel_topic)
+        logging.info("{}, {}".format(self.imu_topics["gyro"], self.imu_topics["accel"]))
 
-            topic_read = bag.read_messages(topic)
-            print("reading topic <-- {}".format(topic))
+        out_csv = open(os.path.join(self.export_dir, bag_name, "imu_{}.csv".format(bag_name)), "w")
 
-            out_csv = open(os.path.join(self.export_dir, bag_name, topic[1:] + ".csv"), "w")
-            out_csv.write("# timestamp ang_vel_x ang_vel_y ang_vel_z lin_acc_x lin_acc_y lin_acc_z\n")
+        out_csv.write("# gyro_timestamp accel_timestamp ang_vel_x ang_vel_y ang_vel_z lin_acc_x lin_acc_y lin_acc_z\n")
 
-            for i, msg in enumerate(tqdm(topic_read)):
+        for i, (gyro_msg, accel_msg) in enumerate(tqdm(zip(gyro_topic, accel_topic))):
 
-                msg = msg.message
+            g_msg = gyro_msg.message
+            a_msg = accel_msg.message
 
-                out_csv.write(
-                    "%d %.12f %.12f %.12f %.12f %.12f %.12f %.12f\n"
-                    % (
-                        i,
-                        msg.header.stamp.to_sec(),
-                        msg.angular_velocity.x,
-                        msg.angular_velocity.y,
-                        msg.angular_velocity.z,
-                        msg.linear_acceleration.x,
-                        msg.linear_acceleration.y,
-                        msg.linear_acceleration.z,
-                    )
+            out_csv.write(
+                "%d %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f\n"
+                % (
+                    i,
+                    g_msg.header.stamp.to_sec(),
+                    a_msg.header.stamp.to_sec(),
+                    g_msg.angular_velocity.x,
+                    g_msg.angular_velocity.y,
+                    g_msg.angular_velocity.z,
+                    a_msg.linear_acceleration.x,
+                    a_msg.linear_acceleration.y,
+                    a_msg.linear_acceleration.z,
                 )
+            )
 
     def _write_pcl(self, bag, bag_name):
 
@@ -155,7 +167,8 @@ class unPackROSBag:
             os.makedirs(topic_dir, exist_ok=True)
 
             topic_read = bag.read_messages(topic)
-            print("reading topic <-- {}".format(topic))
+            logging.info(topic)
+            check_topic(topic, topic_read)
 
             for i, (topic, msg, t) in enumerate(tqdm(topic_read)):
                 pc_array = pointcloud2_to_xyz_array(msg)  # NOTE: missing intensity values, could be extracted
@@ -166,11 +179,29 @@ class unPackROSBag:
                 o3d.t.io.write_point_cloud(os.path.join(topic_dir, "{}.pcd".format(i)), pcd)
 
 
+def check_topic(topic, generator):
+    if utils.peek(generator) is None:
+        logging.warning("Topic generator is empty: {}".format(topic))
+
+
 def main():
 
+    logging.info("Unpacking ROS bag")
     unpack = unPackROSBag()
     unpack.extract_bags()
 
 
 if __name__ == "__main__":
+
+    log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    logging.basicConfig(
+        level=logging.INFO,
+        format=log_fmt,
+        force=True,
+        handlers=[
+            logging.FileHandler(".logging/rosbag_extract.log", "w"),
+            logging.StreamHandler(),
+        ],
+    )
+
     main()

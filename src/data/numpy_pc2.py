@@ -240,7 +240,6 @@ def array_to_xyzl_pointcloud2f(cloud_arr, stamp=None, frame_id=None, merge_rgb=F
 def array_to_xyz_pointcloud2(cloud_arr, stamp=None, frame_id=None, merge_rgb=False):
     """convert an Nx3 float array to an xyz point cloud.
     preserves (scalar) dtype of input.
-    TODO: untested
     """
     cloud_arr = np.asarray(cloud_arr)
     if not cloud_arr.ndim == 2:
