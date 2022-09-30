@@ -144,7 +144,11 @@ def pointcloud2_to_array(cloud_msg, split_rgb=False, remove_padding=True):
     # remove the dummy fields that were added
     if remove_padding:
         cloud_arr = cloud_arr[
-            [fname for fname, _type in dtype_list if not (fname[: len(DUMMY_FIELD_PREFIX)] == DUMMY_FIELD_PREFIX)]
+            [
+                fname
+                for fname, _type in dtype_list
+                if not (fname[: len(DUMMY_FIELD_PREFIX)] == DUMMY_FIELD_PREFIX)
+            ]
         ]
 
     if split_rgb:
@@ -162,8 +166,12 @@ def array_to_xyz_pointcloud2f(cloud_arr, stamp=None, frame_id=None, merge_rgb=Fa
         raise ValueError("cloud_arr must be 2D array")
     if not cloud_arr.shape[1] == 3:
         raise ValueError("cloud_arr shape must be Nx3")
-    xyz = cloud_arr.view(np.dtype([("x", np.float32), ("y", np.float32), ("z", np.float32)])).squeeze()
-    return array_to_pointcloud2(xyz, stamp=stamp, frame_id=frame_id, merge_rgb=merge_rgb)
+    xyz = cloud_arr.view(
+        np.dtype([("x", np.float32), ("y", np.float32), ("z", np.float32)])
+    ).squeeze()
+    return array_to_pointcloud2(
+        xyz, stamp=stamp, frame_id=frame_id, merge_rgb=merge_rgb
+    )
 
 
 def array_to_xyzi_pointcloud2f(cloud_arr, stamp=None, frame_id=None, merge_rgb=False):
@@ -185,10 +193,14 @@ def array_to_xyzi_pointcloud2f(cloud_arr, stamp=None, frame_id=None, merge_rgb=F
             ]
         )
     ).squeeze()
-    return array_to_pointcloud2(xyzi, stamp=stamp, frame_id=frame_id, merge_rgb=merge_rgb)
+    return array_to_pointcloud2(
+        xyzi, stamp=stamp, frame_id=frame_id, merge_rgb=merge_rgb
+    )
 
 
-def arrays_to_xyzi_pointcloud2f(cloud_arr, intensity_array, stamp=None, frame_id=None, merge_rgb=False):
+def arrays_to_xyzi_pointcloud2f(
+    cloud_arr, intensity_array, stamp=None, frame_id=None, merge_rgb=False
+):
     """convert an Nx3 float array and N array to an xyzi point cloud.
     beware of numerical issues when casting from other types to float32.
     """
@@ -212,7 +224,9 @@ def arrays_to_xyzi_pointcloud2f(cloud_arr, intensity_array, stamp=None, frame_id
             ]
         )
     ).squeeze()
-    return array_to_pointcloud2(xyzi, stamp=stamp, frame_id=frame_id, merge_rgb=merge_rgb)
+    return array_to_pointcloud2(
+        xyzi, stamp=stamp, frame_id=frame_id, merge_rgb=merge_rgb
+    )
 
 
 def array_to_xyzl_pointcloud2f(cloud_arr, stamp=None, frame_id=None, merge_rgb=False):
@@ -234,7 +248,9 @@ def array_to_xyzl_pointcloud2f(cloud_arr, stamp=None, frame_id=None, merge_rgb=F
             ]
         )
     ).squeeze()
-    return array_to_pointcloud2(xyzi, stamp=stamp, frame_id=frame_id, merge_rgb=merge_rgb)
+    return array_to_pointcloud2(
+        xyzi, stamp=stamp, frame_id=frame_id, merge_rgb=merge_rgb
+    )
 
 
 def array_to_xyz_pointcloud2(cloud_arr, stamp=None, frame_id=None, merge_rgb=False):
@@ -246,8 +262,14 @@ def array_to_xyz_pointcloud2(cloud_arr, stamp=None, frame_id=None, merge_rgb=Fal
         raise ValueError("cloud_arr must be 2D array")
     if not cloud_arr.shape[1] == 3:
         raise ValueError("cloud_arr shape must be Nx3")
-    xyz = cloud_arr.view(np.dtype([("x", cloud_arr.dtype), ("y", cloud_arr.dtype), ("z", cloud_arr.dtype)])).squeeze()
-    return array_to_pointcloud2(xyz, stamp=stamp, frame_id=frame_id, merge_rgb=merge_rgb)
+    xyz = cloud_arr.view(
+        np.dtype(
+            [("x", cloud_arr.dtype), ("y", cloud_arr.dtype), ("z", cloud_arr.dtype)]
+        )
+    ).squeeze()
+    return array_to_pointcloud2(
+        xyz, stamp=stamp, frame_id=frame_id, merge_rgb=merge_rgb
+    )
 
 
 def array_to_pointcloud2(cloud_arr, stamp=None, frame_id=None, merge_rgb=False):
@@ -270,7 +292,9 @@ def array_to_pointcloud2(cloud_arr, stamp=None, frame_id=None, merge_rgb=False):
     cloud_msg.is_bigendian = False  # assumption
     cloud_msg.point_step = cloud_arr.dtype.itemsize
     cloud_msg.row_step = cloud_msg.point_step * cloud_arr.shape[1]
-    cloud_msg.is_dense = all([np.isfinite(cloud_arr[fname]).all() for fname in cloud_arr.dtype.names])
+    cloud_msg.is_dense = all(
+        [np.isfinite(cloud_arr[fname]).all() for fname in cloud_arr.dtype.names]
+    )
     cloud_msg.data = cloud_arr.tostring()
     return cloud_msg
 
@@ -352,7 +376,11 @@ def get_xyz_points(cloud_array, remove_nans=True, dtype=np.float):
     """
     # remove crap points
     if remove_nans:
-        mask = np.isfinite(cloud_array["x"]) & np.isfinite(cloud_array["y"]) & np.isfinite(cloud_array["z"])
+        mask = (
+            np.isfinite(cloud_array["x"])
+            & np.isfinite(cloud_array["y"])
+            & np.isfinite(cloud_array["z"])
+        )
         cloud_array = cloud_array[mask]
 
     # pull out x, y, and z values

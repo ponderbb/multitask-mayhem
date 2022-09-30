@@ -1,8 +1,8 @@
+import argparse
 import logging
 import os
 import shutil
 from pathlib import Path
-import argparse
 
 import cv2
 import numpy as np
@@ -52,7 +52,12 @@ def compare_images(images_list: list, ssim_limit: float):
 
 
 def copy_pruned_images(
-    pruned_list: list, bag_path: str, input_root: str, output_root: str, depth=False, pcl=False
+    pruned_list: list,
+    bag_path: str,
+    input_root: str,
+    output_root: str,
+    depth=False,
+    pcl=False,
 ):
 
     # Creating path
@@ -93,7 +98,7 @@ def copy_pruned_images(
                     Path(bag_path).stem,
                     "synchronized_l515_depth_image",
                     Path(image).name,
-                ) # FIXME: not bulletproof declaration of paths, ask them as arguments
+                )  # FIXME: not bulletproof declaration of paths, ask them as arguments
                 shutil.copyfile(
                     image, os.path.join(output_depth_path, Path(image).name)
                 )
@@ -112,7 +117,7 @@ def copy_pruned_images(
                     Path(bag_path).stem,
                     "synchronized_velodyne",
                     (Path(image).stem + ".pcd"),
-                ) # FIXME: not bulletproof declaration of paths, ask them as arguments
+                )  # FIXME: not bulletproof declaration of paths, ask them as arguments
                 shutil.copyfile(
                     image, os.path.join(output_pcl_path, (Path(image).stem + ".pcd"))
                 )
@@ -140,13 +145,25 @@ def main(args):
                 len(pruned_images),
             )
         )
-        copy_pruned_images(pruned_list=pruned_images, bag_path=bag, input_root=args.input, output_root = args.output, depth=True, pcl=True)
+        copy_pruned_images(
+            pruned_list=pruned_images,
+            bag_path=bag,
+            input_root=args.input,
+            output_root=args.output,
+            depth=True,
+            pcl=True,
+        )
 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--ssim", default="0.7", help="SSIM cutoff limit of images, float between [0,1]")
+    parser.add_argument(
+        "-s",
+        "--ssim",
+        default="0.7",
+        help="SSIM cutoff limit of images, float between [0,1]",
+    )
     parser.add_argument("-i", "--input", default="data/raw/")
     parser.add_argument("-o", "--output", default="data/interim/")
     parser.add_argument("-d", "--debug", default=False)
@@ -169,5 +186,4 @@ if __name__ == "__main__":
         ],
     )
 
-    
     main(args)
