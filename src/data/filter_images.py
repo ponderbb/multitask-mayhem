@@ -2,14 +2,12 @@ import logging
 import os
 import shutil
 from pathlib import Path
+import argparse
 
 import cv2
 import numpy as np
 from skimage.metrics import structural_similarity as ssim
 from tqdm import tqdm
-
-ROOT_DATA_DIR = "data/raw/"
-OUTPUT_DATA_DIR = "data/interim/"
 
 
 def listbags_fullpath(dir_path: str):
@@ -44,42 +42,125 @@ def compare_images(images_list: list, ssim_limit: float):
                 count_lim = count_lim + 1
                 pruned_list.append(first_image)
                 first_image = current_image
-    logging.info("non_equal: {} different enough: {} with SSIM: {}".format(count, count_lim, ssim_limit))
+    logging.info(
+        "Non-dupicate: {} | Under-limit: {} | SSIM: {}".format(
+            count, count_lim, ssim_limit
+        )
+    )
 
     return pruned_list
 
 
-def copy_pruned_images(pruned_list: list, bag_path: str, output_root: str):
+def copy_pruned_images(
+    pruned_list: list, bag_path: str, input_root: str, output_root: str, depth=False, pcl=False
+):
 
-    output_full_path = os.path.join(output_root, Path(bag_path).stem, "synchronized_l515_image")
+    # Creating path
+    output_bag_path = os.path.join(output_root, Path(bag_path).stem)
+    output_image_path = os.path.join(
+        output_root, Path(bag_path).stem, "synchronized_l515_image"
+    )
+    output_depth_path = os.path.join(
+        output_root, Path(bag_path).stem, "synchronized_l515_depth_image"
+    )
+    output_pcl_path = os.path.join(
+        output_root, Path(bag_path).stem, "synchronized_velodyne"
+    )
 
-    logging.info("Creating folder {} at {}".format(Path(bag_path).stem, output_root))
-    if os.path.exists(output_full_path):
-        logging.debug("Remove previous directory")
-        shutil.rmtree(output_full_path)
-    os.makedirs(output_full_path)
+    if os.path.exists(output_bag_path):
+        logging.debug("Remove previous bag directory")
+        shutil.rmtree(output_bag_path)
 
-    logging.info("Copying images.")
-    for image in tqdm(pruned_list):
-        shutil.copyfile(image, os.path.join(output_full_path, Path(image).name))
+    try:
+        logging.info("Creating folder {}".format(output_image_path))
+        os.makedirs(output_image_path)
+
+        logging.info("Copying images.")
+        for image in tqdm(pruned_list):
+            shutil.copyfile(image, os.path.join(output_image_path, Path(image).name))
+    except:
+        logging.warning("Copying images for bag {} failed".format(bag_path))
+
+    if depth:
+        try:
+            logging.info("Creating folder {}".format(output_depth_path))
+            os.makedirs(output_depth_path)
+
+            logging.info("Copying depth images.")
+            for image in tqdm(pruned_list):
+                image = os.path.join(
+                    input_root,
+                    Path(bag_path).stem,
+                    "synchronized_l515_depth_image",
+                    Path(image).name,
+                ) # FIXME: not bulletproof declaration of paths, ask them as arguments
+                shutil.copyfile(
+                    image, os.path.join(output_depth_path, Path(image).name)
+                )
+        except:
+            logging.warning("Copying depth images for bag {} failed".format(bag_path))
+
+    if pcl:
+        try:
+            logging.info("Creating folder {}".format(output_pcl_path))
+            os.makedirs(output_pcl_path)
+
+            logging.info("Copying pointcloud scans.")
+            for image in tqdm(pruned_list):
+                image = os.path.join(
+                    input_root,
+                    Path(bag_path).stem,
+                    "synchronized_velodyne",
+                    (Path(image).stem + ".pcd"),
+                ) # FIXME: not bulletproof declaration of paths, ask them as arguments
+                shutil.copyfile(
+                    image, os.path.join(output_pcl_path, (Path(image).stem + ".pcd"))
+                )
+        except:
+            logging.warning(
+                "Copying pointcloud scans for bag {} failed".format(bag_path)
+            )
 
 
-def main():
+def main(args):
     logging.info("Listing bags")
-    bags_list = listbags_fullpath(ROOT_DATA_DIR)
-    for i, bag in enumerate(bags_list[-3:-2]):
+    bags_list = listbags_fullpath(args.input)
+
+    if args.debug:
+        bags_list = bags_list[-1:]
+
+    for i, bag in enumerate(bags_list):
         logging.info("{}/{} Pruning bag: {}".format(len(bags_list), i, bag))
         rgb_images = listimages(bag)
-        pruned_images = compare_images(rgb_images, ssim_limit=0.75)
-        logging.info("Pruned images from {} -> {}.".format(len(rgb_images), len(pruned_images)))
-        copy_pruned_images(pruned_images, bag, OUTPUT_DATA_DIR)
+        pruned_images = compare_images(rgb_images, ssim_limit=float(args.ssim))
+        logging.info(
+            "Pruned {:.3f} percentage of images from {} -> {}.".format(
+                (1 - (len(pruned_images) / len(rgb_images))) * 100,
+                len(rgb_images),
+                len(pruned_images),
+            )
+        )
+        copy_pruned_images(pruned_list=pruned_images, bag_path=bag, input_root=args.input, output_root = args.output, depth=True, pcl=True)
 
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--ssim", default="0.7", help="SSIM cutoff limit of images, float between [0,1]")
+    parser.add_argument("-i", "--input", default="data/raw/")
+    parser.add_argument("-o", "--output", default="data/interim/")
+    parser.add_argument("-d", "--debug", default=False)
+
+    args = parser.parse_args()
+
+    if args.debug:
+        level = logging.DEBUG
+    else:
+        level = logging.INFO
+
     log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=level,
         format=log_fmt,
         force=True,
         handlers=[
@@ -87,4 +168,6 @@ if __name__ == "__main__":
             logging.StreamHandler(),
         ],
     )
-    main()
+
+    
+    main(args)

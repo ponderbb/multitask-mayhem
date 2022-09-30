@@ -3,6 +3,35 @@ Multi-task learning for robust autonomy in mobile robots
 
 A short description of the project.
 
+Installation
+------------
+>[!Warning] I did not have too much time for this yet, please consult the Makefile!
+
+Start by automatcially generating an environment for *conda* or *venv* with the following command in the top directory:
+```shell
+$ make create_environment
+``` 
+After activating this environment, install the requirements:
+```shell
+$ make requirements
+```
+
+User guide
+------------
+### Unpacking the bagfiles from `/data/external` to `/data/raw/`
+
+```shell
+python src/data/rosbag_unpack.py
+```
+### Pruning the images from `/data/raw` to `/data/interim`
+
+Accoring to the SSIM measure (read more [here](https://pyimagesearch.com/2014/09/15/python-compare-two-images/))
+
+```shell
+python src/data/filter_images.py -s 0.7
+```
+
+
 Project Organization
 ------------
 
