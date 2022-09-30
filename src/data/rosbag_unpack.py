@@ -58,7 +58,7 @@ class unPackROSBag:
         - output folders are named <bag_name>/<topic_name>/...
         """
 
-        for i, bag_path in enumerate(self.bags_list[-1:]):
+        for i, bag_path in enumerate(self.bags_list):
 
             # create a folder with bag name in data/raw
             bag_name = Path(bag_path).stem
@@ -121,7 +121,7 @@ class unPackROSBag:
                 if msg.is_bigendian == (sys.byteorder == "little"):
                     image = image.byteswap().newbyteorder()
 
-                cv2.imwrite(os.path.join(topic_dir, "{}.png".format(i)), image)
+                cv2.imwrite(os.path.join(topic_dir, "{}-{}.png".format(bag_name, i)), image)
 
     def _write_imu(self, bag, bag_name):
 
@@ -176,7 +176,7 @@ class unPackROSBag:
                 pcd = o3d.t.geometry.PointCloud()
                 pcd.point["positions"] = o3d.core.Tensor(pc_array)
 
-                o3d.t.io.write_point_cloud(os.path.join(topic_dir, "{}.pcd".format(i)), pcd)
+                o3d.t.io.write_point_cloud(os.path.join(topic_dir, "{}-{}.pcd".format(bag_name, i)), pcd)
 
 
 def check_topic(topic, generator):
