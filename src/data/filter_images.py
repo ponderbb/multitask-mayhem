@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 
 def listbags_fullpath(dir_path: str):
-    folder_list = [os.path.join(dir_path, folder) for folder in os.listdir(dir_path)]
+    folder_list = [os.path.join(dir_path, folder) for folder in os.listdir(dir_path) if not folder.startswith('.')]
     folder_list.sort()
 
     return folder_list
