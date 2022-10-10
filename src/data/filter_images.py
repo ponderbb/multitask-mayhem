@@ -31,8 +31,9 @@ def compare_images(images_list: list, ssim_limit: float):
     pruned_list = []
     count = 0
     count_lim = 0
+    images_list = sorted(images_list)
     first_image = images_list[0]
-    for current_image in tqdm(images_list):
+    for current_image in tqdm(images_list[1:]):
         im1 = cv2.imread(first_image, cv2.IMREAD_GRAYSCALE)
         im2 = cv2.imread(current_image, cv2.IMREAD_GRAYSCALE)
         if not np.array_equal(im1, im2):

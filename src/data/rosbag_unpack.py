@@ -132,7 +132,7 @@ class unPackROSBag:
                     image = image.byteswap().newbyteorder()
 
                 cv2.imwrite(
-                    os.path.join(topic_dir, "{}-{}.png".format(bag_name, i)), image
+                    os.path.join(topic_dir, "{}-{}.png".format(bag_name, str(i).zfill(6))), image
                 )
 
     def _write_imu(self, bag, bag_name):
@@ -157,9 +157,9 @@ class unPackROSBag:
             a_msg = accel_msg.message
 
             out_csv.write(
-                "%d %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f\n"
+                "%s %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f\n"
                 % (
-                    i,
+                    str(i).zfill(6),
                     g_msg.header.stamp.to_sec(),
                     a_msg.header.stamp.to_sec(),
                     g_msg.angular_velocity.x,
@@ -195,7 +195,7 @@ class unPackROSBag:
                 pcd.point["positions"] = o3d.core.Tensor(pc_array)
 
                 o3d.t.io.write_point_cloud(
-                    os.path.join(topic_dir, "{}-{}.pcd".format(bag_name, i)), pcd
+                    os.path.join(topic_dir, "{}-{}.pcd".format(bag_name, str(i).zfill(6))), pcd
                 )
 
 
