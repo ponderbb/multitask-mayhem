@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import shutil
+import json
 from pathlib import Path
 
 import cv2
@@ -51,9 +52,14 @@ def compare_images(images_list: list, ssim_limit: float):
 
     return pruned_list
 
+def save_image_list(image_list: list, ssim:float, path:str, name:str):
+    with open(f'{path}/log_ssim{ssim}_{name}.json', 'w') as f:        
+        json.dump(image_list, f)
+
 
 def copy_pruned_images(
     pruned_list: list,
+    ssim_limit,
     bag_path: str,
     input_root: str,
     output_root: str,
@@ -82,6 +88,7 @@ def copy_pruned_images(
         os.makedirs(output_image_path)
 
         logging.info("Copying images.")
+        save_image_list(pruned_list, path=output_bag_path,name=Path(bag_path).stem,ssim=ssim_limit)
         for image in tqdm(pruned_list):
             shutil.copyfile(image, os.path.join(output_image_path, Path(image).name))
     except:
@@ -148,6 +155,7 @@ def main(args):
         )
         copy_pruned_images(
             pruned_list=pruned_images,
+            ssim_limit=float(args.ssim),
             bag_path=bag,
             input_root=args.input,
             output_root=args.output,
