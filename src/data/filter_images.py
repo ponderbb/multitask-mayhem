@@ -41,7 +41,7 @@ class filterImages:
 
         if self.debug:
             logging.debug("### DEBUGGING: only using last bag ###")
-            self.bags_list = self.bags_list[-1:]
+            bags_list = bags_list[-1:]
             self.force = True  # assumes the incentive to rewrite
 
         for i, self.bag in enumerate(bags_list):
@@ -72,6 +72,7 @@ class filterImages:
         rgb_images = self._list_images(self.bag)
         self.compare_images(rgb_images)
 
+        self.input = Path(self.input).parents[0]
         self.construct_paths()
         self.copy_files(self.output_image_path, "rgb")
         self.save_image_list()
@@ -105,39 +106,42 @@ class filterImages:
         return self.pruned_list
 
     def copy_files(self, out_path, cp_type: str):
-        try:
-            logging.info("Creating folder {}".format(out_path))
-            os.makedirs(out_path)
+        # try:
+        logging.info("Creating folder {}".format(out_path))
+        os.makedirs(out_path)
 
-            logging.info("Copying {}:".format(cp_type))
-            for image in tqdm(self.pruned_list):
-                if cp_type == "depth":
-                    out_name = Path(image).name
-                    out_file = os.path.join(
-                        self.input,
-                        self.depth_topic,
-                        out_name,
+        logging.info("Copying {}:".format(cp_type))
+        for image in tqdm(self.pruned_list):
+            if cp_type == "depth":
+                out_name = Path(image).name
+                out_file = os.path.join(
+                    self.input,
+                    Path(self.bag).stem,
+                    self.depth_topic,
+                    out_name,
+                )
+            elif cp_type == "pcl":
+                out_name = Path(image).stem + ".pcd"
+                out_file = os.path.join(
+                    self.input,
+                    Path(self.bag).stem,
+                    self.pcl_topic,
+                    out_name,
+                )
+            elif cp_type == "rgb":
+                out_name = Path(image).name
+                out_file = image
+            else:
+                raise TypeError(
+                    "wrong type at copying: {}, it should be [depth, rgb, pcl]".format(
+                        cp_type
                     )
-                elif cp_type == "pcl":
-                    out_name = Path(image).stem + ".pcd"
-                    out_file = os.path.join(
-                        self.input,
-                        self.pcl_topic,
-                        out_name,
-                    )
-                elif cp_type == "rgb":
-                    out_name = Path(image).name
-                    out_file = image
-                else:
-                    raise TypeError(
-                        "wrong type at copying: {}, it should be [depth, rgb, pcl]".format(
-                            cp_type
-                        )
-                    )
+                )
 
-                shutil.copyfile(out_file, os.path.join(out_path, out_name))
-        except:
-            logging.warning("Copying {} for bag {} failed".format(cp_type, self.bag))
+            shutil.copyfile(out_file, os.path.join(out_path, out_name))
+
+    # except:
+    # logging.warning("Copying {} for bag {} failed".format(cp_type, self.bag))
 
     def construct_paths(self):
         self.output_image_path = os.path.join(
@@ -176,7 +180,9 @@ class filterImages:
             if not folder.startswith(".")
         ]
 
-        assert len(folder_list)!=0, "Folder list is empty, check bag files and input folder!"
+        assert (
+            len(folder_list) != 0
+        ), "Folder list is empty, check bag files and input folder!"
 
         return sorted(folder_list)
 
@@ -188,7 +194,7 @@ class filterImages:
                 if name.endswith((".png")) & ("depth" not in str(root)):
                     rgb_path_list.append(os.path.join(root, name))
 
-        assert len(rgb_path_list)!=0, "There are no images in {}".format(bag_path)
+        assert len(rgb_path_list) != 0, "There are no images in {}".format(bag_path)
 
         return sorted(rgb_path_list)
 

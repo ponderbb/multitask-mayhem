@@ -1,5 +1,7 @@
+import argparse
 import logging
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -18,10 +20,11 @@ import src.utils as utils
 
 
 class unPackROSBag:
-    def __init__(self) -> None:
+    def __init__(self, force: bool) -> None:
         self.root_dir = "data/external/"
         self.export_dir = "data/raw"
         self.extension = ".bag"
+        self.force = force
 
         self.image_topics = [
             "/synchronized_l515_image",
@@ -68,8 +71,17 @@ class unPackROSBag:
 
         for i, bag_path in enumerate(self.bags_list):
 
-            # create a folder with bag name in data/raw
             bag_name = Path(bag_path).stem
+
+            # create a folder with bag name in data/raw
+            if self.check_output(os.path.join(self.export_dir, bag_name)):
+                logging.info(
+                    "Bag extraction already exists, not overwritten: {}".format(
+                        bag_name
+                    )
+                )
+                break
+
             os.makedirs(os.path.join(self.export_dir, bag_name), exist_ok=True)
             logging.info(
                 "{}/{}: unpacking {} ".format(i + 1, len(self.bags_list), bag_name)
@@ -139,6 +151,16 @@ class unPackROSBag:
                     ),
                     image,
                 )
+
+    def check_output(self, bag_out_path):
+        if os.path.exists(bag_out_path):
+            if self.force:
+                shutil.rmtree(bag_out_path)
+                return False
+            else:
+                return True
+        else:
+            return False
 
     def _write_imu(self, bag, bag_name):
 
@@ -212,10 +234,10 @@ def check_topic(topic, generator):
         logging.warning("Topic generator is empty: {}".format(topic))
 
 
-def main():
+def main(args):
 
     logging.info("Unpacking ROS bag")
-    unpack = unPackROSBag()
+    unpack = unPackROSBag(force=args.force)
     unpack.extract_bags()
 
 
@@ -232,4 +254,10 @@ if __name__ == "__main__":
         ],
     )
 
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-f", "--force", default=False, help="Force overwrite existing folders."
+    )
+    args = parser.parse_args()
+
+    main(args)
