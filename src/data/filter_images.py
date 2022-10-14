@@ -8,7 +8,8 @@ from typing import Union
 
 import cv2
 import numpy as np
-from skimage.metrics import structural_similarity as ssim
+from skimage.metrics import normalized_root_mse as skiNRMSE
+from skimage.metrics import structural_similarity as skiSSIM
 from tqdm import tqdm
 
 
@@ -88,7 +89,7 @@ class filterImages:
             im2 = cv2.imread(current_image, cv2.IMREAD_GRAYSCALE)
             if not np.array_equal(im1, im2):
                 count = count + 1
-                sim_res = ssim(im1, im2)  # TODO change this
+                sim_res = self._similarity_check(im1, im2)
                 if sim_res < float(self.sim_lim):
                     count_lim = count_lim + 1
                     self.pruned_list.append(first_image)
@@ -172,6 +173,17 @@ class filterImages:
             return False
 
     @staticmethod
+    def _similarity_check(im1, im2):
+        ssim_res = skiSSIM(
+            im1, im2, win_size=111
+        )  # higher the more similar TODO: find correct window size
+        nrmse_res = skiNRMSE(im1, im2)  # lower the more similar
+        similarity_index = (
+            ssim_res * 0.4 + (1 - nrmse_res) * 0.6
+        )  # TODO: better define the ratio
+        return similarity_index
+
+    @staticmethod
     def _listbags_fullpath(dir_path: Union[str, Path]):
         folder_list = [
             os.path.join(dir_path, folder)
@@ -220,7 +232,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-s",
         "--simlim",
-        default="0.9",
+        default="0.7",
         help="Similarity limit of images, float between [0,1]",
     )
     parser.add_argument("-i", "--input", default="data/raw/")
