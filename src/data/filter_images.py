@@ -4,8 +4,6 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from subprocess import check_output
-from tabnanny import check
 from typing import Union
 
 import cv2
@@ -51,17 +49,18 @@ class filterImages:
                         Path(self.bag).stem
                     )
                 )
-                break
+            else:
+                logging.info(
+                    "{}/{} Pruning bag: {}".format(len(bags_list), i + 1, self.bag)
+                )
+                rgb_images = self._list_images(self.bag)
+                self.compare_images(rgb_images)
 
-            logging.info("{}/{} Pruning bag: {}".format(len(bags_list), i, self.bag))
-            rgb_images = self._list_images(self.bag)
-            self.compare_images(rgb_images)
-
-            self.construct_paths()
-            self.copy_files(self.output_image_path, "rgb")
-            self.save_image_list()
-            self.copy_files(self.output_depth_path, "depth")
-            self.copy_files(self.output_pcl_path, "pcl")
+                self.construct_paths()
+                self.copy_files(self.output_image_path, "rgb")
+                self.save_image_list()
+                self.copy_files(self.output_depth_path, "depth")
+                self.copy_files(self.output_pcl_path, "pcl")
 
     def filter_specific(self):
         self.bag = self.input

@@ -80,19 +80,18 @@ class unPackROSBag:
                         bag_name
                     )
                 )
-                break
+            else:
+                os.makedirs(os.path.join(self.export_dir, bag_name), exist_ok=True)
+                logging.info(
+                    "{}/{}: unpacking {} ".format(i + 1, len(self.bags_list), bag_name)
+                )
 
-            os.makedirs(os.path.join(self.export_dir, bag_name), exist_ok=True)
-            logging.info(
-                "{}/{}: unpacking {} ".format(i + 1, len(self.bags_list), bag_name)
-            )
+                bag = rosbag.Bag(bag_path)
+                self._write_images(bag, bag_name)
+                self._write_imu(bag, bag_name)
+                self._write_pcl(bag, bag_name)
 
-            bag = rosbag.Bag(bag_path)
-            self._write_images(bag, bag_name)
-            self._write_imu(bag, bag_name)
-            self._write_pcl(bag, bag_name)
-
-            bag.close()
+                bag.close()
 
     def _write_images(self, bag, bag_name):
         """
