@@ -10,7 +10,9 @@ import rosbag
 from numpy_pc2 import pointcloud2_to_xyz_array
 from tqdm import tqdm
 
-sys.path.append(os.getcwd()) # BUG: why do we need to add execution folder to path manually?
+sys.path.append(
+    os.getcwd()
+)  # BUG: why do we need to add execution folder to path manually?
 
 import src.utils as utils
 
@@ -132,7 +134,10 @@ class unPackROSBag:
                     image = image.byteswap().newbyteorder()
 
                 cv2.imwrite(
-                    os.path.join(topic_dir, "{}-{}.png".format(bag_name, str(i).zfill(6))), image
+                    os.path.join(
+                        topic_dir, "{}-{}.png".format(bag_name, str(i).zfill(6))
+                    ),
+                    image,
                 )
 
     def _write_imu(self, bag, bag_name):
@@ -195,7 +200,10 @@ class unPackROSBag:
                 pcd.point["positions"] = o3d.core.Tensor(pc_array)
 
                 o3d.t.io.write_point_cloud(
-                    os.path.join(topic_dir, "{}-{}.pcd".format(bag_name, str(i).zfill(6))), pcd
+                    os.path.join(
+                        topic_dir, "{}-{}.pcd".format(bag_name, str(i).zfill(6))
+                    ),
+                    pcd,
                 )
 
 
