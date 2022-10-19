@@ -240,14 +240,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "-d",
         "--debug",
-        default=False,
+        action="store_true",
         help="Include debug level information in the logging.",
     )
     parser.add_argument(
-        "-f", "--force", default=False, help="Force overwrite existing folders."
+        "-f", "--force", action="store_true", help="Force overwrite existing folders."
     )
     parser.add_argument(
-        "-b", "--bag", default=False, help="Unpack and overwrite specific bag."
+        "-b", "--bag", action="store_true", help="Unpack and overwrite specific bag."
     )
 
     args = parser.parse_args()

@@ -76,8 +76,8 @@ class unPackROSBag:
             # create a folder with bag name in data/raw
             if self.check_output(os.path.join(self.export_dir, bag_name)):
                 logging.info(
-                    "Bag extraction already exists, not overwritten: {}".format(
-                        bag_name
+                    "{}/{}: bag extraction already exists, not overwritten: {}".format(
+                        i + 1, len(self.bags_list), bag_name
                     )
                 )
             else:
@@ -108,7 +108,7 @@ class unPackROSBag:
 
             topic_read = bag.read_messages(topic)
             check_topic(topic, topic_read)
-            logging.info(topic)
+            logging.debug(topic)
 
             for i, msg in enumerate(tqdm(topic_read)):
 
@@ -167,7 +167,9 @@ class unPackROSBag:
         accel_topic = bag.read_messages(self.imu_topics["accel"])
         check_topic(self.imu_topics["gyro"], gyro_topic)
         check_topic(self.imu_topics["accel"], accel_topic)
-        logging.info("{}, {}".format(self.imu_topics["gyro"], self.imu_topics["accel"]))
+        logging.debug(
+            "{}, {}".format(self.imu_topics["gyro"], self.imu_topics["accel"])
+        )
 
         out_csv = open(
             os.path.join(self.export_dir, bag_name, "imu_{}.csv".format(bag_name)), "w"
@@ -209,7 +211,7 @@ class unPackROSBag:
             os.makedirs(topic_dir, exist_ok=True)
 
             topic_read = bag.read_messages(topic)
-            logging.info(topic)
+            logging.debug(topic)
             check_topic(topic, topic_read)
 
             for i, (topic, msg, t) in enumerate(tqdm(topic_read)):
@@ -235,16 +237,33 @@ def check_topic(topic, generator):
 
 def main(args):
 
-    logging.info("Unpacking ROS bag")
+    logging.info("Unpacking ROS bags")
     unpack = unPackROSBag(force=args.force)
     unpack.extract_bags()
 
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-f", "--force", action="store_true", help="Force overwrite existing folders."
+    )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="Include debug level information in the logging.",
+    )
+    args = parser.parse_args()
+
+    if args.debug:
+        level = logging.DEBUG
+    else:
+        level = logging.INFO
+
     log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(
-        level=logging.INFO,
+        level=level,
         format=log_fmt,
         force=True,
         handlers=[
@@ -252,11 +271,5 @@ if __name__ == "__main__":
             logging.StreamHandler(),
         ],
     )
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-f", "--force", default=False, help="Force overwrite existing folders."
-    )
-    args = parser.parse_args()
 
     main(args)

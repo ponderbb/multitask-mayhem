@@ -29,9 +29,9 @@ python src/data/rosbag_unpack.py
 
 Similarity limit accoring to the SSIM measure (read more [here](https://pyimagesearch.com/2014/09/15/python-compare-two-images/)). The limit can be adjusted by passing `-s <float>`.
 
-It will skip folders that has been already pruned and have an existing folder in the target directory `/data/interim`. This can be bypassed with `-f True`. 
+It will skip folders that has been already pruned and have an existing folder in the target directory `/data/interim`. This can be bypassed with `-f`. 
 
-Individual bag can be extracted by passing `-b True -i <path_to_bag>`, which assumes that the output folder can be overwritten, if it exists.
+Individual bag can be extracted by passing `-b -i <path_to_bag>`, which assumes that the output folder can be overwritten, if it exists.
 
 Passing `-d` will enable debug level logging information and limit the loop to the last bag in the list.
 
