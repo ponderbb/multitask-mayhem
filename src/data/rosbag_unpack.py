@@ -12,10 +12,6 @@ import rosbag
 from numpy_pc2 import pointcloud2_to_xyz_array
 from tqdm import tqdm
 
-sys.path.append(
-    os.getcwd()
-)  # BUG: why do we need to add execution folder to path manually?
-
 import src.utils as utils
 
 

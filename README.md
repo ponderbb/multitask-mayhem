@@ -16,6 +16,19 @@ After activating this environment, install the requirements:
 $ make requirements
 ```
 
+In case of `ModuleNotFoundError: No module named 'src'`, you should append the following to the end of the environment activation file and restart the virtual environment.
+
+```shell
+echo 'export PYTHONPATH=$PYTHONPATH:$(pwd)' >> ~/.virtualenvs/multitask-mayhem/bin/activate
+```
+
+If you want to use the VSCode debugger with the virtual environment, append the following to the `launch.json` profile.
+
+```shell
+"python": "${command:python.interpreterPath}"
+```
+
+
 User guide
 ------------
 ### Unpacking the bagfiles from `/data/external` to `/data/raw/`
