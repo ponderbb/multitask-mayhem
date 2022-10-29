@@ -73,6 +73,9 @@ else
 	@echo ">>> New virtualenv created. Activate with:\nworkon $(PROJECT_NAME)"
 endif
 
+ODIR = .logging
+dummy_build_folder := $(shell mkdir -p $(ODIR))
+
 ## Test python environment is setup correctly
 test_environment:
 	$(PYTHON_INTERPRETER) test_environment.py
