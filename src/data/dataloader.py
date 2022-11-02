@@ -1,10 +1,14 @@
-import torch
-from torch.utils.data import DataLoader, Dataset
+import argparse
+import logging
+import os
+from pathlib import Path
+from typing import Optional
+
 import numpy as np
 import pytorch_lightning as pl
-from pathlib import Path
-import logging
-import argparse
+import torch
+from torch.utils.data import DataLoader, Dataset, random_split
+
 import src.utils as utils
 from src.data.manifests import generate_manifest
 
@@ -23,11 +27,19 @@ class WarehouseMTLDataModule(pl.LightningDataModule):
         self.manifests = generate_manifest(
             self.config["collections"], self.config["data_root"]
         )
-        
 
+        # # create directory and verify path for output masks
+        # self.mask_folder_path = os.path.join(self.config["data_root"],"test_masks")
+        # if Path(self.mask_folder_path).exists():
+        #     os.rmdir(self.mask_folder_path)
+        # else:
+        #     os.makedirs(self.mask_folder_path)
 
-    # def setup(self, stage: str) -> None:
-    #     return super().setup(stage)
+    def setup(self) -> None:
+        train_set, valid_set, test_set = random_split(
+            self.manifests, self.config["split_ratio"]
+        )
+        # return super().setup(stage)
 
     # def train_dataloader(self) -> TRAIN_DATALOADERS:
     #     return super().train_dataloader()
@@ -49,6 +61,8 @@ class WarehouseMTLDataModule(pl.LightningDataModule):
 
 def main():
 
+    utils.set_seeds()
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-c",
@@ -69,7 +83,7 @@ def main():
     )
 
     data_module = WarehouseMTLDataModule(args)
-    # data_module.setup()
+    data_module.setup()
     # dataloader = data_module.val_dataloader()
 
 
