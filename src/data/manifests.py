@@ -8,6 +8,8 @@ import numpy as np
 import xmltodict
 from tqdm import tqdm
 
+from src.utils import load_yaml
+
 
 def generate_manifest(collections: list, data_root: str):
     """
@@ -49,6 +51,14 @@ def mask_from_poly(shape, out_path, polygon=None):
             points = points.astype(int)
             mask = cv2.fillPoly(mask, [points], color=(255, 255, 255))
     cv2.imwrite(out_path, mask)
+
+
+def label_encoding(annotation, label):
+    assert Path(
+        "configs/class_lookup.yaml"
+    ).exists(), "did not find labels lookup table"
+    lookup_dict = load_yaml("configs/class_lookup.yaml")
+    return lookup_dict[annotation][label]
 
 
 def cvat_to_dict(xml_file, collection, data_root):
@@ -106,6 +116,7 @@ def cvat_to_dict(xml_file, collection, data_root):
                 empty_bbox_list.append(
                     {
                         "label": bbox["@label"],
+                        "class": label_encoding("bbox", bbox["@label"]),
                         "corners": [
                             float(bbox["@xtl"]),
                             float(bbox["@ytl"]),
