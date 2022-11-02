@@ -52,7 +52,7 @@ class filterImages:
                 )
             else:
                 logging.info(
-                    "{}/{} Pruning bag: {}".format(len(bags_list), i + 1, self.bag)
+                    "{}/{} Pruning bag: {}".format(i + 1, len(bags_list), self.bag)
                 )
                 rgb_images = self._list_images(self.bag)
                 self.compare_images(rgb_images)
@@ -90,7 +90,7 @@ class filterImages:
             if not np.array_equal(im1, im2):
                 count = count + 1
                 sim_res = self._similarity_check(im1, im2)
-                if sim_res < float(self.sim_lim):
+                if sim_res < self.sim_lim:
                     count_lim = count_lim + 1
                     self.pruned_list.append(first_image)
                     first_image = current_image
@@ -232,7 +232,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "-s",
         "--simlim",
-        default="0.7",
+        default=0.7,
+        type=float,
         help="Similarity limit of images, float between [0,1]",
     )
     parser.add_argument("-i", "--input", default="data/raw/")
@@ -247,7 +248,7 @@ if __name__ == "__main__":
         "-f", "--force", action="store_true", help="Force overwrite existing folders."
     )
     parser.add_argument(
-        "-b", "--bag", action="store_true", help="Unpack and overwrite specific bag."
+        "-b", "--bag", action="store_true", help="Filter and overwrite specific bag."
     )
 
     args = parser.parse_args()
