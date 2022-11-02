@@ -1,4 +1,3 @@
-
 import torch
 from torch.utils.data import DataLoader, Dataset
 import numpy as np
@@ -7,6 +6,8 @@ from pathlib import Path
 import logging
 import argparse
 import src.utils as utils
+from src.data.manifests import generate_manifest
+
 
 class WarehouseMTLDataModule(pl.LightningDataModule):
     def __init__(self, arguments) -> None:
@@ -19,7 +20,11 @@ class WarehouseMTLDataModule(pl.LightningDataModule):
             raise FileNotFoundError("Config file can not be found.")
 
         # self.all_image_paths = utils.list_image_paths(self.config["collections"])
-        self.manifests = utils.list_labels(self.config["collections"])
+        self.manifests = generate_manifest(
+            self.config["collections"], self.config["data_root"]
+        )
+        
+
 
     # def setup(self, stage: str) -> None:
     #     return super().setup(stage)
@@ -33,14 +38,14 @@ class WarehouseMTLDataModule(pl.LightningDataModule):
     # def test_dataloader(self) -> EVAL_DATALOADERS:
     #     return super().test_dataloader()
 
-
     # class WarehouseMTL(Dataset):
     #     def __init__(self) -> None:
     #         super().__init__()
     #     def __len__(self):
     #         return None
     #     def __getitem__(self, index) -> T_co:
-            # return super().__getitem__(index)
+    # return super().__getitem__(index)
+
 
 def main():
 
@@ -49,7 +54,7 @@ def main():
         "-c",
         "--config",
         default="configs/debug_dataloader.yaml",
-        help="path to config file for dataloading"
+        help="path to config file for dataloading",
     )
     args = parser.parse_args()
     log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -66,6 +71,7 @@ def main():
     data_module = WarehouseMTLDataModule(args)
     # data_module.setup()
     # dataloader = data_module.val_dataloader()
+
 
 if __name__ == "__main__":
     main()
