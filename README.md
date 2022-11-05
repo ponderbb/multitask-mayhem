@@ -15,6 +15,10 @@ After activating this environment, install the requirements:
 ```shell
 $ make requirements
 ```
+Install pre-commit hooks for formatting tests, defined in `.pre-commit-config.yaml`:
+```shell
+$ pre-commit install
+```
 
 In case of `ModuleNotFoundError: No module named 'src'`, you should append the following to the end of the environment activation file and restart the virtual environment.
 
