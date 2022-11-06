@@ -20,12 +20,14 @@ class filterImages:
         input_root: Union[str, Path],
         output_root: Union[str, Path],
         force: bool,
+        rgb_only: bool = False,
         debug: bool = False,
     ) -> None:
         self.input = input_root
         self.output = output_root
         self.sim_lim = similarity_limit
         self.force = force
+        self.rgb_only = rgb_only
         self.debug = debug
         self.image_topic = "synchronized_l515_image"
         self.depth_topic = "synchronized_l515_depth_image"
@@ -60,8 +62,9 @@ class filterImages:
                 self.construct_paths()
                 self.copy_files(self.output_image_path, "rgb")
                 self.save_image_list()
-                self.copy_files(self.output_depth_path, "depth")
-                self.copy_files(self.output_pcl_path, "pcl")
+                if not self.rgb_only:
+                    self.copy_files(self.output_depth_path, "depth")
+                    self.copy_files(self.output_pcl_path, "pcl")
 
     def filter_specific(self):
         self.bag = self.input
@@ -76,8 +79,9 @@ class filterImages:
         self.construct_paths()
         self.copy_files(self.output_image_path, "rgb")
         self.save_image_list()
-        self.copy_files(self.output_depth_path, "depth")
-        self.copy_files(self.output_pcl_path, "pcl")
+        if not self.rgb_only:
+            self.copy_files(self.output_depth_path, "depth")
+            self.copy_files(self.output_pcl_path, "pcl")
 
     def compare_images(self, images_list: list):
         self.pruned_list = []
@@ -106,7 +110,7 @@ class filterImages:
         return self.pruned_list
 
     def copy_files(self, out_path, cp_type: str):
-        # try:
+
         logging.info("Creating folder {}".format(out_path))
         os.makedirs(out_path)
 
@@ -176,7 +180,8 @@ class filterImages:
     def _similarity_check(im1, im2):
         ssim_res = skiSSIM(
             im1, im2, win_size=111
-        )  # higher the more similar TODO: find correct window size
+        )  # higher the more similar 
+        #TODO: find correct window size
         nrmse_res = skiNRMSE(im1, im2)  # lower the more similar
         similarity_index = (
             ssim_res * 0.4 + (1 - nrmse_res) * 0.6
@@ -217,6 +222,7 @@ def main(args):
         input_root=args.input,
         output_root=args.output,
         force=args.force,
+        rgb_only=args.rgb,
         debug=args.debug,
     )
     if args.bag:
@@ -243,6 +249,12 @@ if __name__ == "__main__":
         "--debug",
         action="store_true",
         help="Include debug level information in the logging.",
+    )
+    parser.add_argument(
+        "-r",
+        "--rgb",
+        action="store_true",
+        help="Only copy filtered rgb images.",
     )
     parser.add_argument(
         "-f", "--force", action="store_true", help="Force overwrite existing folders."
