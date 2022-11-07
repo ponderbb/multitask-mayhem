@@ -14,23 +14,18 @@ import src.utils as utils
 from src.data.manifests import generate_manifest
 
 
-class WarehouseMTLDataModule(pl.LightningDataModule):
-    def __init__(self, arguments) -> None:
+class mtlDataModule(pl.LightningDataModule):
+    def __init__(self, config) -> None:
         super().__init__()
-        self.args = arguments
 
-        if Path(self.args.config).exists():
-            self.config = utils.load_yaml(self.args.config)
-        else:
-            raise FileNotFoundError("Config file can not be found.")
+        self.config = utils.load_yaml(config)
 
+        logging.info("generating manifest for data from {}".format(self.config["data_root"]))
         self.manifests = generate_manifest(
             self.config["collections"], self.config["data_root"]
         )
 
-    def setup(self, stage) -> None:
-        # FIXME: once we have proper test set annotated -> [train, valid]
-
+    def prepare_data(self) -> None:
         # split manifest file
         if self.config["dataset"] == "warehouse-nn":
             logging.info(
@@ -40,20 +35,23 @@ class WarehouseMTLDataModule(pl.LightningDataModule):
                     self.config["split_ratio"][2]*100,
                 )
             )
-            train_split, valid_split, test_split = random_split(
+            self.train_split, self.valid_split, self.test_split = random_split(
                 self.manifests, self.config["split_ratio"]
             )
-            datasetObject = WarehouseMTL
+            self.datasetObject = WarehouseMTL
 
         elif self.config["dataset"] == "synthetic-nn":
             raise NotImplementedError("Dataloader not implemented yet!")
+            # self.datasetObject = ...
 
+    def setup(self, stage) -> None:
+        # FIXME: once we have proper test set annotated -> [train, valid]
         if stage == "fit":
-            self.train_dataset = datasetObject(train_split)
+            self.train_dataset = self.datasetObject(self.train_split)
         if stage == "validate":
-            self.valid_dataset = datasetObject(valid_split)
+            self.valid_dataset = self.datasetObject(self.valid_split)
         if stage == "test":
-            self.test_dataset = datasetObject(test_split)
+            self.test_dataset = self.datasetObject(self.test_split)
 
     def train_dataloader(self):
         return DataLoader(self.train_dataset, shuffle=False)
@@ -93,26 +91,31 @@ def main():
 
     utils.set_seeds()
 
+    # grab arguments 
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-c",
         "--config",
-        default="configs/debug_dataloader.yaml",
-        help="path to config file for dataloading",
+        default="configs/dummy_training.yaml",
+        help="Path to pipeline configuration file",
+    )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="Include debug level information in the logging.",
+    )
+    parser.add_argument(
+        "-l",
+        "--log",
+        default=".logging/dataloader_debug.log",
+        help="path to config file for training",
     )
     args = parser.parse_args()
-    log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format=log_fmt,
-        force=True,
-        handlers=[
-            logging.FileHandler(".logging/debug_dataloader.log", "w"),
-            logging.StreamHandler(),
-        ],
-    )
 
-    data_module = WarehouseMTLDataModule(args)
+    utils.logging_setup(args.debug, args.log)
+
+    data_module = mtlDataModule(args.config)
     data_module.setup(stage="validate")
     dataloader = data_module.val_dataloader()
     it = iter(dataloader)

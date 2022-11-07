@@ -4,6 +4,7 @@ import random
 import numpy as np
 import torch
 import yaml
+import logging
 
 
 def peek(iterable):
@@ -26,3 +27,20 @@ def set_seeds(seed: int = 42):
     torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
     random.seed(seed)
+
+def logging_setup(debug, outfile)-> None:
+    if debug:
+        logging_level = logging.DEBUG
+    else:
+        logging_level = logging.INFO
+
+    log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    logging.basicConfig(
+        level=logging_level,
+        format=log_fmt,
+        force=True,
+        handlers=[
+            logging.FileHandler(outfile, "w"),
+            logging.StreamHandler(),
+        ],
+    )

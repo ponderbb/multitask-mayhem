@@ -20,21 +20,10 @@ Install pre-commit hooks for formatting tests, defined in `.pre-commit-config.ya
 $ pre-commit install
 ```
 
-In case of `ModuleNotFoundError: No module named 'src'`, you should append the following to the end of the environment activation file and restart the virtual environment.
-
-```shell
-$ echo 'export PYTHONPATH=$PYTHONPATH:$(pwd)' >> ~/.virtualenvs/multitask-mayhem/bin/activate
-```
-or
-```shell
-$ conda install conda-build
-$ conda develop . 
-```
-
 If you want to use the VSCode debugger with the virtual environment, append the following to the `launch.json` profile.
 
 ```shell
-"python": "${command:python.interpreterPath}"
+$ "python": "${command:python.interpreterPath}"
 ```
 
 
@@ -45,7 +34,7 @@ User guide
 Use `-f True` if you want to overwrite already extracted bags in `data/raw`, otherwise they are skipped.
 
 ```shell
-python src/data/rosbag_unpack.py
+$ python src/data/rosbag_unpack.py
 ```
 ### Pruning the images from `/data/raw` to `/data/interim`
 
@@ -58,7 +47,21 @@ Individual bag can be extracted by passing `-b -i <path_to_bag>`, which assumes 
 Passing `-d` will enable debug level logging information and limit the loop to the last bag in the list.
 
 ```shell
-python src/data/filter_images.py -s 0.7
+$ python src/data/filter_images.py -s 0.7
+```
+
+Issues
+---
+
+In case of `ModuleNotFoundError: No module named 'src'`, you should append the following to the end of the environment activation file and restart the virtual environment.
+
+```shell
+$ echo 'export PYTHONPATH=$PYTHONPATH:$(pwd)' >> ~/.virtualenvs/multitask-mayhem/bin/activate
+```
+or
+```shell
+$ conda install conda-build
+$ conda develop . 
 ```
 
 
