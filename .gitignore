@@ -80,6 +80,7 @@ target/
 /data/interim/*
 /data/external/*
 /data/processed/*
+/models/
 
 # Mac OS-specific storage files
 .DS_Store

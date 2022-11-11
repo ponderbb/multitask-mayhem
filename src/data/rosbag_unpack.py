@@ -53,11 +53,7 @@ class unPackROSBag:
         if self.bags_list:
             logging.info("{} bag(s) found".format(len(self.bags_list)))
         else:
-            raise FileNotFoundError(
-                "No files with .bag extension on the following path: {}".format(
-                    self.root_dir
-                )
-            )
+            raise FileNotFoundError("No files with .bag extension on the following path: {}".format(self.root_dir))
 
     def extract_bags(self):
         """
@@ -78,9 +74,7 @@ class unPackROSBag:
                 )
             else:
                 os.makedirs(os.path.join(self.export_dir, bag_name), exist_ok=True)
-                logging.info(
-                    "{}/{}: unpacking {} ".format(i + 1, len(self.bags_list), bag_name)
-                )
+                logging.info("{}/{}: unpacking {} ".format(i + 1, len(self.bags_list), bag_name))
 
                 bag = rosbag.Bag(bag_path)
                 self._write_images(bag, bag_name)
@@ -117,9 +111,7 @@ class unPackROSBag:
                     channels = 1
                     dtype = np.dtype("uint16")
                 else:
-                    raise TypeError(
-                        "image encoding problem, found {}".format(msg.encoding)
-                    )
+                    raise TypeError("image encoding problem, found {}".format(msg.encoding))
 
                 dtype = dtype.newbyteorder(">" if msg.is_bigendian else "<")
 
@@ -141,9 +133,7 @@ class unPackROSBag:
                     image = image.byteswap().newbyteorder()
 
                 cv2.imwrite(
-                    os.path.join(
-                        topic_dir, "{}-{}.png".format(bag_name, str(i).zfill(6))
-                    ),
+                    os.path.join(topic_dir, "{}-{}.png".format(bag_name, str(i).zfill(6))),
                     image,
                 )
 
@@ -163,17 +153,11 @@ class unPackROSBag:
         accel_topic = bag.read_messages(self.imu_topics["accel"])
         check_topic(self.imu_topics["gyro"], gyro_topic)
         check_topic(self.imu_topics["accel"], accel_topic)
-        logging.debug(
-            "{}, {}".format(self.imu_topics["gyro"], self.imu_topics["accel"])
-        )
+        logging.debug("{}, {}".format(self.imu_topics["gyro"], self.imu_topics["accel"]))
 
-        out_csv = open(
-            os.path.join(self.export_dir, bag_name, "imu_{}.csv".format(bag_name)), "w"
-        )
+        out_csv = open(os.path.join(self.export_dir, bag_name, "imu_{}.csv".format(bag_name)), "w")
 
-        out_csv.write(
-            "# gyro_timestamp accel_timestamp ang_vel_x ang_vel_y ang_vel_z lin_acc_x lin_acc_y lin_acc_z\n"
-        )
+        out_csv.write("# gyro_timestamp accel_timestamp ang_vel_x ang_vel_y ang_vel_z lin_acc_x lin_acc_y lin_acc_z\n")
 
         for i, (gyro_msg, accel_msg) in enumerate(tqdm(zip(gyro_topic, accel_topic))):
 
@@ -211,17 +195,13 @@ class unPackROSBag:
             check_topic(topic, topic_read)
 
             for i, (topic, msg, t) in enumerate(tqdm(topic_read)):
-                pc_array = pointcloud2_to_xyz_array(
-                    msg
-                )  # NOTE: missing intensity values, could be extracted
+                pc_array = pointcloud2_to_xyz_array(msg)  # NOTE: missing intensity values, could be extracted
 
                 pcd = o3d.t.geometry.PointCloud()
                 pcd.point["positions"] = o3d.core.Tensor(pc_array)
 
                 o3d.t.io.write_point_cloud(
-                    os.path.join(
-                        topic_dir, "{}-{}.pcd".format(bag_name, str(i).zfill(6))
-                    ),
+                    os.path.join(topic_dir, "{}-{}.pcd".format(bag_name, str(i).zfill(6))),
                     pcd,
                 )
 
@@ -241,9 +221,7 @@ def main(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-f", "--force", action="store_true", help="Force overwrite existing folders."
-    )
+    parser.add_argument("-f", "--force", action="store_true", help="Force overwrite existing folders.")
     parser.add_argument(
         "-d",
         "--debug",
@@ -252,20 +230,6 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    if args.debug:
-        level = logging.DEBUG
-    else:
-        level = logging.INFO
-
-    log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    logging.basicConfig(
-        level=level,
-        format=log_fmt,
-        force=True,
-        handlers=[
-            logging.FileHandler(".logging/rosbag_extract.log", "w"),
-            logging.StreamHandler(),
-        ],
-    )
+    utils.logging_setup(debug=args.debug, outfile=".logging/rosbag_extract.log")
 
     main(args)

@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 from pathlib import Path
+from typing import List
 
 import cv2
 import numpy as np
@@ -11,7 +12,7 @@ from tqdm import tqdm
 from src.utils import load_yaml
 
 
-def generate_manifest(collections: list, data_root: str):
+def generate_manifest(collections: List[str], data_root: str):
     """
     - generate a dictionary for each labelled image
       with the following keys:
@@ -22,13 +23,9 @@ def generate_manifest(collections: list, data_root: str):
     manifest_list = []
     for collection in tqdm(collections):
 
-        collection_label_path = os.path.join(
-            data_root, collection, "{}.xml".format(collection)
-        )
+        collection_label_path = os.path.join(data_root, collection, "{}.xml".format(collection))
 
-        assert Path(
-            collection_label_path
-        ).exists(), "label path -> {} does not exist".format(collection_label_path)
+        assert Path(collection_label_path).exists(), "label path -> {} does not exist".format(collection_label_path)
 
         with open(collection_label_path, "r", encoding="utf-8") as file:
             label_xml = file.read()
@@ -54,9 +51,7 @@ def mask_from_poly(shape, out_path, polygon=None):
 
 
 def label_encoding(annotation, label):
-    assert Path(
-        "configs/class_lookup.yaml"
-    ).exists(), "did not find labels lookup table"
+    assert Path("configs/class_lookup.yaml").exists(), "did not find labels lookup table"
     lookup_dict = load_yaml("configs/class_lookup.yaml")
     return lookup_dict[annotation][label]
 
@@ -88,16 +83,10 @@ def cvat_to_dict(xml_file, collection, data_root):
         label_dict["name"] = image_label["@name"]
 
         # find corresponding image path
-        image_path = os.path.join(
-            data_root, collection, "synchronized_l515_image", label_dict["name"]
-        )
+        image_path = os.path.join(data_root, collection, "synchronized_l515_image", label_dict["name"])
 
         # check if the image referenced by the label exists
-        assert Path(
-            image_path
-        ).exists(), "Cannot find corresponding image to label {}".format(
-            label_dict["name"]
-        )
+        assert Path(image_path).exists(), "Cannot find corresponding image to label {}".format(label_dict["name"])
 
         # fill the annotation details into the new dictionary
         label_dict["path"] = image_path

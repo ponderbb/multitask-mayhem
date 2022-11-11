@@ -1,5 +1,5 @@
 bbox:
-  person : 0
-  box : 1
-  agv : 2
-  forklift : 3
+  person : 1
+  box : 2
+  agv : 3
+  forklift : 4

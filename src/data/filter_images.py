@@ -12,6 +12,8 @@ from skimage.metrics import normalized_root_mse as skiNRMSE
 from skimage.metrics import structural_similarity as skiSSIM
 from tqdm import tqdm
 
+import src.utils as utils
+
 
 class filterImages:
     def __init__(
@@ -36,9 +38,7 @@ class filterImages:
     def filter_all(self):
         logging.info("Listing bags from {}".format(self.input))
         bags_list = self._listbags_fullpath(self.input)
-        assert (
-            bags_list != None
-        ), "Folder list is empty, did you want to filter a single bag?"
+        assert bags_list is not None, "Folder list is empty, did you want to filter a single bag?"
 
         if self.debug:
             logging.debug("### DEBUGGING: only using last bag ###")
@@ -47,15 +47,9 @@ class filterImages:
 
         for i, self.bag in enumerate(bags_list):
             if self.check_output():
-                logging.info(
-                    "Bag already exists, not overwritten: {}".format(
-                        Path(self.bag).stem
-                    )
-                )
+                logging.info("Bag already exists, not overwritten: {}".format(Path(self.bag).stem))
             else:
-                logging.info(
-                    "{}/{} Pruning bag: {}".format(i + 1, len(bags_list), self.bag)
-                )
+                logging.info("{}/{} Pruning bag: {}".format(i + 1, len(bags_list), self.bag))
                 rgb_images = self._list_images(self.bag)
                 self.compare_images(rgb_images)
 
@@ -136,27 +130,14 @@ class filterImages:
                 out_name = Path(image).name
                 out_file = image
             else:
-                raise TypeError(
-                    "wrong type at copying: {}, it should be [depth, rgb, pcl]".format(
-                        cp_type
-                    )
-                )
+                raise TypeError("wrong type at copying: {}, it should be [depth, rgb, pcl]".format(cp_type))
 
             shutil.copyfile(out_file, os.path.join(out_path, out_name))
 
-    # except:
-    # logging.warning("Copying {} for bag {} failed".format(cp_type, self.bag))
-
     def construct_paths(self):
-        self.output_image_path = os.path.join(
-            self.output, Path(self.bag).stem, self.image_topic
-        )
-        self.output_depth_path = os.path.join(
-            self.output, Path(self.bag).stem, self.depth_topic
-        )
-        self.output_pcl_path = os.path.join(
-            self.output, Path(self.bag).stem, self.pcl_topic
-        )
+        self.output_image_path = os.path.join(self.output, Path(self.bag).stem, self.image_topic)
+        self.output_depth_path = os.path.join(self.output, Path(self.bag).stem, self.depth_topic)
+        self.output_pcl_path = os.path.join(self.output, Path(self.bag).stem, self.pcl_topic)
 
     def save_image_list(self):
         with open(
@@ -178,27 +159,17 @@ class filterImages:
 
     @staticmethod
     def _similarity_check(im1, im2):
-        ssim_res = skiSSIM(
-            im1, im2, win_size=111
-        )  # higher the more similar 
-        #TODO: find correct window size
+        ssim_res = skiSSIM(im1, im2, win_size=111)  # higher the more similar
+        # TODO: find correct window size
         nrmse_res = skiNRMSE(im1, im2)  # lower the more similar
-        similarity_index = (
-            ssim_res * 0.4 + (1 - nrmse_res) * 0.6
-        )  # TODO: better define the ratio
+        similarity_index = ssim_res * 0.4 + (1 - nrmse_res) * 0.6  # TODO: better define the ratio
         return similarity_index
 
     @staticmethod
     def _listbags_fullpath(dir_path: Union[str, Path]):
-        folder_list = [
-            os.path.join(dir_path, folder)
-            for folder in os.listdir(dir_path)
-            if not folder.startswith(".")
-        ]
+        folder_list = [os.path.join(dir_path, folder) for folder in os.listdir(dir_path) if not folder.startswith(".")]
 
-        assert (
-            len(folder_list) != 0
-        ), "Folder list is empty, check bag files and input folder!"
+        assert len(folder_list) != 0, "Folder list is empty, check bag files and input folder!"
 
         return sorted(folder_list)
 
@@ -226,7 +197,6 @@ def main(args):
         debug=args.debug,
     )
     if args.bag:
-        logging
         filt.filter_specific()
     else:
         filt.filter_all()
@@ -256,29 +226,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Only copy filtered rgb images.",
     )
-    parser.add_argument(
-        "-f", "--force", action="store_true", help="Force overwrite existing folders."
-    )
-    parser.add_argument(
-        "-b", "--bag", action="store_true", help="Filter and overwrite specific bag."
-    )
+    parser.add_argument("-f", "--force", action="store_true", help="Force overwrite existing folders.")
+    parser.add_argument("-b", "--bag", action="store_true", help="Filter and overwrite specific bag.")
 
     args = parser.parse_args()
 
-    if args.debug:
-        level = logging.DEBUG
-    else:
-        level = logging.INFO
-
-    log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    logging.basicConfig(
-        level=level,
-        format=log_fmt,
-        force=True,
-        handlers=[
-            logging.FileHandler(".logging/filter_images.log", "w"),
-            logging.StreamHandler(),
-        ],
-    )
+    utils.logging_setup(debug=args.debug, outfile=".logging/filter_images.log")
 
     main(args)

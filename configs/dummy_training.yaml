@@ -15,9 +15,16 @@ split_ratio: [0.7, 0.2, 0.1]
 
 # training pipeline
 model_out_path: "models"
-checkpoint_out_path:
-model: "mobilenet_v2"
-
+model: "fasterrcnn"
+attribute: # optional, leave empty
+optimizer:
+  name: "sgd"
+  lr: 0.005
+  momentum: 0.9
+  weight_decay: 0.0005
+batch_size: 2
+num_workers: 0
+shuffle: False
 # logging
 logging: False
 wandb_project: "mtl-mayhem"
