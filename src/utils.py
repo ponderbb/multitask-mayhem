@@ -74,17 +74,20 @@ def model_timestamp(
     return combined_name + "_" + time_now
 
 
-def create_model_folders(config_path: str, model_folder: str, model_name: str) -> str:
+def create_model_folders(config_path: str, model_folder: str, model_name: str, pretend: bool = False) -> str:
     """Initialize folder structure for model"""
     folder_path = os.path.join(model_folder, model_name)
     weights_path = os.path.join(folder_path, "weights")
     checkpoints_path = os.path.join(folder_path, "checkpoints")
 
-    # establishing model directory
-    os.makedirs(weights_path, exist_ok=True)
-    os.makedirs(checkpoints_path, exist_ok=True)
+    if not pretend:
+        # establishing model directory
+        os.makedirs(weights_path, exist_ok=True)
+        os.makedirs(checkpoints_path, exist_ok=True)
 
-    # copy config file over
-    shutil.copy(config_path, folder_path)
+        # copy config file over
+        shutil.copy(config_path, folder_path)
+    else:
+        logging.warning("Pretending to create model folders")
 
     return weights_path, checkpoints_path

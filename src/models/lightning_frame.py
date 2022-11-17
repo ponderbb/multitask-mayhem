@@ -1,4 +1,3 @@
-import logging
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +24,7 @@ class mtlMayhemModule(pl.LightningModule):
 
         # make folders for the model weights and checkpoints
         self.weights_landing, self.checkpoints_landing = utils.create_model_folders(
-            config_path=config, model_folder=self.config["model_out_path"], model_name=self.model_name
+            config_path=config, model_folder=self.config["model_out_path"], model_name=self.model_name, pretend=True
         )
 
     def setup(self, stage: str) -> None:
@@ -40,8 +39,7 @@ class mtlMayhemModule(pl.LightningModule):
         if self.config["model"] == "fasterrcnn":
             self.model = fasterrcnn_resnet50_fpn(pretrained=True, weights="DEFAULT")
             in_features = self.model.roi_heads.box_predictor.cls_score.in_features
-            self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes=5)
-            # self.loss = fastrcnn_loss()
+            self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, self.config["num_classes"])
         elif self.config["model"] == "mobilenetv3":
             raise NotImplementedError
 
@@ -75,14 +73,20 @@ class mtlMayhemModule(pl.LightningModule):
 
     def training_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
         images, mask, targets = batch
-        prediction = self.model(images, targets)
-        logging.info(prediction)
-        return super().training_step(*args, **kwargs)
+        loss_dict = self.model(images, targets)
+        losses = sum(loss for loss in loss_dict.values())
+        losses = losses
+        return losses
 
     def validation_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
         images, mask, targets = batch
-        prediction = self.model(images, targets)
-        logging.info(prediction)
+        loss_dict = self.model(images, targets)
+        loss_dict = loss_dict
+        # losses = 0
+        # for loss in loss_dict[0].values():
+        #     losses += torch.unsqueeze(loss, -1)
+
+        # logging.info(losses)
         return super().validation_step(*args, **kwargs)
 
     def test_step(self, *args: Any, **kwargs: Any):

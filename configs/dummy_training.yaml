@@ -9,9 +9,10 @@ collections: [
   # "2022-10-19-10-44-31",
   # "2022-10-19-11-07-11",
   "2022-10-19-11-15-59",
-  "2022-10-19-11-20-39"
+  # "2022-10-19-11-20-39"
 ]
 split_ratio: [0.7, 0.2, 0.1]
+num_classes: 5 # including background
 
 # training pipeline
 model_out_path: "models"
@@ -22,7 +23,7 @@ optimizer:
   lr: 0.005
   momentum: 0.9
   weight_decay: 0.0005
-batch_size: 2
+batch_size: 1
 num_workers: 0
 shuffle: False
 # logging
