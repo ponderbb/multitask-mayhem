@@ -1,14 +1,17 @@
-import src.utils as utils
-import logging
 import argparse
-from src.models.lightning_frame import mtlMayhemModule
-from src.data.dataloader import mtlDataModule
-from pytorch_lightning.loggers.wandb import WandbLogger
+
 import pytorch_lightning as pl
+from pytorch_lightning.loggers.wandb import WandbLogger
+
+import src.utils as utils
+from src.data.dataloader import mtlDataModule
+from src.models.lightning_frame import mtlMayhemModule
+
+# import logging
 
 utils.set_seeds()
 
-# grab arguments 
+# grab arguments
 parser = argparse.ArgumentParser()
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -37,18 +40,25 @@ utils.logging_setup(args.debug, args.log)
 # initialize data pipeline
 lightning_datamodule = mtlDataModule(args.config)
 
-# initialize training pipeline 
+# initialize training pipeline
 lightning_module = mtlMayhemModule(args.config)
 
 # initialize Weights & Biases experiment logging
 if lightning_module.config["logging"]:
-    logger = WandbLogger() # TODO: setup team and project
+    logger = WandbLogger(
+        name=lightning_module.model_name,
+        project="multitask-mayhem",
+        entity="thesis-mayhem",
+    )
 else:
     logger = None
 
 # initialize trainer object
 trainer = pl.Trainer(
-    logger=logger
+    logger=logger,
+    devices=1,
+    default_root_dir=lightning_module.checkpoints_landing,
+    max_epochs=lightning_module.config["max_epochs"],
 )
 
 if args.debug:

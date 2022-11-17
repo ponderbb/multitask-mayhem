@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +9,7 @@ from torchvision.models.detection import fasterrcnn_resnet50_fpn
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 
 import src.utils as utils
+from src.models.metrics import compute_metrics
 
 # from torchvision.models.detection.roi_heads import fastrcnn_loss
 
@@ -24,7 +26,7 @@ class mtlMayhemModule(pl.LightningModule):
 
         # make folders for the model weights and checkpoints
         self.weights_landing, self.checkpoints_landing = utils.create_model_folders(
-            config_path=config, model_folder=self.config["model_out_path"], model_name=self.model_name, pretend=True
+            config_path=config, model_folder=self.config["model_out_path"], model_name=self.model_name, pretend=False
         )
 
     def setup(self, stage: str) -> None:
@@ -52,6 +54,9 @@ class mtlMayhemModule(pl.LightningModule):
 
         # TODO: load from checkpoints
 
+        self.best_result = 0
+        self.epoch = 0
+
         return super().setup(stage)
 
     def configure_optimizers(self) -> Any:
@@ -75,19 +80,33 @@ class mtlMayhemModule(pl.LightningModule):
         images, mask, targets = batch
         loss_dict = self.model(images, targets)
         losses = sum(loss for loss in loss_dict.values())
-        losses = losses
+        if self.config["logging"]:
+            wandb.log({"loss": losses})
         return losses
+
+    def on_train_epoch_start(self) -> None:
+        # initialize epoch counter
+        self.epoch += 1
+        if self.config["logging"]:
+            wandb.log({"epoch": self.epoch})
 
     def validation_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
         images, mask, targets = batch
-        loss_dict = self.model(images, targets)
-        loss_dict = loss_dict
-        # losses = 0
-        # for loss in loss_dict[0].values():
-        #     losses += torch.unsqueeze(loss, -1)
+        preds = self.model(images)
+        results = compute_metrics(preds, targets)
+        results = {key: val.item() for key, val in results.items()}
+        if self.config["logging"]:
+            wandb.log({"val_loss": results["map"], "best_val_loss": self.best_result})
+        self.results = results["map"]
 
-        # logging.info(losses)
-        return super().validation_step(*args, **kwargs)
+    def on_validation_end(self) -> None:
+        # save model if performance is improved
+        if self.epoch > 0:
+            if self.best_result < self.results:
+                self.best_result = self.results
+                torch.save(self.model.state_dict(), self.weights_landing + "best.pth")
+            logging.info("Current validation miou: {:.4f}".format(self.results))
+            logging.info("Best validation miou: {:.4f}".format(self.best_result))
 
     def test_step(self, *args: Any, **kwargs: Any):
         return super().test_step(*args, **kwargs)
