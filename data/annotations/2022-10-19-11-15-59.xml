@@ -1,0 +1,893 @@
+<?xml version="1.0" encoding="utf-8"?>
+<annotations>
+  <version>1.1</version>
+  <meta>
+    <task>
+      <id>5</id>
+      <name>2022-10-19-11-15-59_s0.7</name>
+      <size>77</size>
+      <mode>annotation</mode>
+      <overlap>0</overlap>
+      <bugtracker></bugtracker>
+      <created>2022-10-26 08:08:46.424149+00:00</created>
+      <updated>2022-10-28 12:26:56.692974+00:00</updated>
+      <subset>Train</subset>
+      <start_frame>0</start_frame>
+      <stop_frame>76</stop_frame>
+      <frame_filter></frame_filter>
+      <segments>
+        <segment>
+          <id>5</id>
+          <start>0</start>
+          <stop>76</stop>
+          <url>http://localhost:8080/?id=5</url>
+        </segment>
+      </segments>
+      <owner>
+        <username>bbejczy</username>
+        <email>s202821@student.dtu.dk</email>
+      </owner>
+      <assignee></assignee>
+      <labels>
+        <label>
+          <name>box</name>
+          <color>#f59331</color>
+          <type>any</type>
+          <attributes>
+          </attributes>
+        </label>
+        <label>
+          <name>person</name>
+          <color>#2a7dd1</color>
+          <type>any</type>
+          <attributes>
+          </attributes>
+        </label>
+        <label>
+          <name>forklift</name>
+          <color>#ff355e</color>
+          <type>any</type>
+          <attributes>
+          </attributes>
+        </label>
+        <label>
+          <name>agv</name>
+          <color>#b83df5</color>
+          <type>any</type>
+          <attributes>
+          </attributes>
+        </label>
+        <label>
+          <name>floor</name>
+          <color>#83e070</color>
+          <type>any</type>
+          <attributes>
+          </attributes>
+        </label>
+      </labels>
+    </task>
+    <dumped>2022-10-29 11:48:13.153107+00:00</dumped>
+  </meta>
+  <image id="0" name="2022-10-19-11-15-59-000000.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.53,453.42;94.36,378.97;126.49,377.44;331.49,194.36;387.59,193.34;390.65,185.18;540.58,253.01;561.48,246.89;640.00,273.53;640.00,480.00;0.00,480.00;0.00,454.31" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="372.80" ytl="150.00" xbr="388.61" ybr="191.81" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="350.87" ytl="139.29" xbr="372.29" ybr="194.36" z_order="0">
+    </box>
+  </image>
+  <image id="1" name="2022-10-19-11-15-59-000001.png" width="640" height="480">
+    <box label="person" occluded="0" source="manual" xtl="364.13" ytl="151.02" xbr="379.94" ybr="192.83" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="338.24" ytl="139.05" xbr="359.66" ybr="195.15" z_order="0">
+    </box>
+    <polygon label="floor" occluded="0" source="manual" points="0.00,445.58;78.18,383.45;109.46,383.04;320.60,194.95;380.70,193.70;379.87,187.13;524.33,253.80;548.20,247.63;639.57,278.50;640.00,282.02;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+  </image>
+  <image id="2" name="2022-10-19-11-15-59-000005.png" width="640" height="480">
+    <box label="person" occluded="0" source="manual" xtl="356.58" ytl="149.09" xbr="373.93" ybr="194.49" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="325.61" ytl="138.82" xbr="347.03" ybr="195.93" z_order="0">
+    </box>
+    <polygon label="floor" occluded="0" source="manual" points="0.00,433.60;55.10,391.30;86.80,390.00;306.20,195.80;374.50,195.80;375.30,191.20;505.40,252.60;536.30,248.00;640.00,284.70;640.00,359.00;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+  </image>
+  <image id="3" name="2022-10-19-11-15-59-000009.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.44,426.57;38.37,398.12;64.45,396.35;296.18,197.80;370.86,196.62;501.84,254.11;523.77,248.77;640.00,288.21;640.00,480.00;0.00,480.00;0.00,439.61" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="349.04" ytl="147.16" xbr="367.93" ybr="196.14" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="317.57" ytl="138.59" xbr="338.99" ybr="196.71" z_order="0">
+    </box>
+  </image>
+  <image id="4" name="2022-10-19-11-15-59-000035.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,457.64;298.94,197.66;379.30,197.66;523.68,258.11;542.17,252.42;640.00,286.81;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="341.49" ytl="145.24" xbr="361.92" ybr="197.79" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="318.02" ytl="137.67" xbr="339.45" ybr="196.81" z_order="0">
+    </box>
+  </image>
+  <image id="5" name="2022-10-19-11-15-59-000051.png" width="640" height="480">
+    <box label="person" occluded="0" source="manual" xtl="351.47" ytl="154.32" xbr="361.76" ybr="187.25" z_order="0">
+    </box>
+    <polygon label="floor" occluded="0" source="manual" points="0.00,460.13;297.09,197.87;362.52,199.30;361.09,189.34;536.05,268.99;563.79,259.75;640.00,288.81;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="333.95" ytl="143.31" xbr="355.91" ybr="199.44" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="317.89" ytl="137.69" xbr="339.31" ybr="197.85" z_order="0">
+    </box>
+  </image>
+  <image id="6" name="2022-10-19-11-15-59-000063.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="1.06,425.43;297.98,197.25;348.36,197.25;350.14,186.59;551.64,277.26;580.09,267.78;640.00,288.72;640.00,480.00;0.02,480.00;0.02,427.78" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="326.40" ytl="141.38" xbr="349.91" ybr="201.10" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="317.75" ytl="137.72" xbr="339.18" ybr="198.89" z_order="0">
+    </box>
+  </image>
+  <image id="7" name="2022-10-19-11-15-59-000075.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,426.29;297.49,200.53;340.75,201.71;341.94,180.97;349.64,180.97;574.27,287.65;605.68,276.39;640.00,288.57;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="321.93" ytl="139.46" xbr="343.90" ybr="202.75" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="317.61" ytl="137.74" xbr="339.04" ybr="199.92" z_order="0">
+    </box>
+  </image>
+  <image id="8" name="2022-10-19-11-15-59-000085.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,427.18;296.90,198.75;317.05,204.68;340.16,205.86;341.94,187.49;356.16,186.90;640.00,315.60;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="314.90" ytl="137.53" xbr="342.00" ybr="204.40" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="317.47" ytl="137.76" xbr="338.90" ybr="200.96" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="347.30" ytl="157.14" xbr="354.95" ybr="186.71" z_order="0">
+    </box>
+  </image>
+  <image id="9" name="2022-10-19-11-15-59-000101.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,424.09;295.71,202.31;308.16,199.94;306.97,211.79;328.90,210.60;335.42,207.05;339.57,202.31;340.75,187.49;354.39,189.27;638.87,314.91;640.00,480.00;338.73,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="306.11" ytl="135.60" xbr="331.90" ybr="211.92" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="317.34" ytl="137.78" xbr="338.77" ybr="202.00" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="342.20" ytl="156.12" xbr="352.90" ybr="185.69" z_order="0">
+    </box>
+  </image>
+  <image id="10" name="2022-10-19-11-15-59-000111.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,437.00;291.56,205.86;300.45,205.27;298.67,214.75;318.82,214.75;336.60,201.71;338.38,189.86;351.42,189.27;392.32,207.64;400.61,205.86;426.69,215.34;424.91,219.49;441.51,224.83;438.54,228.38;485.96,231.35;508.48,240.24;508.48,260.39;525.67,260.98;640.00,306.71;640.00,480.00;0.00,480.00;0.00,456.68" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="298.85" ytl="133.68" xbr="330.50" ybr="214.30" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="317.20" ytl="137.80" xbr="338.63" ybr="203.03" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="342.20" ytl="157.14" xbr="352.90" ybr="186.71" z_order="0">
+    </box>
+  </image>
+  <image id="11" name="2022-10-19-11-15-59-000119.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,430.70;168.88,296.01;186.66,293.58;286.23,207.64;296.30,205.27;295.12,216.53;318.23,219.49;321.20,205.86;338.38,204.68;340.16,188.67;352.61,186.90;395.28,206.45;404.17,204.08;431.43,214.16;430.84,218.31;445.66,222.46;446.25,232.53;490.70,230.75;517.37,239.64;515.59,260.98;526.26,265.13;531.59,261.57;640.00,306.45;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="292.50" ytl="129.78" xbr="323.40" ybr="218.27" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.84" ytl="136.53" xbr="339.04" ybr="203.34" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="340.40" ytl="157.14" xbr="352.90" ybr="186.71" z_order="0">
+    </box>
+  </image>
+  <image id="12" name="2022-10-19-11-15-59-000127.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,404.38;123.84,316.69;148.14,315.51;155.25,306.02;168.88,307.21;192.59,287.06;263.71,226.01;280.89,208.83;292.15,208.23;295.12,221.27;308.75,221.27;314.68,204.08;336.60,202.31;338.98,189.86;354.98,189.27;395.28,208.23;404.76,204.08;436.17,214.16;434.40,218.31;450.40,224.83;449.80,233.72;532.19,237.27;532.19,269.87;549.37,271.06;640.00,305.22;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="286.15" ytl="125.89" xbr="322.35" ybr="222.23" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.49" ytl="135.25" xbr="339.44" ybr="203.65" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="338.60" ytl="157.14" xbr="352.90" ybr="186.71" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="344.34" ytl="156.68" xbr="353.01" ybr="186.77" z_order="0">
+    </box>
+  </image>
+  <image id="13" name="2022-10-19-11-15-59-000133.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,401.60;103.69,329.73;129.76,327.36;140.43,318.47;157.62,318.47;281.49,208.23;285.64,208.83;285.04,223.64;306.38,224.83;314.08,205.86;336.01,205.86;341.94,188.08;355.57,188.08;401.21,208.83;405.95,204.68;440.91,216.53;438.54,223.05;458.10,227.20;457.51,236.09;468.77,239.05;506.70,237.27;551.74,251.50;550.56,278.17;570.12,278.76;640.00,306.98;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="279.80" ytl="121.99" xbr="321.30" ybr="226.20" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.13" ytl="133.98" xbr="339.85" ybr="203.95" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="338.60" ytl="157.14" xbr="353.65" ybr="186.71" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="343.87" ytl="156.68" xbr="353.37" ybr="186.77" z_order="0">
+    </box>
+  </image>
+  <image id="14" name="2022-10-19-11-15-59-000141.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,404.15;79.39,348.70;107.24,348.70;120.28,336.84;138.65,338.03;178.36,304.25;175.99,275.80;241.19,230.16;258.37,231.35;282.10,208.80;286.20,211.20;283.86,231.94;304.01,230.75;314.68,206.45;336.01,204.68;341.35,187.49;353.79,187.49;404.76,208.23;411.28,207.05;445.66,216.53;443.88,221.86;464.62,230.16;463.44,240.24;520.92,240.24;570.71,256.83;569.52,278.76;566.56,284.09;576.04,287.65;591.45,284.09;640.00,306.94;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="275.50" ytl="118.10" xbr="314.79" ybr="230.17" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="315.77" ytl="132.70" xbr="340.26" ybr="204.26" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="338.60" ytl="157.14" xbr="354.40" ybr="186.71" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="343.41" ytl="156.68" xbr="353.73" ybr="186.77" z_order="0">
+    </box>
+  </image>
+  <image id="15" name="2022-10-19-11-15-59-000149.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,402.30;38.49,372.99;72.27,371.81;87.68,359.96;114.35,358.18;155.84,319.65;155.25,285.28;238.81,232.53;256.00,231.35;269.63,218.90;277.34,220.68;271.41,229.63;282.67,236.68;301.04,224.83;296.30,208.23;310.53,205.27;339.57,204.68;341.35,186.90;353.79,187.49;402.98,209.42;412.47,207.05;450.40,220.68;446.84,224.23;472.33,230.75;470.55,245.57;529.81,243.79;596.19,266.31;592.05,298.91;616.94,298.32;640.00,307.02;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="259.06" ytl="114.50" xbr="312.90" ybr="234.13" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="315.42" ytl="131.43" xbr="340.67" ybr="204.57" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="337.86" ytl="156.77" xbr="354.52" ybr="186.71" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="342.94" ytl="156.68" xbr="354.08" ybr="186.77" z_order="0">
+    </box>
+  </image>
+  <image id="16" name="2022-10-19-11-15-59-000155.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,425.99;55.68,383.07;85.31,380.70;141.02,335.06;136.88,297.73;235.26,235.50;253.04,233.72;254.82,237.87;285.04,237.87;290.38,201.12;338.98,204.68;339.57,188.67;356.76,186.90;405.35,209.42;414.84,207.05;454.55,221.27;453.36,226.01;480.03,234.90;478.85,247.35;536.93,245.57;618.12,274.61;616.34,306.62;625.23,311.36;640.00,309.88;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="246.20" ytl="100.30" xbr="294.70" ybr="238.10" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="315.06" ytl="130.15" xbr="341.07" ybr="204.87" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="337.12" ytl="156.40" xbr="354.64" ybr="186.71" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="342.47" ytl="156.68" xbr="354.44" ybr="186.77" z_order="0">
+    </box>
+  </image>
+  <image id="17" name="2022-10-19-11-15-59-000163.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,427.09;11.82,420.41;39.68,419.22;114.35,358.77;112.58,314.32;221.63,242.61;237.04,247.35;274.37,246.76;282.67,226.01;282.08,210.60;289.19,203.49;340.16,205.27;343.12,188.08;356.76,185.12;407.13,210.60;418.39,207.05;461.66,223.05;460.47,229.63;491.29,236.68;490.11,250.31;554.11,249.72;574.86,255.65;640.00,280.50;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="221.40" ytl="93.60" xbr="279.21" ybr="248.05" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="314.70" ytl="128.88" xbr="341.48" ybr="205.18" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="336.38" ytl="156.04" xbr="354.77" ybr="186.71" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="342.00" ytl="156.68" xbr="354.80" ybr="186.77" z_order="0">
+    </box>
+  </image>
+  <image id="18" name="2022-10-19-11-15-59-000171.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,453.19;78.79,389.59;75.83,331.51;107.24,320.84;187.25,262.17;241.19,256.83;252.45,242.61;287.41,205.27;338.98,204.68;341.94,188.08;351.42,189.27;362.09,189.27;408.32,211.20;421.36,208.83;468.18,224.23;468.18,229.63;502.55,241.42;501.96,256.83;568.93,255.65;640.00,276.90;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="184.10" ytl="83.19" xbr="250.90" ybr="258.70" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="314.34" ytl="127.60" xbr="341.89" ybr="205.49" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="335.64" ytl="155.67" xbr="354.89" ybr="186.71" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="340.30" ytl="156.68" xbr="354.50" ybr="186.77" z_order="0">
+    </box>
+  </image>
+  <image id="19" name="2022-10-19-11-15-59-000179.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,455.35;28.42,432.26;25.45,369.44;175.40,271.65;195.55,267.50;220.44,244.98;240.00,244.39;285.04,206.45;340.16,204.68;341.94,188.67;357.94,186.30;414.24,214.75;421.95,210.01;474.70,227.79;474.70,235.50;493.66,243.79;506.11,240.83;513.81,242.61;515.00,265.72;589.08,263.35;640.00,279.41;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="111.20" ytl="65.34" xbr="198.40" ybr="271.50" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="313.99" ytl="126.33" xbr="342.29" ybr="205.79" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="334.90" ytl="155.30" xbr="355.01" ybr="186.71" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="340.23" ytl="156.24" xbr="354.60" ybr="186.84" z_order="0">
+    </box>
+  </image>
+  <image id="20" name="2022-10-19-11-15-59-000189.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,387.99;189.62,261.57;211.55,250.91;216.89,247.35;237.63,248.53;271.41,214.16;277.34,213.57;286.23,203.49;315.27,203.49;314.68,207.05;342.53,205.86;340.75,188.08;355.57,185.12;417.80,213.03;427.28,210.60;485.96,232.53;485.36,237.87;507.89,246.76;515.59,244.39;534.56,248.53;533.37,271.06;611.01,270.46;640.00,280.25;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="33.70" ytl="32.20" xbr="122.90" ybr="300.10" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="313.63" ytl="125.05" xbr="342.70" ybr="206.10" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="334.16" ytl="154.93" xbr="355.13" ybr="186.71" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="340.17" ytl="155.80" xbr="354.70" ybr="186.92" z_order="0">
+    </box>
+  </image>
+  <image id="21" name="2022-10-19-11-15-59-000201.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,390.13;176.58,269.28;223.41,256.24;283.26,206.45;342.53,206.45;343.12,188.67;358.53,186.30;420.76,215.94;435.58,213.57;499.59,236.68;499.59,242.02;524.48,252.68;541.67,251.50;562.41,259.80;563.60,285.28;640.00,283.54;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="agv" occluded="0" source="manual" xtl="312.15" ytl="122.70" xbr="343.10" ybr="207.88" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="333.42" ytl="154.57" xbr="355.26" ybr="186.71" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="340.10" ytl="155.37" xbr="354.80" ybr="186.99" z_order="0">
+    </box>
+  </image>
+  <image id="22" name="2022-10-19-11-15-59-000217.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,389.19;161.18,286.47;212.74,274.02;264.30,221.27;272.00,221.27;279.12,211.20;342.53,208.83;343.12,189.86;353.20,188.67;421.95,220.68;438.54,219.49;522.11,248.53;522.70,258.02;558.86,269.28;567.75,265.13;612.20,281.72;610.42,312.60;638.87,314.91;640.00,329.99;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="agv" occluded="0" source="manual" xtl="310.67" ytl="120.35" xbr="343.50" ybr="209.66" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="332.68" ytl="154.20" xbr="355.38" ybr="186.71" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="340.03" ytl="154.93" xbr="354.90" ybr="187.07" z_order="0">
+    </box>
+  </image>
+  <image id="23" name="2022-10-19-11-15-59-000238.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,388.22;155.84,288.24;195.55,286.47;281.49,212.38;343.12,211.79;343.72,191.05;357.94,189.27;428.47,220.09;445.06,220.09;551.15,257.42;551.15,265.13;587.30,280.54;611.01,278.17;640.00,289.28;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="agv" occluded="0" source="manual" xtl="309.19" ytl="118.00" xbr="343.90" ybr="211.44" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="331.94" ytl="153.83" xbr="355.50" ybr="186.71" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="339.97" ytl="154.49" xbr="355.00" ybr="187.15" z_order="0">
+    </box>
+  </image>
+  <image id="24" name="2022-10-19-11-15-59-000259.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="1.75,383.66;136.88,300.10;171.25,301.87;255.41,224.23;263.71,224.83;274.37,212.38;342.53,214.16;343.12,189.86;358.53,188.67;435.58,224.23;452.18,221.27;579.60,265.72;579.01,276.98;632.35,296.01;640.00,295.39;640.00,480.00;0.00,480.00;0.00,388.80" z_order="0">
+    </polygon>
+    <box label="agv" occluded="0" source="manual" xtl="307.72" ytl="115.66" xbr="344.30" ybr="213.22" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="331.20" ytl="153.47" xbr="348.85" ybr="186.71" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="339.90" ytl="154.06" xbr="355.10" ybr="187.22" z_order="0">
+    </box>
+  </image>
+  <image id="25" name="2022-10-19-11-15-59-000333.png" width="640" height="480">
+    <box label="person" occluded="0" source="manual" xtl="514.57" ytl="2.11" xbr="640.00" ybr="373.87" z_order="0">
+    </box>
+    <polygon label="floor" occluded="0" source="manual" points="0.00,385.42;109.61,320.84;154.06,317.88;252.45,227.20;256.00,227.79;272.00,214.16;306.38,211.79;306.38,214.75;343.12,213.57;341.94,187.49;356.16,188.67;441.51,228.38;458.69,223.05;555.30,258.02;569.52,323.21;570.71,335.66;565.97,339.81;554.71,339.81;548.19,349.29;557.08,361.14;579.01,374.18;596.19,374.18;638.87,367.66;640.00,381.50;640.00,480.00;573.58,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="agv" occluded="0" source="manual" xtl="306.24" ytl="113.31" xbr="344.70" ybr="215.00" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="318.70" ytl="153.10" xbr="348.30" ybr="186.71" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="325.51" ytl="153.62" xbr="349.90" ybr="187.30" z_order="0">
+    </box>
+  </image>
+  <image id="26" name="2022-10-19-11-15-59-001015.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,398.46;86.50,335.66;131.54,336.25;248.30,230.16;258.97,228.98;266.08,221.86;264.89,218.31;282.08,207.05;310.53,207.64;318.23,192.82;334.23,189.86;339.57,186.90;357.35,185.71;446.84,228.38;463.44,225.42;640.00,291.01;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="307.52" ytl="152.55" xbr="317.72" ybr="185.69" z_order="0">
+    </box>
+    <box label="person" occluded="0" source="manual" xtl="347.30" ytl="155.61" xbr="356.48" ybr="183.66" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="318.80" ytl="147.10" xbr="335.80" ybr="190.00" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="328.50" ytl="157.50" xbr="341.80" ybr="183.70" z_order="0">
+    </box>
+  </image>
+  <image id="27" name="2022-10-19-11-15-59-001039.png" width="640" height="480">
+    <box label="person" occluded="0" source="manual" xtl="307.90" ytl="153.20" xbr="316.80" ybr="177.90" z_order="0">
+    </box>
+    <polygon label="floor" occluded="0" source="manual" points="1.75,389.59;19.53,378.92;88.87,378.33;244.74,235.50;251.26,235.50;256.59,230.75;261.34,223.05;280.89,210.01;310.53,211.79;315.86,192.23;337.20,189.27;340.16,185.71;349.05,185.12;452.77,233.12;477.07,230.75;640.00,288.26;640.00,480.00;0.00,480.00;0.00,391.89" z_order="0">
+    </polygon>
+    <box label="agv" occluded="0" source="manual" xtl="319.93" ytl="147.70" xbr="336.50" ybr="189.82" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="329.01" ytl="157.50" xbr="342.45" ybr="183.88" z_order="0">
+    </box>
+  </image>
+  <image id="28" name="2022-10-19-11-15-59-001063.png" width="640" height="480">
+    <box label="person" occluded="0" source="manual" xtl="310.07" ytl="153.06" xbr="320.78" ybr="184.67" z_order="0">
+    </box>
+    <polygon label="floor" occluded="0" source="manual" points="0.00,450.75;235.85,243.20;246.52,243.20;274.37,214.16;308.75,214.16;320.60,193.42;336.60,192.23;342.53,185.71;347.27,186.30;472.92,239.64;494.85,237.87;640.00,289.88;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="agv" occluded="0" source="manual" xtl="321.06" ytl="148.30" xbr="337.20" ybr="189.64" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="329.52" ytl="157.50" xbr="343.09" ybr="184.06" z_order="0">
+    </box>
+  </image>
+  <image id="29" name="2022-10-19-11-15-59-001083.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,406.16;97.17,334.47;121.47,334.47;224.59,252.09;231.70,253.28;274.37,218.31;312.90,216.53;325.34,191.05;353.20,186.30;498.40,252.68;522.70,244.98;640.00,289.76;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="311.60" ytl="151.53" xbr="325.37" ybr="181.61" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="322.19" ytl="148.90" xbr="337.90" ybr="189.45" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="330.03" ytl="157.50" xbr="343.74" ybr="184.25" z_order="0">
+    </box>
+  </image>
+  <image id="30" name="2022-10-19-11-15-59-001099.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.56,402.04;21.90,386.03;52.72,387.22;212.74,261.57;220.44,261.57;235.26,249.72;237.63,242.61;267.26,219.49;309.93,220.68;324.75,191.05;339.57,188.67;346.09,183.93;350.83,183.93;520.33,259.20;554.11,256.24;640.00,287.83;640.00,480.00;0.00,480.00;0.00,403.22" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="310.38" ytl="147.24" xbr="325.84" ybr="185.59" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="323.32" ytl="149.50" xbr="338.60" ybr="189.27" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="330.54" ytl="157.50" xbr="344.38" ybr="184.43" z_order="0">
+    </box>
+  </image>
+  <image id="31" name="2022-10-19-11-15-59-001123.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,418.61;182.51,282.32;196.74,282.91;214.52,268.69;215.70,262.17;262.52,226.01;306.38,224.23;325.34,191.05;342.53,189.27;346.68,185.71;350.83,182.75;569.52,285.87;606.86,279.41;640.00,289.76;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="309.16" ytl="142.96" xbr="326.30" ybr="189.57" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="322.76" ytl="148.98" xbr="338.58" ybr="189.64" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="331.05" ytl="157.50" xbr="345.03" ybr="184.61" z_order="0">
+    </box>
+  </image>
+  <image id="32" name="2022-10-19-11-15-59-001142.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.56,425.74;148.73,311.36;165.92,313.14;193.18,288.24;193.18,278.76;257.78,230.16;302.23,230.75;313.49,200.53;326.53,198.16;334.83,188.67;355.60,188.10;640.00,317.13;640.00,480.00;0.00,480.00;0.00,429.61" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="307.93" ytl="138.68" xbr="326.76" ybr="193.55" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="322.20" ytl="148.45" xbr="338.55" ybr="190.01" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="331.56" ytl="157.50" xbr="345.67" ybr="184.79" z_order="0">
+    </box>
+  </image>
+  <image id="33" name="2022-10-19-11-15-59-001157.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.56,423.96;99.54,347.51;124.43,346.92;161.77,315.51;161.18,301.87;249.48,234.90;299.86,236.09;315.86,201.71;327.22,197.53;332.07,184.97;353.79,187.49;445.66,230.75;481.22,227.79;503.74,239.64;504.92,259.80;516.78,257.42;640.00,307.00;640.00,480.00;0.00,480.00;0.00,429.58" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="306.71" ytl="134.39" xbr="327.22" ybr="197.53" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="321.64" ytl="147.93" xbr="338.53" ybr="190.38" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="332.07" ytl="157.50" xbr="346.32" ybr="184.97" z_order="0">
+    </box>
+  </image>
+  <image id="34" name="2022-10-19-11-15-59-001167.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.56,421.59;52.72,383.07;79.98,381.88;133.32,335.66;133.91,320.25;244.74,237.27;299.27,237.27;309.93,205.86;327.69,201.51;338.50,190.74;346.96,185.15;355.57,186.30;449.80,233.12;491.88,231.94;519.15,239.05;518.55,265.72;535.74,265.13;640.00,310.54;640.00,480.00;0.00,480.00;0.00,422.48" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="305.48" ytl="130.11" xbr="327.69" ybr="201.51" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="321.08" ytl="147.40" xbr="338.50" ybr="190.74" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="332.58" ytl="157.50" xbr="346.96" ybr="185.15" z_order="0">
+    </box>
+  </image>
+  <image id="35" name="2022-10-19-11-15-59-001175.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="-0.00,425.15;30.79,423.37;108.43,358.18;106.65,341.58;238.22,240.83;299.27,240.83;312.31,210.60;318.23,207.05;320.52,191.11;347.61,185.34;357.35,186.90;459.88,237.87;503.14,233.72;536.33,246.22;537.52,275.80;557.67,272.83;640.00,308.52;640.00,480.00;-0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="304.26" ytl="125.83" xbr="328.15" ybr="205.49" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="320.52" ytl="146.88" xbr="338.48" ybr="191.11" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="333.09" ytl="157.50" xbr="347.61" ybr="185.34" z_order="0">
+    </box>
+  </image>
+  <image id="36" name="2022-10-19-11-15-59-001184.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.56,455.97;68.13,396.70;64.57,379.51;240.59,246.22;293.93,249.13;313.49,211.20;318.82,210.01;323.57,192.23;338.45,191.48;348.25,185.52;360.31,188.08;468.18,243.20;513.22,240.24;555.30,255.05;555.89,274.02;557.67,275.80;558.86,282.32;639.46,323.21;640.00,480.00;0.00,480.00;0.00,457.24" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="303.04" ytl="121.54" xbr="328.61" ybr="209.46" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="319.96" ytl="146.35" xbr="338.45" ybr="191.48" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="333.60" ytl="157.50" xbr="348.25" ybr="185.52" z_order="0">
+    </box>
+  </image>
+  <image id="37" name="2022-10-19-11-15-59-001193.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="-0.00,448.17;12.42,439.37;10.64,415.07;228.74,249.72;295.12,250.91;311.12,213.57;320.60,213.03;324.75,193.42;338.43,191.85;348.90,185.70;352.01,186.90;481.81,246.76;520.92,240.24;572.49,259.20;576.04,284.69;581.38,294.17;605.08,293.58;640.00,307.08;640.00,480.00;-0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="301.81" ytl="117.26" xbr="329.07" ybr="213.44" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="319.41" ytl="145.83" xbr="338.43" ybr="191.85" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="334.11" ytl="157.50" xbr="348.90" ybr="185.70" z_order="0">
+    </box>
+  </image>
+  <image id="38" name="2022-10-19-11-15-59-001201.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,419.79;221.03,252.68;292.15,253.87;309.34,217.72;321.20,215.34;326.53,190.45;345.49,188.08;349.31,186.10;359.13,186.90;477.07,235.50;477.66,244.98;540.48,246.22;605.08,268.09;606.27,295.36;612.20,297.73;611.60,310.76;640.00,313.70;640.00,336.78;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="300.59" ytl="112.97" xbr="329.54" ybr="217.42" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="318.85" ytl="145.30" xbr="338.40" ybr="192.22" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="334.21" ytl="157.25" xbr="349.31" ybr="186.10" z_order="0">
+    </box>
+  </image>
+  <image id="39" name="2022-10-19-11-15-59-001217.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,418.01;208.59,260.39;285.04,262.82;308.16,221.27;320.01,220.68;323.57,191.64;349.72,186.50;361.50,186.90;493.66,238.46;495.44,250.91;563.00,250.31;640.00,277.51;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="299.36" ytl="108.69" xbr="330.00" ybr="221.40" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="318.29" ytl="144.78" xbr="338.38" ybr="192.59" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="334.31" ytl="156.99" xbr="349.72" ybr="186.50" z_order="0">
+    </box>
+  </image>
+  <image id="40" name="2022-10-19-11-15-59-001229.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,422.59;188.44,279.41;279.71,281.72;304.60,226.61;324.16,218.90;323.57,194.01;338.35,192.95;350.14,186.90;356.76,187.49;520.92,253.87;518.55,264.54;599.16,268.09;640.00,284.43;640.00,480.00;442.26,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="290.50" ytl="110.78" xbr="329.29" ybr="220.43" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="317.73" ytl="144.25" xbr="338.35" ybr="192.95" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="334.42" ytl="156.74" xbr="350.14" ybr="186.90" z_order="0">
+    </box>
+  </image>
+  <image id="41" name="2022-10-19-11-15-59-001241.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,421.88;167.69,298.32;272.00,299.50;303.42,227.20;321.79,224.23;324.16,194.60;338.33,193.32;350.55,187.30;400.61,209.42;407.73,210.01;541.08,264.54;542.26,278.76;629.38,280.54;640.00,286.48;640.00,478.08;639.62,480.00;410.08,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="288.45" ytl="112.87" xbr="328.57" ybr="219.46" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="317.17" ytl="143.73" xbr="338.33" ybr="193.32" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="334.52" ytl="156.48" xbr="350.55" ybr="187.30" z_order="0">
+    </box>
+  </image>
+  <image id="42" name="2022-10-19-11-15-59-001249.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.56,423.37;143.99,309.58;265.48,308.39;291.56,257.42;286.40,218.49;327.86,218.49;316.61,193.69;338.30,193.69;350.96,187.70;357.94,189.86;402.98,210.60;408.91,209.42;560.04,274.61;557.67,288.84;640.00,288.27;640.00,480.00;0.00,480.00;0.00,423.97" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="286.40" ytl="114.96" xbr="327.86" ybr="218.49" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.61" ytl="143.20" xbr="338.30" ybr="193.69" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="334.62" ytl="156.23" xbr="350.96" ybr="187.70" z_order="0">
+    </box>
+  </image>
+  <image id="43" name="2022-10-19-11-15-59-001257.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,389.84;26.05,375.37;59.83,371.81;96.57,346.32;94.80,326.17;113.76,312.60;139.25,313.14;168.29,324.99;254.22,324.40;286.82,266.31;278.52,231.35;318.23,216.53;316.05,194.06;338.28,194.06;351.37,188.10;359.13,189.86;586.71,284.69;582.56,297.13;640.00,300.82;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="286.90" ytl="117.05" xbr="327.14" ybr="217.52" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.05" ytl="142.68" xbr="338.28" ybr="194.06" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="334.72" ytl="155.97" xbr="351.37" ybr="188.10" z_order="0">
+    </box>
+  </image>
+  <image id="44" name="2022-10-19-11-15-59-001265.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="1.15,421.00;64.57,370.62;61.61,349.88;90.65,330.32;119.69,328.54;145.17,347.51;245.93,344.55;283.86,272.83;272.00,237.87;293.93,234.90;305.79,218.31;316.45,217.72;315.49,194.43;351.78,188.50;373.94,192.82;406.54,209.42;414.24,210.01;615.16,291.21;614.57,311.36;640.00,312.82;640.00,480.00;0.00,480.00;0.00,423.23" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="285.70" ytl="119.15" xbr="326.43" ybr="216.56" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="315.49" ytl="142.15" xbr="338.25" ybr="194.43" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="334.82" ytl="155.72" xbr="351.78" ybr="188.50" z_order="0">
+    </box>
+  </image>
+  <image id="45" name="2022-10-19-11-15-59-001275.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="2.81,420.05;22.96,405.83;20.00,380.94;63.27,350.71;95.86,350.12;124.31,371.45;235.73,367.90;260.03,324.04;278.40,287.89;264.77,245.81;286.70,241.07;303.30,219.73;316.93,213.21;314.93,194.79;342.41,195.43;352.20,188.90;356.04,188.91;414.13,211.43;418.87,211.43;640.00,299.21;640.00,480.00;0.00,480.00;0.00,423.12" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="287.90" ytl="121.24" xbr="325.72" ybr="215.59" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="314.93" ytl="141.63" xbr="338.23" ybr="194.79" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="334.93" ytl="155.46" xbr="352.20" ybr="188.90" z_order="0">
+    </box>
+  </image>
+  <image id="46" name="2022-10-19-11-15-59-001283.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="1.15,389.59;28.42,371.81;64.57,371.22;96.57,400.26;220.44,397.29;274.37,301.87;254.82,249.13;281.49,246.76;297.49,227.20;316.45,214.75;321.20,195.19;338.20,195.16;352.61,189.30;359.13,188.67;405.35,204.68;410.10,212.38;417.80,212.38;640.00,300.41;640.00,480.00;0.00,480.00;0.00,392.94" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="287.95" ytl="123.33" xbr="325.00" ybr="214.62" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="314.37" ytl="141.10" xbr="338.20" ybr="195.16" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="335.03" ytl="155.21" xbr="352.61" ybr="189.30" z_order="0">
+    </box>
+  </image>
+  <image id="47" name="2022-10-19-11-15-59-001291.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,424.56;215.70,425.15;264.89,318.47;250.08,262.82;282.08,255.65;292.75,237.27;288.00,213.65;324.29,213.65;338.58,195.53;353.02,189.70;363.87,192.82;640.00,302.68;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="288.00" ytl="125.42" xbr="324.29" ybr="213.65" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="314.72" ytl="140.40" xbr="338.58" ybr="195.28" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="335.13" ytl="154.95" xbr="353.02" ybr="189.70" z_order="0">
+    </box>
+  </image>
+  <image id="48" name="2022-10-19-11-15-59-001299.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="189.72,480.00;260.74,335.06;241.19,272.24;273.19,270.46;289.78,244.98;272.60,225.42;290.11,212.68;323.57,212.68;333.64,197.56;335.47,190.01;363.28,192.23;640.00,303.80;640.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="290.11" ytl="127.51" xbr="323.57" ybr="212.68" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="315.07" ytl="139.71" xbr="338.97" ybr="195.39" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="335.47" ytl="154.95" xbr="352.93" ybr="190.01" z_order="0">
+    </box>
+  </image>
+  <image id="49" name="2022-10-19-11-15-59-001307.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="187.25,479.67;253.04,346.92;242.96,332.69;232.89,333.88;229.33,279.41;263.11,278.76;283.86,250.31;285.64,243.20;267.86,226.01;286.82,208.83;292.22,211.71;316.45,213.03;315.41,196.28;334.83,196.97;353.70,190.32;359.72,190.45;640.00,301.35;640.00,480.00;192.51,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="292.22" ytl="129.60" xbr="322.86" ybr="211.71" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="315.41" ytl="139.01" xbr="339.35" ybr="195.51" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="335.81" ytl="154.95" xbr="352.85" ybr="190.32" z_order="0">
+    </box>
+  </image>
+  <image id="50" name="2022-10-19-11-15-59-001315.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="183.31,480.00;244.74,368.85;231.70,349.88;221.63,352.84;216.89,288.24;260.15,289.43;285.04,258.61;261.34,233.12;287.41,207.05;315.86,208.83;320.01,198.16;354.04,190.63;369.20,194.01;640.00,300.53;640.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="293.24" ytl="131.64" xbr="323.07" ybr="209.07" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="315.76" ytl="138.31" xbr="339.73" ybr="195.63" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="336.15" ytl="154.95" xbr="352.76" ybr="190.63" z_order="0">
+    </box>
+  </image>
+  <image id="51" name="2022-10-19-11-15-59-001323.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="175.34,480.00;232.89,387.22;217.48,365.29;208.00,371.22;201.48,329.73;209.77,320.84;203.25,312.60;207.40,301.28;257.78,298.32;279.12,268.69;253.63,238.46;287.41,207.64;323.28,206.43;340.12,197.02;354.38,190.94;414.84,209.42;415.43,214.75;428.47,214.75;640.00,300.10;640.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="294.25" ytl="133.68" xbr="323.28" ybr="206.43" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.11" ytl="137.62" xbr="340.12" ybr="195.74" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="336.49" ytl="154.95" xbr="352.67" ybr="190.94" z_order="0">
+    </box>
+  </image>
+  <image id="52" name="2022-10-19-11-15-59-001337.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="187.41,480.00;218.07,428.11;194.36,398.48;186.07,399.07;178.96,352.84;203.25,326.17;234.07,317.28;256.00,307.80;267.86,281.13;242.37,252.09;235.85,246.22;288.60,202.31;295.27,203.78;317.64,203.49;325.34,198.16;354.72,191.25;373.94,191.05;413.65,210.01;417.21,217.12;427.88,216.53;640.00,299.92;640.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="295.27" ytl="135.72" xbr="323.48" ybr="203.78" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.46" ytl="136.92" xbr="340.50" ybr="195.86" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="336.83" ytl="154.95" xbr="352.59" ybr="191.25" z_order="0">
+    </box>
+  </image>
+  <image id="53" name="2022-10-19-11-15-59-001357.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="194.36,479.08;168.88,457.75;175.40,447.08;165.32,441.74;155.25,380.70;170.66,372.40;181.33,355.21;204.44,354.03;240.00,340.40;244.74,331.51;258.37,300.10;221.03,262.17;287.41,203.49;316.80,197.76;335.06,190.79;355.06,191.56;362.68,190.45;420.17,209.42;422.54,215.94;431.43,216.53;640.00,299.96;640.00,480.00;214.92,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="296.28" ytl="137.76" xbr="323.69" ybr="201.14" z_order="0">
+    </box>
+    <box label="person" occluded="0" source="manual" xtl="335.06" ytl="145.92" xbr="350.36" ybr="190.79" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.80" ytl="136.22" xbr="340.88" ybr="195.97" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="337.17" ytl="154.95" xbr="352.50" ybr="191.56" z_order="0">
+    </box>
+  </image>
+  <image id="54" name="2022-10-19-11-15-59-001375.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="131.54,478.49;129.17,419.82;148.73,408.55;162.36,407.37;206.81,386.03;227.55,374.18;241.78,332.69;193.77,284.69;297.30,198.50;328.60,200.50;355.40,191.87;363.28,190.45;423.13,213.03;426.10,218.31;433.80,217.72;640.00,299.43;640.00,480.00;161.26,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="297.30" ytl="139.80" xbr="323.90" ybr="198.50" z_order="0">
+    </box>
+    <box label="person" occluded="0" source="manual" xtl="338.80" ytl="143.00" xbr="356.84" ybr="192.85" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="317.15" ytl="135.52" xbr="341.27" ybr="196.09" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="337.51" ytl="154.95" xbr="353.69" ybr="191.87" z_order="0">
+    </box>
+  </image>
+  <image id="55" name="2022-10-19-11-15-59-001389.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="112.58,479.67;122.65,421.00;85.31,377.14;292.75,198.16;302.65,195.70;317.50,198.50;355.74,192.18;365.05,191.64;423.73,213.03;426.10,218.90;437.36,218.31;640.00,298.69;640.00,480.00;119.22,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="302.65" ytl="147.95" xbr="322.90" ybr="195.70" z_order="0">
+    </box>
+    <box label="person" occluded="0" source="manual" xtl="338.50" ytl="139.60" xbr="355.66" ybr="195.41" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="317.50" ytl="137.12" xbr="341.65" ybr="198.50" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="337.85" ytl="154.95" xbr="354.89" ybr="192.18" z_order="0">
+    </box>
+  </image>
+  <image id="56" name="2022-10-19-11-15-59-001521.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.63,446.33;291.82,201.04;308.00,192.90;317.83,194.41;323.94,220.93;338.73,221.95;344.34,193.39;362.70,190.34;447.35,222.46;446.85,227.05;455.00,230.11;460.61,228.07;640.00,300.09;640.00,480.00;0.00,480.00;0.00,450.62" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="308.00" ytl="156.10" xbr="321.90" ybr="192.90" z_order="0">
+    </box>
+    <box label="person" occluded="0" source="manual" xtl="315.68" ytl="117.36" xbr="349.90" ybr="219.90" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="338.19" ytl="154.95" xbr="356.08" ybr="192.49" z_order="0">
+    </box>
+  </image>
+  <image id="57" name="2022-10-19-11-15-59-001547.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,447.54;291.14,210.00;305.22,198.98;317.46,197.15;314.40,208.16;338.88,209.39;349.28,241.21;365.80,244.27;379.26,234.48;370.09,213.67;371.31,198.98;381.71,202.66;640.00,305.74;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="310.00" ytl="158.60" xbr="321.90" ybr="192.90" z_order="0">
+    </box>
+    <box label="person" occluded="0" source="manual" xtl="331.49" ytl="95.94" xbr="389.70" ybr="241.80" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="318.38" ytl="140.50" xbr="343.74" ybr="206.98" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="336.10" ytl="155.97" xbr="347.40" ybr="195.90" z_order="0">
+    </box>
+  </image>
+  <image id="58" name="2022-10-19-11-15-59-001561.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,444.27;306.44,189.80;312.56,191.64;316.85,202.66;337.00,200.80;342.55,195.31;359.68,193.48;363.35,193.48;367.64,197.76;362.74,235.09;368.86,249.16;417.82,253.45;421.49,247.33;419.65,239.37;420.27,216.73;482.07,236.92;481.46,246.10;493.70,247.33;501.04,246.72;640.00,301.11;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="363.11" ytl="72.99" xbr="422.30" ybr="252.50" z_order="0">
+    </box>
+    <box label="person" occluded="0" source="manual" xtl="313.13" ytl="154.08" xbr="323.84" ybr="176.52" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.30" ytl="132.86" xbr="341.70" ybr="202.50" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="336.12" ytl="153.40" xbr="355.30" ybr="192.82" z_order="0">
+    </box>
+  </image>
+  <image id="59" name="2022-10-19-11-15-59-001583.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,443.97;307.67,190.42;316.23,190.42;316.37,203.61;342.46,203.61;342.55,192.25;357.12,189.74;438.62,222.85;436.18,274.87;456.37,287.10;508.39,301.18;527.90,300.40;528.58,257.73;640.00,303.86;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="433.99" ytl="15.88" xbr="527.90" ybr="300.40" z_order="0">
+    </box>
+    <box label="person" occluded="0" source="manual" xtl="320.78" ytl="152.04" xbr="331.49" ybr="174.48" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.37" ytl="131.51" xbr="342.46" ybr="203.61" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="336.15" ytl="150.84" xbr="357.12" ybr="189.74" z_order="0">
+    </box>
+  </image>
+  <image id="60" name="2022-10-19-11-15-59-001588.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.47,447.44;307.05,189.80;315.01,189.19;316.44,204.73;339.49,205.71;357.35,190.25;377.43,196.54;397.62,200.21;426.38,215.51;520.01,253.45;513.28,309.75;557.34,343.40;595.28,334.22;573.87,279.76;640.00,301.62;640.00,480.00;0.00,480.00;0.00,450.12" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="460.00" ytl="0.00" xbr="640.00" ybr="339.70" z_order="0">
+    </box>
+    <box label="person" occluded="0" source="manual" xtl="320.78" ytl="153.60" xbr="331.49" ybr="174.48" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.44" ytl="130.16" xbr="343.22" ybr="204.73" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="336.29" ytl="150.47" xbr="357.35" ybr="190.25" z_order="0">
+    </box>
+  </image>
+  <image id="61" name="2022-10-19-11-15-59-001591.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,442.53;304.61,192.86;316.85,191.03;316.51,205.84;343.98,205.84;357.57,190.76;426.38,214.89;427.00,223.46;501.04,232.64;502.88,244.88;523.07,250.39;535.31,253.45;534.70,270.58;561.63,273.64;577.54,278.54;581.82,365.43;640.00,386.87;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="529.36" ytl="0.00" xbr="640.00" ybr="376.90" z_order="0">
+    </box>
+    <box label="person" occluded="0" source="manual" xtl="321.93" ytl="153.47" xbr="332.64" ybr="174.35" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.51" ytl="128.81" xbr="343.98" ybr="205.84" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="336.44" ytl="150.11" xbr="357.57" ybr="190.76" z_order="0">
+    </box>
+  </image>
+  <image id="62" name="2022-10-19-11-15-59-001597.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,442.39;307.05,193.48;313.79,194.09;316.59,206.96;344.74,206.96;357.80,191.27;430.06,214.28;432.50,223.46;515.73,233.25;516.34,249.16;552.45,253.45;551.84,275.48;573.25,276.09;639.96,298.12;640.00,300.57;639.96,340.34;633.22,345.85;632.00,355.64;640.00,369.11;640.00,477.42;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="323.08" ytl="153.34" xbr="333.79" ybr="174.22" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.59" ytl="127.46" xbr="344.74" ybr="206.96" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="336.59" ytl="149.74" xbr="357.80" ybr="191.27" z_order="0">
+    </box>
+  </image>
+  <image id="63" name="2022-10-19-11-15-59-001613.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,446.70;307.67,189.80;312.56,191.64;316.66,208.07;345.49,208.07;358.02,191.77;376.20,195.92;439.24,219.79;438.62,225.30;452.70,226.52;463.71,228.36;477.18,235.09;502.27,234.48;540.82,246.72;542.04,265.07;583.04,266.91;591.61,271.81;588.55,296.28;616.09,294.45;640.00,302.32;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="324.23" ytl="153.22" xbr="334.93" ybr="174.09" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.66" ytl="126.11" xbr="345.49" ybr="208.07" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="336.73" ytl="149.38" xbr="358.02" ybr="191.77" z_order="0">
+    </box>
+  </image>
+  <image id="64" name="2022-10-19-11-15-59-001625.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,442.46;306.44,190.42;316.23,191.03;316.73,209.19;346.25,209.19;358.25,192.28;375.59,196.54;402.52,205.10;410.47,205.10;447.19,221.01;446.58,230.19;474.73,232.64;483.91,238.76;500.43,241.82;510.22,238.76;571.42,259.57;569.58,271.19;573.25,276.70;587.33,279.76;617.93,276.70;640.00,281.30;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="325.37" ytl="153.09" xbr="336.08" ybr="173.97" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.73" ytl="124.76" xbr="346.25" ybr="209.19" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="336.88" ytl="149.01" xbr="358.25" ybr="192.28" z_order="0">
+    </box>
+  </image>
+  <image id="65" name="2022-10-19-11-15-59-001637.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,445.30;310.11,189.80;314.40,194.70;313.79,208.16;330.92,213.67;347.01,210.30;348.06,198.37;358.47,192.79;365.80,194.09;408.03,208.77;412.92,206.94;456.98,224.69;456.37,232.03;482.07,235.09;493.70,238.76;493.70,247.33;524.30,244.27;602.63,271.81;600.79,287.10;630.78,292.00;638.12,290.16;640.00,347.58;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="327.41" ytl="152.07" xbr="338.12" ybr="172.94" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.80" ytl="123.42" xbr="347.01" ybr="210.30" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="337.02" ytl="148.65" xbr="358.47" ybr="192.79" z_order="0">
+    </box>
+  </image>
+  <image id="66" name="2022-10-19-11-15-59-001647.png" width="640" height="480">
+    <polygon label="floor" occluded="0" source="manual" points="0.00,437.86;121.02,339.12;117.96,282.82;199.35,277.93;308.28,190.42;315.01,192.86;316.40,211.03;347.62,211.03;349.28,195.31;358.70,193.30;363.97,190.42;413.53,210.00;422.10,210.00;465.55,227.75;465.55,233.86;479.62,237.54;496.15,239.98;509.61,241.21;512.67,250.39;518.79,251.61;541.43,249.78;546.33,251.00;573.87,255.90;597.12,260.79;640.00,260.18;639.34,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="328.43" ytl="150.54" xbr="340.12" ybr="171.41" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.40" ytl="121.02" xbr="347.62" ybr="211.03" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="337.17" ytl="148.28" xbr="358.70" ybr="193.30" z_order="0">
+    </box>
+  </image>
+  <image id="67" name="2022-10-19-11-15-59-001655.png" width="640" height="480">
+    <box label="person" occluded="0" source="manual" xtl="308.03" ytl="152.55" xbr="319.25" ybr="186.71" z_order="0">
+    </box>
+    <polygon label="floor" occluded="0" source="manual" points="0.00,439.20;13.32,429.08;12.71,406.44;42.69,382.57;69.00,381.96;87.98,364.21;81.86,289.55;134.48,285.27;142.44,289.55;185.89,288.33;305.83,191.64;312.56,191.64;316.00,211.77;348.23,211.77;347.44,196.54;358.91,193.00;366.41,191.64;400.07,202.66;409.25,208.77;413.53,205.71;474.12,229.58;474.12,238.76;488.80,239.98;522.46,241.82;521.24,252.84;527.36,255.90;573.25,254.67;600.79,265.69;639.96,266.91;640.00,268.13;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="325.75" ytl="150.54" xbr="338.05" ybr="171.41" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="316.00" ytl="118.63" xbr="348.23" ybr="211.77" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="336.86" ytl="147.98" xbr="358.91" ybr="193.00" z_order="0">
+    </box>
+  </image>
+  <image id="68" name="2022-10-19-11-15-59-001663.png" width="640" height="480">
+    <box label="person" occluded="0" source="manual" xtl="308.03" ytl="151.02" xbr="318.74" ybr="187.73" z_order="0">
+    </box>
+    <polygon label="floor" occluded="0" source="manual" points="0.47,421.12;20.05,421.12;50.03,394.81;35.35,299.34;117.96,296.90;119.80,301.18;152.84,304.24;169.98,297.51;302.77,194.70;313.79,194.70;315.60,212.50;348.84,212.50;348.06,193.48;359.12,192.71;365.80,187.97;412.92,210.61;420.27,210.61;481.46,233.86;481.46,242.43;501.04,245.49;501.66,248.55;531.64,247.33;535.92,255.28;536.54,258.95;546.33,263.85;578.15,262.01;640.00,274.02;640.00,480.00;0.00,480.00;0.00,425.25" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="323.08" ytl="150.54" xbr="335.97" ybr="171.41" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="315.60" ytl="116.23" xbr="348.84" ybr="212.50" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="336.55" ytl="147.69" xbr="359.12" ybr="192.71" z_order="0">
+    </box>
+  </image>
+  <image id="69" name="2022-10-19-11-15-59-001673.png" width="640" height="480">
+    <box label="person" occluded="0" source="manual" xtl="303.95" ytl="151.53" xbr="317.72" ybr="186.20" z_order="0">
+    </box>
+    <polygon label="floor" occluded="0" source="manual" points="1.69,314.03;92.87,312.19;92.26,320.76;106.95,321.37;130.20,316.48;150.39,314.64;305.22,191.64;310.73,192.25;310.73,200.82;314.55,215.50;349.72,215.50;348.67,195.92;359.33,192.41;369.47,191.03;420.88,211.22;425.77,211.22;491.86,237.54;490.64,245.49;497.37,251.00;514.51,250.39;521.24,255.28;548.78,251.61;560.40,259.57;556.12,268.13;574.48,274.25;611.19,271.81;640.00,278.27;640.00,480.00;0.00,480.00;0.00,320.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="320.40" ytl="150.54" xbr="333.90" ybr="171.41" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="314.55" ytl="115.67" xbr="349.72" ybr="215.50" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="336.23" ytl="147.39" xbr="359.33" ybr="192.41" z_order="0">
+    </box>
+  </image>
+  <image id="70" name="2022-10-19-11-15-59-001685.png" width="640" height="480">
+    <box label="person" occluded="0" source="manual" xtl="304.97" ytl="150.51" xbr="317.72" ybr="194.36" z_order="0">
+    </box>
+    <polygon label="floor" occluded="0" source="manual" points="0.00,344.62;43.91,344.02;45.14,355.03;45.75,359.31;73.90,356.26;84.92,350.14;111.84,346.46;302.77,197.15;309.50,198.98;313.50,218.50;350.60,218.50;351.73,195.92;359.54,192.11;367.03,192.25;425.77,214.89;430.06,213.67;509.00,246.10;508.39,255.90;530.42,259.57;542.04,266.30;571.42,262.01;593.45,276.09;586.72,280.37;602.63,287.72;628.94,286.49;640.00,286.97;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="319.50" ytl="150.88" xbr="334.62" ybr="174.20" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="313.50" ytl="115.10" xbr="350.60" ybr="218.50" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="335.92" ytl="147.09" xbr="359.54" ybr="192.11" z_order="0">
+    </box>
+  </image>
+  <image id="71" name="2022-10-19-11-15-59-001693.png" width="640" height="480">
+    <box label="person" occluded="0" source="manual" xtl="298.85" ytl="150.00" xbr="314.66" ybr="192.32" z_order="0">
+    </box>
+    <polygon label="floor" occluded="0" source="manual" points="0.00,390.45;22.50,389.30;35.96,382.57;50.65,379.51;61.05,372.78;76.96,370.33;298.85,192.32;307.05,193.48;306.44,219.79;346.59,218.40;346.83,194.09;355.60,192.04;366.41,189.80;374.37,195.31;377.43,200.82;396.40,203.88;409.86,202.66;411.09,214.28;427.61,215.51;515.73,249.16;520.63,256.51;518.18,264.46;527.97,265.07;549.39,265.69;557.95,271.19;577.54,269.97;613.64,286.49;610.58,289.55;626.49,300.57;638.73,298.12;640.00,348.97;640.00,480.00;0.00,480.00;0.00,390.80" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="315.40" ytl="150.77" xbr="330.51" ybr="174.10" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="309.90" ytl="112.75" xbr="346.59" ybr="218.40" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="332.40" ytl="147.02" xbr="355.60" ybr="192.04" z_order="0">
+    </box>
+  </image>
+  <image id="72" name="2022-10-19-11-15-59-001699.png" width="640" height="480">
+    <box label="person" occluded="0" source="manual" xtl="295.79" ytl="150.51" xbr="310.58" ybr="192.83" z_order="0">
+    </box>
+    <polygon label="floor" occluded="0" source="manual" points="0.47,406.44;40.24,399.70;293.59,197.15;302.16,197.15;302.90,221.10;338.88,221.63;351.66,191.97;360.91,192.25;374.37,202.04;390.28,205.10;400.68,205.71;407.41,213.67;426.38,217.34;519.40,253.45;525.52,260.79;524.91,268.13;551.84,269.36;565.91,277.93;594.06,277.31;621.60,292.61;622.21,300.57;640.00,310.84;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="310.97" ytl="151.54" xbr="326.08" ybr="174.87" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="302.90" ytl="110.40" xbr="344.14" ybr="221.10" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="328.87" ytl="146.95" xbr="351.66" ybr="191.97" z_order="0">
+    </box>
+  </image>
+  <image id="73" name="2022-10-19-11-15-59-001707.png" width="640" height="480">
+    <box label="person" occluded="0" source="manual" xtl="292.84" ytl="152.09" xbr="304.06" ybr="192.88" z_order="0">
+    </box>
+    <polygon label="floor" occluded="0" source="manual" points="0.00,423.73;288.08,199.60;294.82,197.76;298.83,222.73;339.10,222.73;337.65,195.92;347.71,191.91;359.07,192.86;395.18,209.39;406.19,216.12;424.55,219.79;524.91,258.34;529.19,266.30;533.48,267.52;536.54,266.91;537.15,274.25;561.01,278.54;578.76,285.27;602.63,287.72;640.00,308.04;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="306.53" ytl="152.31" xbr="321.65" ybr="175.63" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="298.83" ytl="111.00" xbr="339.10" ybr="222.73" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="325.35" ytl="146.89" xbr="347.71" ybr="191.91" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="399.32" ytl="132.66" xbr="416.66" ybr="207.11" z_order="0">
+    </box>
+  </image>
+  <image id="74" name="2022-10-19-11-15-59-001717.png" width="640" height="480">
+    <box label="person" occluded="0" source="manual" xtl="286.72" ytl="150.56" xbr="303.55" ybr="189.83" z_order="0">
+    </box>
+    <polygon label="floor" occluded="0" source="manual" points="0.00,419.78;284.41,197.76;292.37,197.15;291.14,219.79;294.80,225.90;335.53,224.37;334.59,198.98;343.77,191.84;362.74,200.21;387.83,210.00;400.68,208.16;403.13,213.67;409.86,221.63;425.77,221.63;535.31,265.07;543.27,273.64;546.94,274.87;546.94,282.82;565.91,288.33;577.54,285.27;595.90,296.90;635.06,296.90;640.00,307.09;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="302.10" ytl="153.07" xbr="317.22" ybr="176.40" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="294.77" ytl="107.05" xbr="335.53" ybr="224.37" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="321.82" ytl="146.82" xbr="343.77" ybr="191.84" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="397.28" ytl="130.62" xbr="416.30" ybr="207.45" z_order="0">
+    </box>
+  </image>
+  <image id="75" name="2022-10-19-11-15-59-001733.png" width="640" height="480">
+    <box label="person" occluded="0" source="manual" xtl="290.19" ytl="145.92" xbr="302.93" ybr="175.00" z_order="0">
+    </box>
+    <polygon label="floor" occluded="0" source="manual" points="0.00,412.58;286.25,191.64;288.70,195.92;290.70,226.00;331.97,226.00;329.70,194.09;339.83,191.77;358.46,196.54;365.19,204.49;379.26,206.33;398.55,207.03;402.52,215.51;413.53,224.07;424.55,223.46;427.61,222.24;556.73,273.03;557.95,281.60;574.48,284.66;570.81,295.67;587.33,299.96;598.34,296.90;609.36,301.79;640.00,315.05;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="302.45" ytl="151.27" xbr="317.56" ybr="174.60" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="290.70" ytl="103.09" xbr="331.97" ybr="226.00" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="318.30" ytl="146.75" xbr="339.83" ybr="191.77" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="398.55" ytl="127.81" xbr="419.26" ybr="207.03" z_order="0">
+    </box>
+  </image>
+  <image id="76" name="2022-10-19-11-15-59-001765.png" width="640" height="480">
+    <box label="person" occluded="0" source="manual" xtl="293.25" ytl="144.39" xbr="312.80" ybr="174.70" z_order="0">
+    </box>
+    <polygon label="floor" occluded="0" source="manual" points="0.00,411.07;289.90,190.40;292.74,229.57;333.98,227.75;332.14,198.37;347.44,189.80;366.41,201.43;376.82,205.71;390.28,206.94;402.89,206.09;411.09,210.00;410.47,217.34;422.10,222.24;434.95,224.07;598.34,288.33;597.73,295.67;621.60,303.02;617.93,315.25;625.88,322.60;640.00,323.16;640.00,480.00;0.00,480.00" z_order="0">
+    </polygon>
+    <box label="person" occluded="0" source="manual" xtl="302.80" ytl="149.47" xbr="317.91" ybr="172.80" z_order="0">
+    </box>
+    <box label="agv" occluded="0" source="manual" xtl="292.74" ytl="99.00" xbr="337.60" ybr="229.57" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="318.30" ytl="146.75" xbr="339.83" ybr="191.77" z_order="0">
+    </box>
+    <box label="box" occluded="0" source="manual" xtl="402.89" ytl="124.50" xbr="425.28" ybr="206.09" z_order="0">
+    </box>
+  </image>
+</annotations>
