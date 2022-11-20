@@ -40,6 +40,7 @@ class mtlMayhemModule(pl.LightningModule):
         # update configuration of hyperparams in wandb
         if self.config["logging"]:
             wandb.config.update(self.config)
+            wandb.define_metric("epoch")  # can be changed to batch
 
         if self.config["model"] == "fasterrcnn":
             self.model = fasterrcnn_resnet50_fpn(pretrained=True, weights="DEFAULT")
