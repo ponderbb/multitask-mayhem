@@ -4,6 +4,7 @@ import os
 import random
 import shutil
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -52,7 +53,7 @@ def logging_setup(debug: bool, outfile: str) -> None:
 
 def grab_time() -> str:
     dt = datetime.now()
-    str_date_time = dt.strftime("%y-%m-%dT%H:%M:%S")
+    str_date_time = dt.strftime("%y-%m-%dT%H%M%S")  # change to be windows compatible
     return str_date_time
 
 
@@ -74,20 +75,26 @@ def model_timestamp(
     return combined_name + "_" + time_now
 
 
-def create_model_folders(config_path: str, model_folder: str, model_name: str, pretend: bool = False) -> str:
+def create_model_folders(config_path: str, model_folder: str, model_name: str, debug: bool) -> str:
     """Initialize folder structure for model"""
-    folder_path = os.path.join(model_folder, model_name)
-    weights_path = os.path.join(folder_path, "weights")
-    checkpoints_path = os.path.join(folder_path, "checkpoints")
+    if not debug:
+        folder_path = os.path.join(model_folder, model_name)
+        weights_path = os.path.join(folder_path, "weights")
+        checkpoints_path = os.path.join(folder_path, "checkpoints")
 
-    if not pretend:
         # establishing model directory
         os.makedirs(weights_path, exist_ok=True)
         os.makedirs(checkpoints_path, exist_ok=True)
 
         # copy config file over
         shutil.copy(config_path, folder_path)
+
+        # logs
+        logging.info("model folder created: {}".format(folder_path))
+        logging.info("config file moved: {}".format(Path(config_path).name))
+
     else:
-        logging.warning("Pretending to create model folders")
+        logging.warning("debug mode: weights and checkpoints are not saved")
+        checkpoints_path, weights_path = None, None
 
     return weights_path, checkpoints_path

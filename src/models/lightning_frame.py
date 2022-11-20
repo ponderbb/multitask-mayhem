@@ -26,7 +26,10 @@ class mtlMayhemModule(pl.LightningModule):
 
         # make folders for the model weights and checkpoints
         self.weights_landing, self.checkpoints_landing = utils.create_model_folders(
-            config_path=config, model_folder=self.config["model_out_path"], model_name=self.model_name, pretend=False
+            config_path=config,
+            model_folder=self.config["model_out_path"],
+            model_name=self.model_name,
+            debug=self.config["debug"],
         )
 
     def setup(self, stage: str) -> None:
@@ -52,8 +55,6 @@ class mtlMayhemModule(pl.LightningModule):
             else:
                 raise FileExistsError("No trained model found.")
 
-        # TODO: load from checkpoints
-
         self.best_result = 0
         self.epoch = 0
 
@@ -77,7 +78,7 @@ class mtlMayhemModule(pl.LightningModule):
         return super().configure_optimizers()
 
     def training_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
-        images, mask, targets = batch
+        images, targets = batch
         loss_dict = self.model(images, targets)
         losses = sum(loss for loss in loss_dict.values())
         if self.config["logging"]:
@@ -91,7 +92,7 @@ class mtlMayhemModule(pl.LightningModule):
             wandb.log({"epoch": self.epoch})
 
     def validation_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
-        images, mask, targets = batch
+        images, targets = batch
         preds = self.model(images)
         results = compute_metrics(preds, targets)
         results = {key: val.item() for key, val in results.items()}
@@ -104,9 +105,13 @@ class mtlMayhemModule(pl.LightningModule):
         if self.epoch > 0:
             if self.best_result < self.results:
                 self.best_result = self.results
-                torch.save(self.model.state_dict(), self.weights_landing + "best.pth")
-            logging.info("Current validation miou: {:.4f}".format(self.results))
-            logging.info("Best validation miou: {:.4f}".format(self.best_result))
+                if not self.config["debug"]:
+                    torch.save(self.model.state_dict(), self.weights_landing + "best.pth")
+                else:
+                    logging.warning("DEBUG MODE: model weights are not saved")
+
+            logging.info("Current validation mAP: {:.4f}".format(self.results))
+            logging.info("Best validation mAP: {:.4f}".format(self.best_result))
 
     def test_step(self, *args: Any, **kwargs: Any):
         return super().test_step(*args, **kwargs)

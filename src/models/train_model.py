@@ -20,18 +20,6 @@ parser.add_argument(
     default="configs/dummy_training.yaml",
     help="Path to pipeline configuration file",
 )
-parser.add_argument(
-    "-d",
-    "--debug",
-    action="store_true",
-    help="Include debug level information in the logging.",
-)
-parser.add_argument(
-    "-l",
-    "--log",
-    default=".logging/training_pipeline.log",
-    help="path to config file for training",
-)
 args = parser.parse_args()
 
 # set up output logging
@@ -56,14 +44,12 @@ else:
 # initialize trainer object
 trainer = pl.Trainer(
     logger=logger,
+    accelerator="auto",
     devices=1,
+    enable_checkpointing=not (lightning_datamodule.config["debug"]),
     default_root_dir=lightning_module.checkpoints_landing,
     max_epochs=lightning_module.config["max_epochs"],
 )
 
-if args.debug:
-    # run validation hook to test I/Os
-    trainer.validate(model=lightning_module, datamodule=lightning_datamodule)
-else:
-    # start training
-    trainer.fit(model=lightning_module, datamodule=lightning_datamodule)
+# start training
+trainer.fit(model=lightning_module, datamodule=lightning_datamodule)

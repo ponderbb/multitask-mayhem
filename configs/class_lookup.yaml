@@ -3,3 +3,8 @@ bbox:
   box : 2
   agv : 3
   forklift : 4
+bbox_rev:
+  1: "person"
+  2: "box"
+  3: "agv"
+  4: "forklift"

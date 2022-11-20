@@ -66,7 +66,6 @@ class mtlDataModule(pl.LightningDataModule):
             batch_size=self.config["batch_size"],
             num_workers=self.config["num_workers"],
             collate_fn=self.collate_fn,
-            shuffle=self.config["shuffle"],
         )
 
     def test_dataloader(self):
@@ -75,25 +74,7 @@ class mtlDataModule(pl.LightningDataModule):
             batch_size=self.config["batch_size"],
             num_workers=self.config["num_workers"],
             collate_fn=self.collate_fn,
-            shuffle=self.config["shuffle"],
         )
-
-    # @staticmethod
-    # def collate_fn(batch):
-    #     images, masks, boxes, labels =[],[],[],[]
-
-    #     for image, mask, target in batch:
-    #         images.append(image)
-    #         masks.append(mask)
-    #         boxes.append(target["boxes"])
-    #         labels.append(target["labels"])
-
-    #         targets={
-    #             "boxes":torch.stack(boxes),
-    #             "labels":torch.stack(labels)
-    #         }
-
-    #     return images, masks, targets
 
     @staticmethod
     def collate_fn(batch):
@@ -138,14 +119,22 @@ class FasterRCNNDataset(Dataset):
     def __getitem__(self, index):
         image = self.transforms(Image.open(self.dataset[index]["path"]))
         mask = self.transforms(Image.open(self.dataset[index]["mask"]))
-        target = {
-            "boxes": torch.FloatTensor([bbox["corners"] for bbox in self.dataset[index]["bbox"]]),
-            "labels": torch.LongTensor([bbox["class"] for bbox in self.dataset[index]["bbox"]]),
-        }
-        return image, mask, target
 
-    # def collate_fn(batch):
-    #     return tuple(zip(*batch))
+        # check for images without bounding boxes
+        if "bbox" in self.dataset[index].keys():
+            boxes = torch.FloatTensor([bbox["corners"] for bbox in self.dataset[index]["bbox"]])
+            labels = torch.LongTensor([bbox["class"] for bbox in self.dataset[index]["bbox"]])
+        else:
+            boxes = torch.empty(size=[0, 4], dtype=torch.float32)
+            labels = torch.empty(size=[0], dtype=torch.int64)
+
+        target = {
+            "boxes": boxes,
+            "labels": labels,
+            "masks": torch.as_tensor(mask, dtype=torch.bool),
+        }
+
+        return image, target
 
 
 def main():
@@ -183,7 +172,6 @@ def main():
     it = iter(dataloader)
     first = next(it)
     second = next(it)
-    logging.info("{}, {} itt a vege fuss el vele".format(first, second))
 
 
 if __name__ == "__main__":

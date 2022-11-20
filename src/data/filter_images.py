@@ -228,6 +228,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("-f", "--force", action="store_true", help="Force overwrite existing folders.")
     parser.add_argument("-b", "--bag", action="store_true", help="Filter and overwrite specific bag.")
+    parser.add_argument("-l", "--label", action="store_true", help="Filter and overwrite base on annotations.")
 
     args = parser.parse_args()
 
