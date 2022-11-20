@@ -110,6 +110,6 @@ def create_model_folders(
 
     else:
         logging.warning("debug mode: weights and checkpoints are not saved")
-        checkpoints_path, weights_path = None, None
+        checkpoints_path, weights_path, folder_path = None, None, None
 
     return weights_path, checkpoints_path, folder_path

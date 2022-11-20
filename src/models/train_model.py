@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "-c",
     "--config",
-    default="configs/fasterrcnn_testdrive.yaml",
+    default="configs/dummy_training_hpc.yaml",
     help="Path to pipeline configuration file",
 )
 args = parser.parse_args()
@@ -34,10 +34,10 @@ lightning_module = mtlMayhemModule(args.config)
 # initialize Weights & Biases experiment logging
 if lightning_module.config["logging"]:
     logger = WandbLogger(
-        name=lightning_module,
+        name=lightning_module.model_name,
         project=lightning_module.config["wandb_project"],
         entity=lightning_module.config["entity"],
-        save_dir=lightning_module.model_landing,
+        save_dir=lightning_module.checkpoints_landing,
         log_model=False,
     )
 else:
