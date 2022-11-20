@@ -13,6 +13,7 @@ from skimage.metrics import structural_similarity as skiSSIM
 from tqdm import tqdm
 
 import src.utils as utils
+from src.data.manifests import cvat_to_dict
 
 
 class filterImages:
@@ -70,6 +71,28 @@ class filterImages:
         self.compare_images(rgb_images)
 
         self.input = Path(self.input).parents[0]
+        self.construct_paths()
+        self.copy_files(self.output_image_path, "rgb")
+        self.save_image_list()
+        if not self.rgb_only:
+            self.copy_files(self.output_depth_path, "depth")
+            self.copy_files(self.output_pcl_path, "pcl")
+
+    def filter_on_annotation(self, annotation_path: Union[str, Path]):
+
+        self.bag = Path(annotation_path).stem
+        self.force = True
+        self.check_output()
+
+        with open(annotation_path, "r", encoding="utf-8") as file:
+            label_xml = file.read()
+
+            # translates the xml to a dictionary (plus creates the mask folder)
+            label_dict = cvat_to_dict(
+                xml_file=label_xml, collection=Path(annotation_path).stem, data_root=self.input, create_mask=False
+            )
+
+        self.pruned_list = [label["path"] for label in label_dict]
         self.construct_paths()
         self.copy_files(self.output_image_path, "rgb")
         self.save_image_list()
@@ -196,8 +219,15 @@ def main(args):
         rgb_only=args.rgb,
         debug=args.debug,
     )
+
+    # NOTE: remove after debugging
+    # args.label = None
+    args.label = "data/external/2022-09-23-11-03-28.xml"
+
     if args.bag:
         filt.filter_specific()
+    elif args.label:
+        filt.filter_on_annotation(args.label)
     else:
         filt.filter_all()
 
@@ -228,7 +258,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("-f", "--force", action="store_true", help="Force overwrite existing folders.")
     parser.add_argument("-b", "--bag", action="store_true", help="Filter and overwrite specific bag.")
-    parser.add_argument("-l", "--label", action="store_true", help="Filter and overwrite base on annotations.")
+    parser.add_argument("-l", "--label", type=str, help="Path to annotation, filter images.")
 
     args = parser.parse_args()
 

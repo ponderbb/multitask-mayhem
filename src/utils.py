@@ -6,6 +6,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
+import __main__
 import numpy as np
 import torch
 import yaml
@@ -33,8 +34,15 @@ def set_seeds(seed: int = 42) -> None:
     random.seed(seed)
 
 
-def logging_setup(debug: bool, outfile: str) -> None:
-    if debug:
+def logging_setup(config: str) -> None:
+    """Setup logging"""
+
+    # create log folder
+    os.makedirs(".logging", exist_ok=True)
+
+    # load logging level
+    config = load_yaml(config)
+    if config["debug"]:
         logging_level = logging.DEBUG
     else:
         logging_level = logging.INFO
@@ -45,7 +53,7 @@ def logging_setup(debug: bool, outfile: str) -> None:
         format=log_fmt,
         force=True,
         handlers=[
-            logging.FileHandler(outfile, "w"),
+            logging.FileHandler(".logging/{}.log".format(Path(__main__.__file__).stem), "w"),
             logging.StreamHandler(),
         ],
     )
@@ -75,7 +83,7 @@ def model_timestamp(
     return combined_name + "_" + time_now
 
 
-def create_model_folders(config_path: str, model_folder: str, model_name: str, debug: bool) -> str:
+def create_model_folders(config_path: str, manifest_path: str, model_folder: str, model_name: str, debug: bool) -> str:
     """Initialize folder structure for model"""
     if not debug:
         folder_path = os.path.join(model_folder, model_name)
@@ -86,8 +94,9 @@ def create_model_folders(config_path: str, model_folder: str, model_name: str, d
         os.makedirs(weights_path, exist_ok=True)
         os.makedirs(checkpoints_path, exist_ok=True)
 
-        # copy config file over
+        # copy config- and move manifest file over
         shutil.copy(config_path, folder_path)
+        shutil.move(manifest_path, folder_path)
 
         # logs
         logging.info("model folder created: {}".format(folder_path))

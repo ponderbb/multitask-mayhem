@@ -80,6 +80,8 @@ target/
 /data/interim/*
 /data/external/*
 /data/processed/*
+/data/rosbags/*
+/data/annotations/*
 /models/
 
 # Mac OS-specific storage files

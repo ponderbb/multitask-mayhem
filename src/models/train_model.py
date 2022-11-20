@@ -23,7 +23,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 # set up output logging
-utils.logging_setup(args.debug, args.log)
+utils.logging_setup(args.config)
 
 # initialize data pipeline
 lightning_datamodule = mtlDataModule(args.config)

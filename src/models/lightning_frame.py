@@ -24,9 +24,10 @@ class mtlMayhemModule(pl.LightningModule):
         # create unqiue timestamped name with optinal attributes
         self.model_name = utils.model_timestamp(model_name=self.config["model"], attribute=self.config["attribute"])
 
-        # make folders for the model weights and checkpoints
+        # make folders for the model weights and checkpoints, move manifest and config
         self.weights_landing, self.checkpoints_landing = utils.create_model_folders(
             config_path=config,
+            manifest_path=self.config["data_root"] + "/manifest.json",
             model_folder=self.config["model_out_path"],
             model_name=self.model_name,
             debug=self.config["debug"],

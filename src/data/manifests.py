@@ -23,7 +23,10 @@ def generate_manifest(collections: List[str], data_root: str):
     manifest_list = []
     for collection in tqdm(collections):
 
-        collection_label_path = os.path.join(data_root, collection, "{}.xml".format(collection))
+        # from the imagefolder, move to the dataroot "/data/interim" -> "/data"
+        data_parent_folder = str(Path(data_root).parents[0])
+
+        collection_label_path = os.path.join(data_parent_folder, "annotations/{}.xml".format(collection))
 
         assert Path(collection_label_path).exists(), "label path -> {} does not exist".format(collection_label_path)
 
@@ -56,20 +59,22 @@ def label_encoding(annotation, label):
     return lookup_dict[annotation][label]
 
 
-def cvat_to_dict(xml_file, collection, data_root):
+def cvat_to_dict(xml_file, collection, data_root, create_mask: bool = True):
     """
     - extract cvat labels to readable format
     - check for corresponding image paths
     - return dataloader manifest
+    - #FIXME: too complex, break to pieces
     """
 
     label_dicts_list = []
 
-    # clean directory for new masks
-    mask_out_path = os.path.join(data_root, collection, "synchronized_l515_mask")
-    if Path(mask_out_path).exists():
-        shutil.rmtree(mask_out_path)
-    os.makedirs(mask_out_path)
+    if create_mask:
+        # clean directory for new masks
+        mask_out_path = os.path.join(data_root, collection, "synchronized_l515_mask")
+        if Path(mask_out_path).exists():
+            shutil.rmtree(mask_out_path)
+        os.makedirs(mask_out_path)
 
     # generated dictionary with original html file inside
     raw_label_dict = xmltodict.parse(xml_file)
@@ -90,7 +95,8 @@ def cvat_to_dict(xml_file, collection, data_root):
 
         # fill the annotation details into the new dictionary
         label_dict["path"] = image_path
-        label_dict["mask"] = os.path.join(mask_out_path, label_dict["name"])
+        if create_mask:
+            label_dict["mask"] = os.path.join(mask_out_path, label_dict["name"])
         label_dict["shape"] = [int(image_label["@height"]), int(image_label["@width"])]
 
         # find all the bounding boxes and save them as a list
@@ -116,35 +122,36 @@ def cvat_to_dict(xml_file, collection, data_root):
                 )
             label_dict["bbox"] = empty_bbox_list
 
-        # find all the segmentation polygons and save them as a list
-        empty_polygon_list = []
-        if "polygon" in image_label:
+        if create_mask:
+            # find all the segmentation polygons and save them as a list
+            empty_polygon_list = []
+            if "polygon" in image_label:
 
-            # catch if there is only one entry in the annotation type
-            if type(image_label["polygon"]) == dict:
-                image_label["polygon"] = [image_label["polygon"]]
+                # catch if there is only one entry in the annotation type
+                if type(image_label["polygon"]) == dict:
+                    image_label["polygon"] = [image_label["polygon"]]
 
-            for poly in image_label["polygon"]:
+                for poly in image_label["polygon"]:
 
-                # convert nodes from str to floats
-                nodes = []
-                for node in poly["@points"].split(";"):
-                    nodes.append(list(map(float, node.split(","))))
+                    # convert nodes from str to floats
+                    nodes = []
+                    for node in poly["@points"].split(";"):
+                        nodes.append(list(map(float, node.split(","))))
 
-                empty_polygon_list.append({"label": poly["@label"], "nodes": nodes})
+                    empty_polygon_list.append({"label": poly["@label"], "nodes": nodes})
 
-            label_dict["polygon"] = empty_polygon_list
+                label_dict["polygon"] = empty_polygon_list
 
-            # save the mask in a .png format under /data_root/collection/image_name.png
-            mask_from_poly(
-                shape=label_dict["shape"],
-                out_path=label_dict["mask"],
-                polygon=label_dict["polygon"],
-            )
+                # save the mask in a .png format under /data_root/collection/image_name.png
+                mask_from_poly(
+                    shape=label_dict["shape"],
+                    out_path=label_dict["mask"],
+                    polygon=label_dict["polygon"],
+                )
 
-        else:
-            # if no segmentation in the image, save an empty mask
-            mask_from_poly(shape=label_dict["shape"], out_path=label_dict["mask"])
+            else:
+                # if no segmentation in the image, save an empty mask
+                mask_from_poly(shape=label_dict["shape"], out_path=label_dict["mask"])
 
         # appending of label to image[i] to the list
         label_dicts_list.append(label_dict)
