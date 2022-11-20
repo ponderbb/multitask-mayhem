@@ -53,7 +53,9 @@ class unPackROSBag:
         if self.bags_list:
             logging.info("{} bag(s) found".format(len(self.bags_list)))
         else:
-            raise FileNotFoundError("No files with .bag extension on the following path: {}".format(self.root_dir))
+            raise FileNotFoundError(
+                "No files with .bag extension on the following path: {}".format(self.root_dir)
+            )
 
     def extract_bags(self):
         """
@@ -157,7 +159,9 @@ class unPackROSBag:
 
         out_csv = open(os.path.join(self.export_dir, bag_name, "imu_{}.csv".format(bag_name)), "w")
 
-        out_csv.write("# gyro_timestamp accel_timestamp ang_vel_x ang_vel_y ang_vel_z lin_acc_x lin_acc_y lin_acc_z\n")
+        out_csv.write(
+            "# gyro_timestamp accel_timestamp ang_vel_x ang_vel_y ang_vel_z lin_acc_x lin_acc_y lin_acc_z\n"
+        )
 
         for i, (gyro_msg, accel_msg) in enumerate(tqdm(zip(gyro_topic, accel_topic))):
 
@@ -195,7 +199,9 @@ class unPackROSBag:
             check_topic(topic, topic_read)
 
             for i, (topic, msg, t) in enumerate(tqdm(topic_read)):
-                pc_array = pointcloud2_to_xyz_array(msg)  # NOTE: missing intensity values, could be extracted
+                pc_array = pointcloud2_to_xyz_array(
+                    msg
+                )  # NOTE: missing intensity values, could be extracted
 
                 pcd = o3d.t.geometry.PointCloud()
                 pcd.point["positions"] = o3d.core.Tensor(pc_array)
@@ -221,7 +227,9 @@ def main(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--force", action="store_true", help="Force overwrite existing folders.")
+    parser.add_argument(
+        "-f", "--force", action="store_true", help="Force overwrite existing folders."
+    )
     parser.add_argument(
         "-d",
         "--debug",

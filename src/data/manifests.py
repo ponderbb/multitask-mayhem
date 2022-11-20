@@ -26,9 +26,13 @@ def generate_manifest(collections: List[str], data_root: str):
         # from the imagefolder, move to the dataroot "/data/interim" -> "/data"
         data_parent_folder = str(Path(data_root).parents[0])
 
-        collection_label_path = os.path.join(data_parent_folder, "annotations/{}.xml".format(collection))
+        collection_label_path = os.path.join(
+            data_parent_folder, "annotations/{}.xml".format(collection)
+        )
 
-        assert Path(collection_label_path).exists(), "label path -> {} does not exist".format(collection_label_path)
+        assert Path(collection_label_path).exists(), "label path -> {} does not exist".format(
+            collection_label_path
+        )
 
         with open(collection_label_path, "r", encoding="utf-8") as file:
             label_xml = file.read()
@@ -88,10 +92,14 @@ def cvat_to_dict(xml_file, collection, data_root, create_mask: bool = True):
         label_dict["name"] = image_label["@name"]
 
         # find corresponding image path
-        image_path = os.path.join(data_root, collection, "synchronized_l515_image", label_dict["name"])
+        image_path = os.path.join(
+            data_root, collection, "synchronized_l515_image", label_dict["name"]
+        )
 
         # check if the image referenced by the label exists
-        assert Path(image_path).exists(), "Cannot find corresponding image to label {}".format(label_dict["name"])
+        assert Path(image_path).exists(), "Cannot find corresponding image to label {}".format(
+            label_dict["name"]
+        )
 
         # fill the annotation details into the new dictionary
         label_dict["path"] = image_path

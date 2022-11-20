@@ -31,7 +31,9 @@ class mtlDataModule(pl.LightningDataModule):
                 self.config["split_ratio"][2] * 100,
             )
         )
-        self.train_split, self.valid_split, self.test_split = random_split(self.manifests, self.config["split_ratio"])
+        self.train_split, self.valid_split, self.test_split = random_split(
+            self.manifests, self.config["split_ratio"]
+        )
 
         # specific loaders for specific formats models take
         if self.config["model"] == "fasterrcnn":

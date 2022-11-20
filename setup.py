@@ -4,7 +4,7 @@ setup(
     name="src",
     packages=find_packages(),
     version="0.1.0",
-    description="A short description of the project.",
+    description="DTU Thesis project on Multi-task Learning for Robust Autonomy in Mobile Robotics",
     author="bbejczy",
     license="",
 )

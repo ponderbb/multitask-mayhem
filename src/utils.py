@@ -83,7 +83,13 @@ def model_timestamp(
     return combined_name + "_" + time_now
 
 
-def create_model_folders(config_path: str, manifest_path: str, model_folder: str, model_name: str, debug: bool) -> str:
+def create_model_folders(
+    config_path: str,
+    manifest_path: str,
+    model_folder: str,
+    model_name: str,
+    debug: bool,
+) -> str:
     """Initialize folder structure for model"""
     if not debug:
         folder_path = os.path.join(model_folder, model_name)
@@ -106,4 +112,4 @@ def create_model_folders(config_path: str, manifest_path: str, model_folder: str
         logging.warning("debug mode: weights and checkpoints are not saved")
         checkpoints_path, weights_path = None, None
 
-    return weights_path, checkpoints_path
+    return weights_path, checkpoints_path, folder_path
