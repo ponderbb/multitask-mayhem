@@ -83,6 +83,7 @@ target/
 /data/rosbags/*
 /data/annotations/*
 /models/
+.logging/
 
 # Mac OS-specific storage files
 .DS_Store

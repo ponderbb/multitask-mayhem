@@ -46,18 +46,23 @@ else:
     logger = None
 
 # callbacks
-lr_monitor = LearningRateMonitor(logging_interval="epoch")
+callbacks_list = []
+callbacks_list.append(LearningRateMonitor(logging_interval="epoch"))
 es_config = lightning_module.config["early_stop"]
-early_stop_callback = EarlyStopping(
-    monitor="val_result", min_delta=es_config["delta"], patience=es_config["patience"], verbose=False, mode="max"
+callbacks_list.append(
+    EarlyStopping(
+        monitor="val_result", min_delta=es_config["delta"], patience=es_config["patience"], verbose=False, mode="max"
+    )
 )
-checkpoint_callback = ModelCheckpoint(
-    monitor="val_result",
-    dirpath=lightning_module.checkpoints_landing,
-    filename="{epoch:02d}-{val_result:.4f}",
-    save_top_k=3,
-    mode="max",
-)
+if not (lightning_datamodule.config["debug"]):
+    checkpoint_callback = ModelCheckpoint(
+        monitor="val_result",
+        dirpath=lightning_module.checkpoints_landing,
+        filename="{epoch:02d}-{val_result:.2f}",
+        save_top_k=1,
+        mode="max",
+    )
+    callbacks_list.append(checkpoint_callback)
 
 # initialize trainer object
 trainer = pl.Trainer(
@@ -67,7 +72,7 @@ trainer = pl.Trainer(
     enable_checkpointing=not (lightning_datamodule.config["debug"]),
     default_root_dir=lightning_module.checkpoints_landing,
     max_epochs=lightning_module.config["max_epochs"],
-    callbacks=[lr_monitor, early_stop_callback, checkpoint_callback],
+    callbacks=callbacks_list,
 )
 
 # start training

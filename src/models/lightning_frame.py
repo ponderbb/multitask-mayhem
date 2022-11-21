@@ -140,19 +140,3 @@ class mtlMayhemModule(pl.LightningModule):
 
             logging.info("Current validation mAP: {:.6f}".format(results["map"]))
             logging.info("Best validation mAP: {:.6f}".format(self.best_result))
-
-    # def test_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
-    #     images, targets = batch
-
-    #     boxes = targets[0]["boxes"]
-    #     labels = targets[0]["labels"]
-    #     masks = targets[0]["masks"]
-    #     label_names = [self.class_lookup["bbox_rev"][label.item()] for label in labels]
-
-    #     img = images[0].mul(255).type(torch.uint8)
-    #     drawn_image = draw_bounding_boxes(img, boxes, label_names)
-    #     drawn_image = draw_segmentation_masks(drawn_image, masks, alpha=0.5, colors="green")
-    #     image_pil = T.ToPILImage()(drawn_image)
-    #     image_pil.save(self.model_landing + "inf/{}.png".format(batch_idx))
-
-    #     return super().test_step(*args, **kwargs)
