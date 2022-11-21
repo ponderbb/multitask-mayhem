@@ -4,17 +4,12 @@ from typing import Any
 
 import pytorch_lightning as pl
 import torch
-import torchvision.transforms as T
 import wandb
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
-from torchvision.models.detection.faster_rcnn import (
-    FasterRCNN_ResNet50_FPN_Weights, FastRCNNPredictor)
-from torchvision.utils import draw_bounding_boxes, draw_segmentation_masks
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 
 import src.utils as utils
 from src.models.metrics import compute_metrics
-
-# from torchvision.models.detection.roi_heads import fastrcnn_loss
 
 
 class mtlMayhemModule(pl.LightningModule):
@@ -43,12 +38,12 @@ class mtlMayhemModule(pl.LightningModule):
         if stage == "test" or stage == "validate":
             self.config["logging"] = False
 
-        # # update configuration of hyperparams in wandb
-        # if self.config["logging"]:
-        #     wandb.init(dir=self.model_landing, config=self.config)
+        # update configuration of hyperparams in wandb
+        if self.config["logging"]:
+            wandb.config.update(self.config)
 
         if self.config["model"] == "fasterrcnn":
-            self.model = fasterrcnn_resnet50_fpn(pretrained=True, weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
+            self.model = fasterrcnn_resnet50_fpn(pretrained=True, weights="DEFAULT")
             in_features = self.model.roi_heads.box_predictor.cls_score.in_features
             self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, self.config["num_classes"])
         elif self.config["model"] == "mobilenetv3":
@@ -57,7 +52,7 @@ class mtlMayhemModule(pl.LightningModule):
         # loading for inference from saved weights
         if stage == "test":  # FIXME: also include validation
             if Path(self.weights_landing).exists():
-                self.model.load_state_dict(torch.load(self.weights_landing + "best.pth"))
+                self.model.load_state_dict(torch.load(self.weights_landing + "/best.pth"))
             else:
                 raise FileExistsError("No trained model found.")
 
@@ -65,49 +60,54 @@ class mtlMayhemModule(pl.LightningModule):
         self.epoch = 0
 
     def configure_optimizers(self) -> Any:
-        """set up optimizer configurations"""
-        config = self.config["optimizer"]
+        # configurations for optimizer and scheduler
+        optim_config = self.config["optimizer"]
+        lr_config = self.config["lr_scheduler"]
 
-        if config["name"] == "sgd":
+        # choose optimizer
+        if optim_config["name"] == "sgd":
             self.optimizer = torch.optim.SGD(
                 self.parameters(),
-                lr=config["lr"],
-                momentum=config["momentum"],
-                weight_decay=config["weight_decay"],
+                lr=optim_config["lr"],
+                momentum=optim_config["momentum"],
+                weight_decay=optim_config["weight_decay"],
             )
-        elif config["name"] == "adam":
+        elif optim_config["name"] == "adam":
             self.optimizer = torch.optim.Adam(
                 self.parameters(),
-                lr=config["lr"],
-                momentum=config["momentum"],
-                weight_decay=config["weight_decay"],
+                lr=optim_config["lr"],
+                momentum=optim_config["momentum"],
+                weight_decay=optim_config["weight_decay"],
             )
         else:
             raise ModuleNotFoundError("Optimizer name can be [adam, sgd].")
 
-        return self.optimizer
+        # choose scheduler
+        if lr_config["name"] == "steplr":
+            self.lr_scheduler = torch.optim.lr_scheduler.StepLR(
+                self.optimizer, step_size=lr_config["step_size"], gamma=lr_config["gamma"]
+            )
+        elif lr_config["name"] is None:
+            self.lr_scheduler = None
+        else:
+            raise ModuleNotFoundError("Learning rate scheduler name can be [steplr or None].")
+
+        return [self.optimizer], [self.lr_scheduler]
 
     def training_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
         images, targets = batch
         loss_dict = self.model(images, targets)
         losses = sum(loss for loss in loss_dict.values())
         if self.config["logging"]:
-            wandb.log(
-                {
-                    "train_loss": losses,
-                    "epoch": self.epoch,
-                    "batch": batch_idx,
-                }
-            )
+            self.log("train_loss", losses, on_step=True, on_epoch=True, logger=True)
         return losses
 
     def on_train_epoch_start(self) -> None:
         # initialize epoch counter
         self.epoch += 1
         if self.config["logging"]:
-            wandb.log({"epoch": self.epoch})
-
-        # wandb.define_metric(name="epoch", step_metric="epoch")  # can be changed to batch
+            self.log("epoch_sanity", self.epoch, on_epoch=True)
+            # wandb.log({"epoch": self.epoch})
 
     def on_validation_start(self) -> None:
         self.val_targets = []
@@ -120,20 +120,14 @@ class mtlMayhemModule(pl.LightningModule):
         self.val_targets.extend(targets)
         self.val_preds.extend(preds)
 
-    def on_validation_end(self) -> None:
+    def on_validation_epoch_end(self) -> None:
         # skip sanity check
         if self.epoch > 0:
             # compute metrics
             results = compute_metrics(preds=self.val_preds, targets=self.val_targets)
             results = {key: val.item() for key, val in results.items()}
             if self.config["logging"]:
-                wandb.log(
-                    {
-                        "val_map": results["map"],
-                        "val_all": results,
-                        "epoch": self.epoch,
-                    }
-                )
+                self.log("val_result", results["map"], on_step=False, on_epoch=True, prog_bar=True, logger=True)
 
             # save model if performance is improved
             if self.best_result < results["map"]:
@@ -147,18 +141,18 @@ class mtlMayhemModule(pl.LightningModule):
             logging.info("Current validation mAP: {:.6f}".format(results["map"]))
             logging.info("Best validation mAP: {:.6f}".format(self.best_result))
 
-    def test_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
-        images, targets = batch
+    # def test_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
+    #     images, targets = batch
 
-        boxes = targets[0]["boxes"]
-        labels = targets[0]["labels"]
-        masks = targets[0]["masks"]
-        label_names = [self.class_lookup["bbox_rev"][label.item()] for label in labels]
+    #     boxes = targets[0]["boxes"]
+    #     labels = targets[0]["labels"]
+    #     masks = targets[0]["masks"]
+    #     label_names = [self.class_lookup["bbox_rev"][label.item()] for label in labels]
 
-        img = images[0].mul(255).type(torch.uint8)
-        drawn_image = draw_bounding_boxes(img, boxes, label_names)
-        drawn_image = draw_segmentation_masks(drawn_image, masks, alpha=0.5, colors="green")
-        image_pil = T.ToPILImage()(drawn_image)
-        image_pil.save(self.model_landing + "inf/{}.png".format(batch_idx))
+    #     img = images[0].mul(255).type(torch.uint8)
+    #     drawn_image = draw_bounding_boxes(img, boxes, label_names)
+    #     drawn_image = draw_segmentation_masks(drawn_image, masks, alpha=0.5, colors="green")
+    #     image_pil = T.ToPILImage()(drawn_image)
+    #     image_pil.save(self.model_landing + "inf/{}.png".format(batch_idx))
 
-        return super().test_step(*args, **kwargs)
+    #     return super().test_step(*args, **kwargs)

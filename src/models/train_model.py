@@ -1,6 +1,8 @@
 import argparse
 
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers.wandb import WandbLogger
 
 import src.utils as utils
@@ -37,11 +39,25 @@ if lightning_module.config["logging"]:
         name=lightning_module.model_name,
         project=lightning_module.config["wandb_project"],
         entity=lightning_module.config["entity"],
-        save_dir=lightning_module.checkpoints_landing,
+        save_dir=lightning_module.config["local_logs"],
         log_model=False,
     )
 else:
     logger = None
+
+# callbacks
+lr_monitor = LearningRateMonitor(logging_interval="epoch")
+es_config = lightning_module.config["early_stop"]
+early_stop_callback = EarlyStopping(
+    monitor="val_result", min_delta=es_config["delta"], patience=es_config["patience"], verbose=False, mode="max"
+)
+checkpoint_callback = ModelCheckpoint(
+    monitor="val_result",
+    dirpath=lightning_module.checkpoints_landing,
+    filename="{epoch:02d}-{val_result:.4f}",
+    save_top_k=3,
+    mode="max",
+)
 
 # initialize trainer object
 trainer = pl.Trainer(
@@ -51,6 +67,7 @@ trainer = pl.Trainer(
     enable_checkpointing=not (lightning_datamodule.config["debug"]),
     default_root_dir=lightning_module.checkpoints_landing,
     max_epochs=lightning_module.config["max_epochs"],
+    callbacks=[lr_monitor, early_stop_callback, checkpoint_callback],
 )
 
 # start training

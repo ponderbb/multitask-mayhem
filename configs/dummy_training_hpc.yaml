@@ -18,11 +18,22 @@ num_classes: 5 # including background
 model_out_path: "models"
 model: "fasterrcnn"
 attribute: "dummy" # optional, can be left empty
+
+# callbacks
 optimizer:
   name: "sgd"
   lr: 0.005
   momentum: 0.9
   weight_decay: 0.0005
+lr_scheduler:
+  name: "steplr" # can be None
+  step_size: 3
+  gamma: 0.1
+early_stop:
+  delta: 0.0000
+  patience: 3
+
+# loader
 batch_size: 1
 num_workers: 0
 shuffle: True
@@ -30,7 +41,9 @@ max_epochs: 30
 
 # logging
 logging: False
-wandb_project: "mtl-mayhem"
+wandb_project: "multitask-mayhem"
+entity: "thesis-mayhem"
+local_logs: ".logging"
 
 # debug
 debug: True # no checkpoints or weights saved
