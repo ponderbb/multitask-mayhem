@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "-c",
     "--config",
-    default="configs/dummy_training_hpc.yaml",
+    default="configs/fasterrcnn_od_hpc.yaml",
     help="Path to pipeline configuration file",
 )
 args = parser.parse_args()
@@ -57,7 +57,7 @@ callbacks_list.append(
 if not (lightning_datamodule.config["debug"]):
     checkpoint_callback = ModelCheckpoint(
         monitor="val_result",
-        dirpath=lightning_module.checkpoints_landing,
+        dirpath=lightning_module.path_dict["checkpoints_path"],
         filename="{epoch:02d}-{val_result:.2f}",
         save_top_k=1,
         mode="max",
@@ -70,7 +70,7 @@ trainer = pl.Trainer(
     accelerator="auto",
     devices=1,
     enable_checkpointing=not (lightning_datamodule.config["debug"]),
-    default_root_dir=lightning_module.checkpoints_landing,
+    default_root_dir=lightning_module.path_dict["checkpoints_path"],
     max_epochs=lightning_module.config["max_epochs"],
     callbacks=callbacks_list,
 )

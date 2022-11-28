@@ -17,23 +17,35 @@ from src.models.metrics import compute_metrics
 
 
 class mtlMayhemModule(pl.LightningModule):
-    def __init__(self, config, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, config_path, *args: Any, **kwargs: Any) -> None:
         super().__init__()
 
         # load configuration scrip
-        self.config = utils.load_yaml(config)
+        self.config = utils.load_yaml(config_path)
 
-        # create unqiue timestamped name with optinal attributes
-        self.model_name = utils.model_timestamp(model_name=self.config["model"], attribute=self.config["attribute"])
+        # check if loaded config name has timestamp
+        if utils.check_if_model_timestamped(config_path):
+            # load name and paths from config file
+            self.model_name = str(Path(config_path).stem)
+            logging.info("Model name: {}".format(self.model_name))
+            self.path_dict = utils.create_paths(
+                model_name=self.model_name,
+                model_folder=self.config["model_out_path"],
+            )
+        else:
+            # create timestamped name for model
+            self.model_name = utils.model_timestamp(model_name=self.config["model"], attribute=self.config["attribute"])
+            logging.info("Model name: {}".format(self.model_name))
 
-        # make folders for the model weights and checkpoints, move manifest and config
-        (self.weights_landing, self.checkpoints_landing, self.model_landing,) = utils.create_model_folders(
-            config_path=config,
-            manifest_path=self.config["data_root"] + "/manifest.json",
-            model_folder=self.config["model_out_path"],
-            model_name=self.model_name,
-            debug=self.config["debug"],
-        )
+            # create paths for training
+            self.path_dict = utils.create_paths(
+                model_name=self.model_name, model_folder=self.config["model_out_path"], assert_paths=False
+            )
+            utils.create_model_folders(
+                config_old_path=config_path,
+                manifest_old_path=self.config["data_root"] + "/manifest.json",
+                path_dict=self.path_dict,
+            )
 
         self.class_lookup = utils.load_yaml("configs/class_lookup.yaml")
 
@@ -61,8 +73,8 @@ class mtlMayhemModule(pl.LightningModule):
 
         # loading for inference from saved weights
         if stage == "test":  # FIXME: also include validation
-            if Path(self.weights_landing).exists():
-                self.model.load_state_dict(torch.load(self.weights_landing + "/best.pth"))
+            if Path(self.path_dict["weights_path"]).exists():
+                self.model.load_state_dict(torch.load(self.path_dict["weights_path"] + "/best.pth"))
             else:
                 raise FileExistsError("No trained model found.")
 
@@ -144,7 +156,7 @@ class mtlMayhemModule(pl.LightningModule):
                 self.best_result = results["map"]
                 if not self.config["debug"]:
                     logging.info("Saving model weights.")
-                    torch.save(self.model.state_dict(), self.weights_landing + "/best.pth")
+                    torch.save(self.model.state_dict(), self.path_dict["weights_path"] + "/best.pth")
                 else:
                     logging.warning("DEBUG MODE: model weights are not saved")
 

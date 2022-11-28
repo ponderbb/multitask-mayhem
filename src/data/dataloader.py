@@ -14,10 +14,19 @@ from src.data.manifests import generate_manifest
 
 
 class mtlDataModule(pl.LightningDataModule):
-    def __init__(self, config) -> None:
+    def __init__(self, config_path) -> None:
         super().__init__()
 
-        self.config = utils.load_yaml(config)
+        self.config = utils.load_yaml(config_path)
+
+        logging.info("Data root folder -> {}".format(self.config["data_root"]))
+        if utils.check_if_model_timestamped(config_path):
+            # load from manifest file
+            raise NotImplementedError("Loading manifest for inference not implemented yet")
+        else:
+            self.manifests = generate_manifest(
+                collections=self.config["collections"], data_root=self.config["data_root"], create_mask=False
+            )
 
     def prepare_data(self) -> None:
         # split manifest file
@@ -43,11 +52,6 @@ class mtlDataModule(pl.LightningDataModule):
         if stage == "fit":
             self.train_dataset = self.datasetObject(self.train_split)
             self.valid_dataset = self.datasetObject(self.valid_split)
-
-            logging.info("Data root folder -> {}".format(self.config["data_root"]))
-            self.manifests = generate_manifest(
-                collections=self.config["collections"], data_root=self.config["data_root"], create_mask=False
-            )
 
         if stage == "validate":
             self.valid_dataset = self.datasetObject(self.valid_split)

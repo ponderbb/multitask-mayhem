@@ -3,6 +3,7 @@ import itertools
 import logging
 import os
 import random
+import re
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -88,36 +89,66 @@ def model_timestamp(
     return combined_name + "_" + time_now
 
 
-def create_model_folders(
-    config_path: str,
-    manifest_path: str,
+def check_if_model_timestamped(config: str) -> bool:
+    """check if model name is already timestamped"""
+    regex = "_[0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9][0-9][0-9][0-9][0-9]$"
+    config_name = str(Path(config).stem)
+    if re.findall(config_name, regex):
+        return True
+    else:
+        return False
+
+
+def create_paths(
     model_folder: str,
     model_name: str,
-    debug: bool,
-) -> str:
-    """Initialize folder structure for model"""
-    if not debug:
-        folder_path = os.path.join(model_folder, model_name)
-        weights_path = os.path.join(folder_path, "weights")
-        checkpoints_path = os.path.join(folder_path, "checkpoints")
+    assert_paths: bool = True,
+):
+    logging.info("creating paths for model: {}".format(model_name))
+    # create paths to existing folders
+    folder_path = os.path.join(model_folder, model_name)
+    weights_path = os.path.join(folder_path, "weights")
+    checkpoints_path = os.path.join(folder_path, "checkpoints")
+    config_path = os.path.join(folder_path, "{}.yaml".format(model_name))
+    manifest_path = os.path.join(folder_path, "manifest.json")
 
-        # establishing model directory
-        os.makedirs(weights_path, exist_ok=True)
-        os.makedirs(checkpoints_path, exist_ok=True)
+    if assert_paths:
+        # assertions as sanity check
+        assert not (folder_path.exists()), "model folder does not exist"
+        assert not (weights_path.exists()), "weights folder does not exist"
+        assert not (checkpoints_path.exists()), "checkpoints folder does not exist"
+        assert not (config_path.exists()), "config file does not exist"
+        assert not (manifest_path.exists()), "manifest file does not exist"
 
-        # copy config- and move manifest file over
-        shutil.copy(config_path, folder_path)
-        shutil.move(manifest_path, folder_path)
+    return {
+        "folder_path": folder_path,
+        "weights_path": weights_path,
+        "checkpoints_path": checkpoints_path,
+        "config_path": config_path,
+        "manifest_path": manifest_path,
+    }
 
-        # logs
-        logging.info("model folder created: {}".format(folder_path))
-        logging.info("config file moved: {}".format(Path(config_path).name))
 
-    else:
-        logging.warning("debug mode: weights and checkpoints are not saved")
-        checkpoints_path, weights_path, folder_path = None, None, None
+def create_model_folders(
+    config_old_path: str,
+    manifest_old_path: str,
+    path_dict: dict,
+):
+    """Initialize folder structure for model
+    debug: if True, pass paths as None to avoid creating folders
+    """
 
-    return weights_path, checkpoints_path, folder_path
+    # establishing model directory
+    os.makedirs(path_dict["weights_path"], exist_ok=True)
+    os.makedirs(path_dict["checkpoints_path"], exist_ok=True)
+
+    # copy config- and move manifest file over
+    shutil.copy(config_old_path, path_dict["config_path"])
+    shutil.move(manifest_old_path, path_dict["manifest_path"])
+
+    # logs
+    logging.info("model folder created: {}".format(path_dict["folder_path"]))
+    logging.info("config file moved: {}".format(Path(config_old_path).name))
 
 
 def list_files_with_extension(path: str, extension: str, format: str) -> list:
