@@ -16,8 +16,8 @@ num_classes: 5 # including background
 
 # training pipeline
 model_out_path: "models"
-model: "fasterrcnn"
-attribute: "od_sanity" # optional, can be left empty
+model: "fasterrcnn_v2"
+attribute:  # optional, can be left empty
 
 # callbacks
 optimizer:

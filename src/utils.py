@@ -1,3 +1,4 @@
+import glob
 import itertools
 import logging
 import os
@@ -34,14 +35,18 @@ def set_seeds(seed: int = 42) -> None:
     random.seed(seed)
 
 
-def logging_setup(config: str) -> None:
+def logging_setup(config_path: str = "") -> None:
     """Setup logging"""
 
     # create log folder
     os.makedirs(".logging", exist_ok=True)
 
     # load logging level
-    config = load_yaml(config)
+    if config_path != "":
+        config = load_yaml(config_path)
+    else:
+        config = {"debug": True}
+
     if config["debug"]:
         logging_level = logging.DEBUG
     else:
@@ -113,3 +118,22 @@ def create_model_folders(
         checkpoints_path, weights_path, folder_path = None, None, None
 
     return weights_path, checkpoints_path, folder_path
+
+
+def list_files_with_extension(path: str, extension: str, format: str) -> list:
+    """List all files with a given extension in a directory
+    format defines the return structure
+    stem: returns only the filename without extension
+    name: returns the filename with extension
+    path: returns the full path"""
+
+    assert path[-1] == "/", "path should end with /"
+    assert extension[0] == ".", "extension should start with ."
+    assert format in ["stem", "name", "path"], "format should be stem, name or path"
+
+    files_list = glob.glob(path + "*" + extension)
+    if format == "stem":
+        files_list = [Path(file).stem for file in files_list]
+    elif format == "name":
+        files_list = [Path(file).name for file in files_list]
+    return files_list

@@ -19,21 +19,16 @@ class mtlDataModule(pl.LightningDataModule):
 
         self.config = utils.load_yaml(config)
 
-        logging.info("generating manifest for data from {}".format(self.config["data_root"]))
-        self.manifests = generate_manifest(self.config["collections"], self.config["data_root"])
-
     def prepare_data(self) -> None:
         # split manifest file
         logging.info(
-            "splitting dataset to train: {}% valid: {}% test: {}%".format(
+            "Splitting dataset to train: {}% valid: {}% test: {}%".format(
                 self.config["split_ratio"][0] * 100,
                 self.config["split_ratio"][1] * 100,
                 self.config["split_ratio"][2] * 100,
             )
         )
-        self.train_split, self.valid_split, self.test_split = random_split(
-            self.manifests, self.config["split_ratio"]
-        )
+        self.train_split, self.valid_split, self.test_split = random_split(self.manifests, self.config["split_ratio"])
 
         # specific loaders for specific formats models take
         if self.config["model"] == "fasterrcnn":
@@ -48,8 +43,15 @@ class mtlDataModule(pl.LightningDataModule):
         if stage == "fit":
             self.train_dataset = self.datasetObject(self.train_split)
             self.valid_dataset = self.datasetObject(self.valid_split)
+
+            logging.info("Data root folder -> {}".format(self.config["data_root"]))
+            self.manifests = generate_manifest(
+                collections=self.config["collections"], data_root=self.config["data_root"], create_mask=False
+            )
+
         if stage == "validate":
             self.valid_dataset = self.datasetObject(self.valid_split)
+
         if stage == "test":
             self.test_dataset = self.datasetObject(self.test_split)
 
@@ -151,21 +153,9 @@ def main():
         default="configs/dummy_training.yaml",
         help="Path to pipeline configuration file",
     )
-    parser.add_argument(
-        "-d",
-        "--debug",
-        action="store_true",
-        help="Include debug level information in the logging.",
-    )
-    parser.add_argument(
-        "-l",
-        "--log",
-        default=".logging/dataloader_debug.log",
-        help="path to config file for training",
-    )
     args = parser.parse_args()
 
-    utils.logging_setup(args.debug, args.log)
+    utils.logging_setup(args.config)
 
     data_module = mtlDataModule(args.config)
     data_module.prepare_data()

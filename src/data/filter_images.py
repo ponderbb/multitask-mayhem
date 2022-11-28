@@ -156,9 +156,7 @@ class filterImages:
                 out_name = Path(image).name
                 out_file = image
             else:
-                raise TypeError(
-                    "wrong type at copying: {}, it should be [depth, rgb, pcl]".format(cp_type)
-                )
+                raise TypeError("wrong type at copying: {}, it should be [depth, rgb, pcl]".format(cp_type))
 
             shutil.copyfile(out_file, os.path.join(out_path, out_name))
 
@@ -195,11 +193,7 @@ class filterImages:
 
     @staticmethod
     def _listbags_fullpath(dir_path: Union[str, Path]):
-        folder_list = [
-            os.path.join(dir_path, folder)
-            for folder in os.listdir(dir_path)
-            if not folder.startswith(".")
-        ]
+        folder_list = [os.path.join(dir_path, folder) for folder in os.listdir(dir_path) if not folder.startswith(".")]
 
         assert len(folder_list) != 0, "Folder list is empty, check bag files and input folder!"
 
@@ -265,16 +259,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Only copy filtered rgb images.",
     )
-    parser.add_argument(
-        "-f", "--force", action="store_true", help="Force overwrite existing folders."
-    )
-    parser.add_argument(
-        "-b", "--bag", action="store_true", help="Filter and overwrite specific bag."
-    )
+    parser.add_argument("-f", "--force", action="store_true", help="Force overwrite existing folders.")
+    parser.add_argument("-b", "--bag", action="store_true", help="Filter and overwrite specific bag.")
     parser.add_argument("-l", "--label", type=str, help="Path to annotation, filter images.")
 
     args = parser.parse_args()
 
-    utils.logging_setup(debug=args.debug, outfile=".logging/filter_images.log")
+    utils.logging_setup()
 
     main(args)

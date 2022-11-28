@@ -84,6 +84,7 @@ target/
 /data/annotations/*
 /models/
 .logging/
+notebooks/*/*.png
 
 # Mac OS-specific storage files
 .DS_Store

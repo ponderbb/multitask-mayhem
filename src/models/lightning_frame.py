@@ -5,7 +5,11 @@ from typing import Any
 import pytorch_lightning as pl
 import torch
 import wandb
-from torchvision.models.detection import fasterrcnn_resnet50_fpn
+from torchvision.models.detection import (
+    fasterrcnn_resnet50_fpn,
+    fasterrcnn_resnet50_fpn_v2,
+    maskrcnn_resnet50_fpn,
+)
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 
 import src.utils as utils
@@ -46,8 +50,14 @@ class mtlMayhemModule(pl.LightningModule):
             self.model = fasterrcnn_resnet50_fpn(pretrained=True, weights="DEFAULT")
             in_features = self.model.roi_heads.box_predictor.cls_score.in_features
             self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, self.config["num_classes"])
+        elif self.config["model"] == "fasterrcnn_v2":
+            self.model = fasterrcnn_resnet50_fpn_v2(pretrained=True, weights="DEFAULT")
+            in_features = self.model.roi_heads.box_predictor.cls_score.in_features
+            self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, self.config["num_classes"])
         elif self.config["model"] == "mobilenetv3":
             raise NotImplementedError
+        elif self.config["model"] == "maskrcnn":
+            self.model = maskrcnn_resnet50_fpn(predtrained=True, weights="DEFAULT")
 
         # loading for inference from saved weights
         if stage == "test":  # FIXME: also include validation
