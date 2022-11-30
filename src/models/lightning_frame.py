@@ -197,27 +197,14 @@ class mtlMayhemModule(pl.LightningModule):
             # extract mAP overall and for each class
             results_map = results["map"].item()
             classes_map = results["map_per_class"].tolist()
-            results_mar = results["mar"].item()
-            classes_mar = results["mar_per_class"].tolist()
 
             results_classes_map = {self.class_lookup["bbox_rev"][idx + 1]: map for idx, map in enumerate(classes_map)}
-            results_classes_mar = {self.class_lookup["bbox_rev"][idx + 1]: map for idx, map in enumerate(classes_mar)}
 
             if self.config["logging"]:
                 self.log({
                     "val_map": results_map,
                     "val_class_map": results_classes_map,
-                    "val_mar": results_mar,
-                    "val_class_mar": results_classes_mar
                 }, on_step=False, on_epoch=True, prog_bar=False, logger=True)
-                # self.log("val_map", results_map, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-                # self.log(
-                #     "val_class_map", results_classes_map, on_step=False, on_epoch=True, prog_bar=False, logger=True
-                # )
-                # self.log("val_mar", results_mar, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-                # self.log(
-                #     "val_class_mar", results_classes_mar, on_step=False, on_epoch=True, prog_bar=False, logger=True
-                # )
 
             # save model if performance is improved
             if self.best_result < results["map"]:

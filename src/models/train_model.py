@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "-c",
     "--config",
-    default="configs/ssdlite_base.yaml",
+    default="configs/ssdlite_gp.yaml",
     help="Path to pipeline configuration file",
 )
 args = parser.parse_args()
