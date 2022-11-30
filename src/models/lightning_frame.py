@@ -201,10 +201,8 @@ class mtlMayhemModule(pl.LightningModule):
             results_classes_map = {self.class_lookup["bbox_rev"][idx + 1]: map for idx, map in enumerate(classes_map)}
 
             if self.config["logging"]:
-                self.log({
-                    "val_map": results_map,
-                    "val_class_map": results_classes_map,
-                }, on_step=False, on_epoch=True, prog_bar=False, logger=True)
+                self.log("val_map", results_map, on_step=False, on_epoch=True, prog_bar=False, logger=True)
+                self.log("class_map", results_classes_map, on_step=False, on_epoch=True, prog_bar=False, logger=True)
 
             # save model if performance is improved
             if self.best_result < results["map"]:

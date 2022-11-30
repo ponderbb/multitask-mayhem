@@ -38,7 +38,7 @@ early_stop:
 batch_size: 2
 num_workers: 4
 shuffle: True
-max_epochs: 30
+max_epochs: 50
 
 # logging
 logging: True
