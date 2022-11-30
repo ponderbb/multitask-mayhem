@@ -65,6 +65,7 @@ class mtlDataModule(pl.LightningDataModule):
             num_workers=self.config["num_workers"],
             collate_fn=self.collate_fn,
             shuffle=self.config["shuffle"],
+            drop_last=True,
         )
 
     def val_dataloader(self):
@@ -73,6 +74,7 @@ class mtlDataModule(pl.LightningDataModule):
             batch_size=self.config["batch_size"],
             num_workers=self.config["num_workers"],
             collate_fn=self.collate_fn,
+            drop_last=True,
         )
 
     def test_dataloader(self):
@@ -81,6 +83,7 @@ class mtlDataModule(pl.LightningDataModule):
             batch_size=self.config["batch_size"],
             num_workers=self.config["num_workers"],
             collate_fn=self.collate_fn,
+            drop_last=True,
         )
 
     @staticmethod

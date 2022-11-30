@@ -1,18 +1,23 @@
 import logging
+from functools import partial
 from pathlib import Path
 from typing import Any
 
 import pytorch_lightning as pl
 import torch
+import torch.nn as nn
 import torchvision.transforms as T
 import wandb
+from torchvision.models.detection import _utils as det_utils
 from torchvision.models.detection import (
     fasterrcnn_mobilenet_v3_large_320_fpn,
     fasterrcnn_resnet50_fpn,
     maskrcnn_resnet50_fpn,
+    ssdlite320_mobilenet_v3_large,
 )
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
+from torchvision.models.detection.ssdlite import SSDLiteClassificationHead, SSDLiteHead
 
 import src.utils as utils
 from src.models.metrics import compute_metrics
@@ -73,6 +78,21 @@ class mtlMayhemModule(pl.LightningModule):
             self.model = fasterrcnn_mobilenet_v3_large_320_fpn(pretrained=True, weights="DEFAULT")
             in_features = self.model.roi_heads.box_predictor.cls_score.in_features
             self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, self.config["detection_classes"])
+
+        elif self.config["model"] == "ssdlite":
+            self.model = ssdlite320_mobilenet_v3_large(
+                pretrained=True,
+                weights="DEFAULT",
+            )
+            in_features = det_utils.retrieve_out_channels(self.model.backbone, (320, 320))
+            num_anchors = self.model.anchor_generator.num_anchors_per_location()
+            norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.03)  # NOTE: stolened from a blogpost
+            self.model.head.classification_head = SSDLiteClassificationHead(
+                in_channels=in_features,
+                num_classes=self.config["detection_classes"],
+                num_anchors=num_anchors,
+                norm_layer=norm_layer,
+            )
 
         elif self.config["model"] == "maskrcnn":
 
@@ -138,14 +158,22 @@ class mtlMayhemModule(pl.LightningModule):
         loss_dict = self.model(images, targets)
         losses = sum(loss for loss in loss_dict.values())
         if self.config["logging"]:
-            self.log("train_loss", losses, on_step=True, on_epoch=True, logger=True)
+            self.log(
+                "train_loss", losses, on_step=True, on_epoch=True, logger=True, batch_size=self.config["batch_size"]
+            )
         return losses
 
     def on_train_epoch_start(self) -> None:
         # initialize epoch counter
         self.epoch += 1
         if self.config["logging"]:
-            self.log("epoch_sanity", torch.as_tensor(self.epoch, dtype=torch.float32), on_epoch=True)
+            self.log(
+                "epoch_sanity",
+                torch.as_tensor(self.epoch, dtype=torch.float32),
+                on_step=False,
+                on_epoch=True,
+                logger=True,
+            )
             # wandb.log({"epoch": self.epoch})
 
     def on_validation_start(self) -> None:
@@ -165,9 +193,17 @@ class mtlMayhemModule(pl.LightningModule):
         if self.epoch > 0:
             # compute metrics
             results = compute_metrics(preds=self.val_preds, targets=self.val_targets)
-            results = {key: val.item() for key, val in results.items()}
+
+            # extract mAP overall and for each class
+            results_map = results["map"].item()
+            classes_map = results["map_per_class"].tolist()
+            results_classes_map = {self.class_lookup["bbox_rev"][idx + 1]: map for idx, map in enumerate(classes_map)}
+
             if self.config["logging"]:
-                self.log("val_result", results["map"], on_step=False, on_epoch=True, prog_bar=True, logger=True)
+                self.log("val_map", results_map, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+                self.log(
+                    "val_class_map", results_classes_map, on_step=False, on_epoch=True, prog_bar=False, logger=True
+                )
 
             # save model if performance is improved
             if self.best_result < results["map"]:

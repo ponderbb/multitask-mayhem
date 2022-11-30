@@ -26,6 +26,14 @@ If you want to use the VSCode debugger with the virtual environment, append the 
 $ "python": "${command:python.interpreterPath}"
 ```
 
+Install logging with Weights & Biases and provide API key for your profil.
+
+```shell
+$ wandb login
+```
+
+
+
 
 User guide
 ------------

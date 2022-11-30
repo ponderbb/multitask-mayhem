@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "-c",
     "--config",
-    default="configs/dummy_training_hpc.yaml",
+    default="configs/ssdlite_base.yaml",
     help="Path to pipeline configuration file",
 )
 args = parser.parse_args()
@@ -47,26 +47,34 @@ if lightning_module.config["logging"]:
 else:
     logger = None
 
-# callbacks
+### CALLBACKS ###
 callbacks_list = []
-callbacks_list.append(LearningRateMonitor(logging_interval="epoch"))
-es_config = lightning_module.config["early_stop"]
-callbacks_list.append(
-    EarlyStopping(
-        monitor="val_result", min_delta=es_config["delta"], patience=es_config["patience"], verbose=False, mode="max"
+
+# learning rate scheduler
+if lightning_module.config["logging"]:
+    callbacks_list.append(LearningRateMonitor(logging_interval="epoch"))
+
+# early stopping
+if lightning_module.config["logging"]:
+    es_config = lightning_module.config["early_stop"]
+    callbacks_list.append(
+        EarlyStopping(
+            monitor="val_map", min_delta=es_config["delta"], patience=es_config["patience"], verbose=False, mode="max"
+        )
     )
-)
-if not (lightning_datamodule.config["debug"]):
+
+# model checkpointing
+if not (lightning_datamodule.config["debug"]) and lightning_module.config["logging"]:
     checkpoint_callback = ModelCheckpoint(
-        monitor="val_result",
+        monitor="val_map",
         dirpath=lightning_module.path_dict["checkpoints_path"],
-        filename="{epoch:02d}-{val_result:.2f}",
+        filename="{epoch:02d}-{val_map:.2f}",
         save_top_k=1,
         mode="max",
     )
     callbacks_list.append(checkpoint_callback)
 
-# initialize trainer object
+### TRAINER ###
 trainer = pl.Trainer(
     logger=logger,
     accelerator="auto",
