@@ -1,5 +1,7 @@
 import argparse
+import os
 
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
@@ -19,7 +21,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "-c",
     "--config",
-    default="configs/fasterrcnn_od_hpc.yaml",
+    default="configs/dummy_training_hpc.yaml",
     help="Path to pipeline configuration file",
 )
 args = parser.parse_args()

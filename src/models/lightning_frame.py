@@ -4,13 +4,15 @@ from typing import Any
 
 import pytorch_lightning as pl
 import torch
+import torchvision.transforms as T
 import wandb
 from torchvision.models.detection import (
+    fasterrcnn_mobilenet_v3_large_320_fpn,
     fasterrcnn_resnet50_fpn,
-    fasterrcnn_resnet50_fpn_v2,
     maskrcnn_resnet50_fpn,
 )
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
+from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 
 import src.utils as utils
 from src.models.metrics import compute_metrics
@@ -23,7 +25,7 @@ class mtlMayhemModule(pl.LightningModule):
         # load configuration scrip
         self.config = utils.load_yaml(config_path)
 
-        # check if loaded config name has timestamp
+        # check if config file is for already trained model (with timestamp) or not
         if utils.check_if_model_timestamped(config_path):
             # load name and paths from config file
             self.model_name = str(Path(config_path).stem)
@@ -41,6 +43,8 @@ class mtlMayhemModule(pl.LightningModule):
             self.path_dict = utils.create_paths(
                 model_name=self.model_name, model_folder=self.config["model_out_path"], assert_paths=False
             )
+
+            # create folders for weights and checkpoints
             utils.create_model_folders(
                 config_old_path=config_path,
                 manifest_old_path=self.config["data_root"] + "/manifest.json",
@@ -59,17 +63,30 @@ class mtlMayhemModule(pl.LightningModule):
             wandb.config.update(self.config)
 
         if self.config["model"] == "fasterrcnn":
+
             self.model = fasterrcnn_resnet50_fpn(pretrained=True, weights="DEFAULT")
             in_features = self.model.roi_heads.box_predictor.cls_score.in_features
-            self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, self.config["num_classes"])
-        elif self.config["model"] == "fasterrcnn_v2":
-            self.model = fasterrcnn_resnet50_fpn_v2(pretrained=True, weights="DEFAULT")
+            self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, self.config["detection_classes"])
+
+        elif self.config["model"] == "fasterrcnn_mobilenetv3":
+
+            self.model = fasterrcnn_mobilenet_v3_large_320_fpn(pretrained=True, weights="DEFAULT")
             in_features = self.model.roi_heads.box_predictor.cls_score.in_features
-            self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, self.config["num_classes"])
-        elif self.config["model"] == "mobilenetv3":
-            raise NotImplementedError
+            self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, self.config["detection_classes"])
+
         elif self.config["model"] == "maskrcnn":
-            self.model = maskrcnn_resnet50_fpn(predtrained=True, weights="DEFAULT")
+
+            # fastercnn based on resnet50 backbone
+            self.model = maskrcnn_resnet50_fpn(pretrained=True, weights="DEFAULT")
+            in_features = self.model.roi_heads.box_predictor.cls_score.in_features
+            self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, self.config["segmentation_classes"])
+
+            # maskrcnn based on resnet50 backbone
+            in_features_mask = self.model.roi_heads.mask_predictor.conv5_mask.in_channels
+            hidden_layer = 256
+            self.model.roi_heads.mask_predictor = MaskRCNNPredictor(
+                in_features_mask, hidden_layer, self.config["segmentation_classes"]
+            )
 
         # loading for inference from saved weights
         if stage == "test":  # FIXME: also include validation
@@ -128,7 +145,7 @@ class mtlMayhemModule(pl.LightningModule):
         # initialize epoch counter
         self.epoch += 1
         if self.config["logging"]:
-            self.log("epoch_sanity", self.epoch, on_epoch=True)
+            self.log("epoch_sanity", torch.as_tensor(self.epoch, dtype=torch.float32), on_epoch=True)
             # wandb.log({"epoch": self.epoch})
 
     def on_validation_start(self) -> None:
@@ -137,8 +154,9 @@ class mtlMayhemModule(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
         images, targets = batch
-        targets = list(targets)
         preds = self.model(images)
+        # self.log_validation_images(prediction=preds, target=targets)
+        targets = list(targets)
         self.val_targets.extend(targets)
         self.val_preds.extend(preds)
 
@@ -162,3 +180,28 @@ class mtlMayhemModule(pl.LightningModule):
 
             logging.info("Current validation mAP: {:.6f}".format(results["map"]))
             logging.info("Best validation mAP: {:.6f}".format(self.best_result))
+
+    def log_validation_images(self, prediction, target):
+        image = T.ToPILImage()(prediction[0].mul(255).type(torch.uint8))
+        scores = prediction[0]["scores"]
+        score_mask = scores > 0.8
+
+        # boxes_filtered = prediction[0]["boxes"][score_mask]
+        masks_filtered = prediction[0]["masks"][score_mask]
+        labels_filtered = prediction[0]["labels"][score_mask]
+
+        img = wandb.Image(
+            image,
+            masks={
+                "predictions": {
+                    "mask_data": masks_filtered,
+                    "class_labels": self.class_lookup["sseg_rev"],
+                },
+                "ground_truth": {
+                    "mask_data": target[0]["masks"],
+                    "class_labels": self.class_lookup["sseg_rev"],
+                },
+            },
+        )
+
+        self.log("Val_Image", img, on_step=False, on_epoch=True, logger=True)

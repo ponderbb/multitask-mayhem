@@ -110,11 +110,12 @@ def cvat_to_dict(xml_file, collection, data_root, create_mask: bool = True):
 
     label_dicts_list = []
 
+    mask_out_path = os.path.join(data_root, collection, "synchronized_l515_mask")
+
     if create_mask:
         tqdm.write("Processing collection {}, creating mask -> {}".format(collection, create_mask))
 
         # clean directory for new masks
-        mask_out_path = os.path.join(data_root, collection, "synchronized_l515_mask")
         if Path(mask_out_path).exists():
             tqdm.write("Cleaning mask directory")
             shutil.rmtree(mask_out_path)
@@ -139,8 +140,7 @@ def cvat_to_dict(xml_file, collection, data_root, create_mask: bool = True):
 
         # fill the annotation details into the new dictionary
         label_dict["path"] = image_path
-        if create_mask:
-            label_dict["mask"] = os.path.join(mask_out_path, label_dict["name"])
+        label_dict["mask"] = os.path.join(mask_out_path, label_dict["name"])
         label_dict["shape"] = [int(image_label["@height"]), int(image_label["@width"])]
 
         # find all the bounding boxes and save them as a list

@@ -12,7 +12,8 @@ collections: [
   # "2022-10-19-11-20-39"
 ]
 split_ratio: [0.7, 0.2, 0.1]
-num_classes: 5 # including background
+detection_classes: 5 # including background
+segmentation_classes: 2 # including background
 
 # training pipeline
 model_out_path: "models"

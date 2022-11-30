@@ -8,3 +8,9 @@ bbox_rev:
   2: "box"
   3: "agv"
   4: "forklift"
+sseg:
+  background : 0
+  floor : 1
+sseg_rev:
+  0: "background"
+  1: "floor"

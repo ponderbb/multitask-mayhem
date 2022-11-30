@@ -3,7 +3,7 @@
 ### –- specify queue --
 #BSUB -q gpua100
 ### -- set the job Name --
-#BSUB -J mtl 
+#BSUB -J mobilnetv3 
 ### -- ask for number of cores (default: 1) --
 #BSUB -n 1
 ### -- Select the resources: 1 gpu in exclusive process mode --
@@ -33,5 +33,6 @@ source ~/miniconda3/bin/activate
 conda activate multitask-mayhem
 
 python src/models/train_model.py -c configs/fasterrcnn_od_hpc.yaml
+python src/models/train_model.py -c configs/fasterrcnn_mobilenetv3.yaml
 
 ## submit by using: bsub < src/models/hpc_jobscript.sh 

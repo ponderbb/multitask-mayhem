@@ -40,7 +40,7 @@ class mtlDataModule(pl.LightningDataModule):
         self.train_split, self.valid_split, self.test_split = random_split(self.manifests, self.config["split_ratio"])
 
         # specific loaders for specific formats models take
-        if self.config["model"] == "fasterrcnn":
+        if self.config["model"] == "fasterrcnn" or "maskrcnn":
             self.datasetObject = FasterRCNNDataset
         else:
             # custom for self-built models
@@ -48,7 +48,6 @@ class mtlDataModule(pl.LightningDataModule):
         logging.info("Loading dataset object -> {}".format(self.datasetObject))
 
     def setup(self, stage) -> None:
-        # FIXME: once we have proper test set annotated -> [train, valid]
         if stage == "fit":
             self.train_dataset = self.datasetObject(self.train_split)
             self.valid_dataset = self.datasetObject(self.valid_split)
@@ -56,7 +55,7 @@ class mtlDataModule(pl.LightningDataModule):
         if stage == "validate":
             self.valid_dataset = self.datasetObject(self.valid_split)
 
-        if stage == "test":
+        if stage == "test":  # TODO: split rest to [train, test]
             self.test_dataset = self.datasetObject(self.test_split)
 
     def train_dataloader(self):
@@ -164,10 +163,10 @@ def main():
     data_module = mtlDataModule(args.config)
     data_module.prepare_data()
     data_module.setup(stage="validate")
-    dataloader = data_module.val_dataloader()
-    it = iter(dataloader)
-    first = next(it)
-    second = next(it)
+    # dataloader = data_module.val_dataloader()
+    # it = iter(dataloader)
+    # first = next(it)
+    # second = next(it)
 
 
 if __name__ == "__main__":
