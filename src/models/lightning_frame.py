@@ -135,7 +135,6 @@ class mtlMayhemModule(pl.LightningModule):
             self.optimizer = torch.optim.Adam(
                 self.parameters(),
                 lr=optim_config["lr"],
-                momentum=optim_config["momentum"],
                 weight_decay=optim_config["weight_decay"],
             )
         else:

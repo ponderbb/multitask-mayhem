@@ -18,7 +18,7 @@ segmentation_classes: 2 # including background
 # training pipeline
 model_out_path: "models"
 model: "ssdlite"
-attribute: "adam_optim" # optional, can be left empty
+attribute: "adam_optim8" # optional, can be left empty
 
 # callbacks
 optimizer:
@@ -35,7 +35,7 @@ early_stop:
   patience: 3
 
 # loader configs
-batch_size: 2
+batch_size: 8
 num_workers: 4
 shuffle: True
 max_epochs: 50
