@@ -113,11 +113,11 @@ def cvat_to_dict(xml_file, collection, data_root, create_mask: bool = True):
     mask_out_path = os.path.join(data_root, collection, "synchronized_l515_mask")
 
     if create_mask:
-        tqdm.write("Processing collection {}, creating mask -> {}".format(collection, create_mask))
+        # tqdm.write("Processing collection {}, creating mask -> {}".format(collection, create_mask))
 
         # clean directory for new masks
         if Path(mask_out_path).exists():
-            tqdm.write("Cleaning mask directory")
+            # tqdm.write("Cleaning mask directory")
             shutil.rmtree(mask_out_path)
         os.makedirs(mask_out_path)
 

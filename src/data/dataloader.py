@@ -19,6 +19,8 @@ class mtlDataModule(pl.LightningDataModule):
 
         self.config = utils.load_yaml(config_path)
 
+        utils.set_seeds()
+
         logging.info("Data root folder -> {}".format(self.config["data_root"]))
         if utils.check_if_model_timestamped(config_path):
             # load from manifest file
