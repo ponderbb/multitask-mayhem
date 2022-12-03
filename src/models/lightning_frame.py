@@ -1,26 +1,17 @@
 import logging
-from functools import partial
 from pathlib import Path
 from typing import Any
 
 import pytorch_lightning as pl
 import torch
-import torch.nn as nn
 import torchvision.transforms as T
 import wandb
-from torchvision.models.detection import _utils as det_utils
-from torchvision.models.detection import (
-    fasterrcnn_mobilenet_v3_large_320_fpn,
-    fasterrcnn_resnet50_fpn,
-    maskrcnn_resnet50_fpn,
-    ssdlite320_mobilenet_v3_large,
-)
-from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
-from torchvision.models.detection.ssdlite import SSDLiteClassificationHead, SSDLiteHead
+from torch.autograd import Variable
+from torchmetrics.functional import dice, jaccard_index
 
 import src.utils as utils
 from src.models.metrics import compute_metrics
+from src.models.model_loader import ModelLoader
 
 
 class mtlMayhemModule(pl.LightningModule):
@@ -29,94 +20,65 @@ class mtlMayhemModule(pl.LightningModule):
 
         # load configuration scrip
         self.config = utils.load_yaml(config_path)
+        self.class_lookup = utils.load_yaml("configs/class_lookup.yaml")
 
-        # check if config file is for already trained model (with timestamp) or not
+        # initialize model loader
+        self.model_loader = ModelLoader(self.config)
+        if self.config["model"] in ["fasterrcnn", "fasterrcnn_mobilenetv3", "ssdlite"]:
+            self.val_metric = "map"
+        elif self.config["model"] in ["deeplabv3"]:
+            self.val_metric = "miou"
+
+        # check if config file is for trained model or not
         if utils.check_if_model_timestamped(config_path):
             # load name and paths from config file
             self.model_name = str(Path(config_path).stem)
-            logging.info("Model name: {}".format(self.model_name))
+
             self.path_dict = utils.create_paths(
                 model_name=self.model_name,
                 model_folder=self.config["model_out_path"],
             )
+
         else:
             # create timestamped name for model
             self.model_name = utils.model_timestamp(model_name=self.config["model"], attribute=self.config["attribute"])
-            logging.info("Model name: {}".format(self.model_name))
 
             # create paths for training
             self.path_dict = utils.create_paths(
                 model_name=self.model_name, model_folder=self.config["model_out_path"], assert_paths=False
             )
 
-            # create folders for weights and checkpoints
-            utils.create_model_folders(
-                config_old_path=config_path,
-                manifest_old_path=self.config["data_root"] + "/manifest.json",
-                path_dict=self.path_dict,
-            )
+            if not self.config["debug"]:
+                # create folders for weights and checkpoints
+                utils.create_model_folders(
+                    config_old_path=config_path,
+                    manifest_old_path=self.config["data_root"] + "/manifest.json",
+                    path_dict=self.path_dict,
+                )
 
-        self.class_lookup = utils.load_yaml("configs/class_lookup.yaml")
+        logging.info("Model instance ID: {}".format(self.model_name))
 
     def setup(self, stage: str) -> None:
+
+        # load model
+        self.model = self.model_loader.grab_model()
+
+        # initialize variables
+        self.best_result = 0
+        self.epoch = 0
+
         # turn of logging plots for testing or validation
         if stage == "test" or stage == "validate":
             self.config["logging"] = False
 
-        # update configuration of hyperparams in wandb
-        if self.config["logging"]:
-            wandb.config.update(self.config)
-
-        if self.config["model"] == "fasterrcnn":
-
-            self.model = fasterrcnn_resnet50_fpn(pretrained=True, weights="DEFAULT")
-            in_features = self.model.roi_heads.box_predictor.cls_score.in_features
-            self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, self.config["detection_classes"])
-
-        elif self.config["model"] == "fasterrcnn_mobilenetv3":
-
-            self.model = fasterrcnn_mobilenet_v3_large_320_fpn(pretrained=True, weights="DEFAULT")
-            in_features = self.model.roi_heads.box_predictor.cls_score.in_features
-            self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, self.config["detection_classes"])
-
-        elif self.config["model"] == "ssdlite":
-            self.model = ssdlite320_mobilenet_v3_large(
-                pretrained=True,
-                weights="DEFAULT",
-            )
-            in_features = det_utils.retrieve_out_channels(self.model.backbone, (320, 320))
-            num_anchors = self.model.anchor_generator.num_anchors_per_location()
-            norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.03)  # NOTE: stolened from a blogpost
-            self.model.head.classification_head = SSDLiteClassificationHead(
-                in_channels=in_features,
-                num_classes=self.config["detection_classes"],
-                num_anchors=num_anchors,
-                norm_layer=norm_layer,
-            )
-
-        elif self.config["model"] == "maskrcnn":
-
-            # fastercnn based on resnet50 backbone
-            self.model = maskrcnn_resnet50_fpn(pretrained=True, weights="DEFAULT")
-            in_features = self.model.roi_heads.box_predictor.cls_score.in_features
-            self.model.roi_heads.box_predictor = FastRCNNPredictor(in_features, self.config["segmentation_classes"])
-
-            # maskrcnn based on resnet50 backbone
-            in_features_mask = self.model.roi_heads.mask_predictor.conv5_mask.in_channels
-            hidden_layer = 256
-            self.model.roi_heads.mask_predictor = MaskRCNNPredictor(
-                in_features_mask, hidden_layer, self.config["segmentation_classes"]
-            )
-
-        # loading for inference from saved weights
-        if stage == "test":  # FIXME: also include validation
             if Path(self.path_dict["weights_path"]).exists():
                 self.model.load_state_dict(torch.load(self.path_dict["weights_path"] + "/best.pth"))
             else:
                 raise FileExistsError("No trained model found.")
 
-        self.best_result = 0
-        self.epoch = 0
+        # update configuration of hyperparams in wandb
+        if self.config["logging"]:
+            wandb.config.update(self.config)
 
     def configure_optimizers(self) -> Any:
         # configurations for optimizer and scheduler
@@ -153,67 +115,133 @@ class mtlMayhemModule(pl.LightningModule):
         return [self.optimizer], [self.lr_scheduler]
 
     def training_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
+        """forward pass and loss calculation
+        images: [B,C,H,W]
+        targets: dictionary with keys "boxes", "masks", "labels"
+        """
         images, targets = batch
-        loss_dict = self.model(images, targets)
-        losses = sum(loss for loss in loss_dict.values())
+
+        # format to [B,C,H,W] tensor
+        if isinstance(images, tuple):
+            images = self.tuple_of_tensors_to_tensor(images)
+
+        ### model specific forward pass ###
+
+        if self.config["model"] in ["fasterrcnn", "fasterrcnn_mobilenetv3", "ssdlite"]:
+            loss_dict = self.model(images, targets)
+            train_loss = sum(loss for loss in loss_dict.values())
+
+        elif self.config["model"] in ["deeplabv3"]:
+            # targets only contain masks as torch.BoolTensor
+            targets = self.tuple_of_tensors_to_tensor(targets)
+
+            preds = self.model(images)
+            activation = torch.nn.Sigmoid()
+            preds = activation(preds["out"])
+            train_loss = dice(
+                preds=preds, target=targets, ignore_index=self.class_lookup["sseg"]["background"]
+            ).requires_grad_()
+
+        ### _endof model specific forward pass ###
+
         if self.config["logging"]:
-            self.log(
-                "train_loss", losses, on_step=True, on_epoch=True, logger=True, batch_size=self.config["batch_size"]
-            )
-        return losses
+            self.log("train_loss", train_loss, on_step=True, on_epoch=True, batch_size=self.config["batch_size"])
+
+        return train_loss
 
     def on_train_epoch_start(self) -> None:
         # initialize epoch counter
         self.epoch += 1
         if self.config["logging"]:
-            self.log(
-                "epoch_sanity",
-                torch.as_tensor(self.epoch, dtype=torch.float32),
-                on_step=False,
-                on_epoch=True,
-                logger=True,
-            )
-            # wandb.log({"epoch": self.epoch})
+            self.log("epoch_sanity", torch.as_tensor(self.epoch, dtype=torch.float32), on_epoch=True)
 
     def on_validation_start(self) -> None:
         self.val_targets = []
         self.val_preds = []
+        self.val_losses = []
 
     def validation_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
+        """forward pass and loss calculation
+        images: [B,C,H,W]
+        targets: dictionary with keys "boxes", "masks", "labels"
+        """
         images, targets = batch
-        preds = self.model(images)
-        # self.log_validation_images(prediction=preds, target=targets)
-        targets = list(targets)
-        self.val_targets.extend(targets)
+
+        # format to [B,C,H,W] tensor
+        if isinstance(images, tuple):
+            images = self.tuple_of_tensors_to_tensor(images)
+
+        if self.config["model"] in ["fasterrcnn", "fasterrcnn_mobilenetv3", "ssdlite"]:
+            preds = self.model(images)
+
+        elif self.config["model"] in ["deeplabv3"]:
+            # targets only contain masks as torch.BoolTensor
+            targets = self.tuple_of_tensors_to_tensor(targets)
+
+            preds = self.model(images)
+            activation = torch.nn.Softmax()
+            preds = activation(preds["out"])
+            val_loss = jaccard_index(
+                preds=preds,
+                target=targets,
+                num_classes=self.config["segmentation_classes"],
+                ignore_index=self.class_lookup["sseg"]["background"],
+            )
+            if self.config["logging"]:
+                self.log("val_loss", val_loss, on_step=True, on_epoch=True, prog_bar=True)
+
+        self.val_targets.extend(list(targets))
         self.val_preds.extend(preds)
+        self.val_losses.append(val_loss)
 
     def on_validation_epoch_end(self) -> None:
         # skip sanity check
         if self.epoch > 0:
-            # compute metrics
-            results = compute_metrics(preds=self.val_preds, targets=self.val_targets)
 
-            # extract mAP overall and for each class
-            results_map = results["map"].item()
-            classes_map = results["map_per_class"].tolist()
+            if self.config["model"] in ["fasterrcnn", "fasterrcnn_mobilenetv3", "ssdlite"]:
+                # compute metrics
+                results = compute_metrics(preds=self.val_preds, targets=self.val_targets)
 
-            results_classes_map = {self.class_lookup["bbox_rev"][idx + 1]: map for idx, map in enumerate(classes_map)}
+                # extract mAP overall and for each class
+                results_map = results["map"].item()
+                classes_map = results["map_per_class"].tolist()
 
-            if self.config["logging"]:
-                self.log("val_map", results_map, on_step=False, on_epoch=True, prog_bar=False, logger=True)
-                self.log("class_map", results_classes_map, on_step=False, on_epoch=True, prog_bar=False, logger=True)
+                results_classes_map = {
+                    self.class_lookup["bbox_rev"][idx + 1]: map for idx, map in enumerate(classes_map)
+                }
 
-            # save model if performance is improved
-            if self.best_result < results["map"]:
-                self.best_result = results["map"]
-                if not self.config["debug"]:
-                    logging.info("Saving model weights.")
-                    torch.save(self.model.state_dict(), self.path_dict["weights_path"] + "/best.pth")
-                else:
-                    logging.warning("DEBUG MODE: model weights are not saved")
+                if self.config["logging"]:
+                    self.log("val_{}".format(self.val_metric), results_map, on_epoch=True)
+                    self.log("class_{}".format(self.val_metric), results_classes_map, on_epoch=True)
 
-            logging.info("Current validation mAP: {:.6f}".format(results["map"]))
-            logging.info("Best validation mAP: {:.6f}".format(self.best_result))
+                self._save_model(result=results["map"], save_on="max")
+
+                logging.info("Current validation mAP: {:.6f}".format(results["map"]))
+                logging.info("Best validation mAP: {:.6f}".format(self.best_result))
+
+            elif self.config["model"] in ["deeplabv3"]:
+                mIoU = torch.mean(torch.stack(self.val_losses))
+                if self.config["logging"]:
+                    self.log("val_{}".format(self.val_metric), mIoU, on_epoch=True)
+                self._save_model(result=mIoU, save_on="max")
+
+                logging.info("Current validation mIoU: {:.6f}".format(mIoU))
+                logging.info("Best validation mIoU: {:.6f}".format(self.best_result))
+
+    def _save_model(self, result, save_on: str):
+        save_model = False
+        if save_on == "max":
+            save_model = self.best_result < result
+        if save_on == "min":
+            save_model = self.best_result > result
+
+        if save_model:
+            self.best_result = result
+            if not self.config["debug"]:
+                logging.info("Saving model weights.")
+                torch.save(self.model.state_dict(), self.path_dict["weights_path"] + "/best.pth")
+            else:
+                logging.warning("DEBUG MODE: model weights are not saved")
 
     def log_validation_images(self, prediction, target):
         image = T.ToPILImage()(prediction[0].mul(255).type(torch.uint8))
@@ -238,4 +266,8 @@ class mtlMayhemModule(pl.LightningModule):
             },
         )
 
-        self.log("Val_Image", img, on_step=False, on_epoch=True, logger=True)
+        self.log("Val_Image", img, on_epoch=True)
+
+    @staticmethod
+    def tuple_of_tensors_to_tensor(tuple_of_tensors):
+        return torch.stack(list(tuple_of_tensors), dim=0)

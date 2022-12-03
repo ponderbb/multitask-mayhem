@@ -42,11 +42,13 @@ class mtlDataModule(pl.LightningDataModule):
         self.train_split, self.valid_split, self.test_split = random_split(self.manifests, self.config["split_ratio"])
 
         # specific loaders for specific formats models take
-        if self.config["model"] == "fasterrcnn" or "maskrcnn":
+        if self.config["model"] in ["fasterrcnn", "fasterrcnn_mobilenetv3", "ssdlite"]:
             self.datasetObject = FasterRCNNDataset
+        elif self.config["model"] in ["deeplabv3"]:
+            self.datasetObject = DeepLabV3Dataset
         else:
-            # custom for self-built models
-            self.datasetObject = CustomDataset
+            raise NotImplementedError("Dataloader could not be found for {}".format(self.config["model"]))
+
         logging.info("Loading dataset object -> {}".format(self.datasetObject))
 
     def setup(self, stage) -> None:
@@ -147,6 +149,22 @@ class FasterRCNNDataset(Dataset):
         }
 
         return image, target
+
+
+class DeepLabV3Dataset(Dataset):
+    def __init__(self, data_split: Subset) -> None:
+        self.dataset = data_split
+        self.transforms = transforms.Compose([transforms.ToTensor()])
+        super().__init__()
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, index):
+        image = self.transforms(Image.open(self.dataset[index]["path"]))
+        mask = read_image(self.dataset[index]["mask"]).type(torch.BoolTensor)
+
+        return image, mask
 
 
 def main():

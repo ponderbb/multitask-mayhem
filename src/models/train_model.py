@@ -1,7 +1,6 @@
 import argparse
 import os
 
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
@@ -21,7 +20,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "-c",
     "--config",
-    default="configs/ssdlite_gp.yaml",
+    default="configs/deeplabv3_mobilnetv3.yaml",
     help="Path to pipeline configuration file",
 )
 args = parser.parse_args()
@@ -59,14 +58,18 @@ if lightning_module.config["logging"]:
     es_config = lightning_module.config["early_stop"]
     callbacks_list.append(
         EarlyStopping(
-            monitor="val_map", min_delta=es_config["delta"], patience=es_config["patience"], verbose=False, mode="max"
+            monitor="val_{}".format(lightning_module.val_metric),
+            min_delta=es_config["delta"],
+            patience=es_config["patience"],
+            verbose=False,
+            mode="max",
         )
     )
 
 # model checkpointing
 if not (lightning_datamodule.config["debug"]) and lightning_module.config["logging"]:
     checkpoint_callback = ModelCheckpoint(
-        monitor="val_map",
+        monitor="val_{}".format(lightning_module.val_metric),
         dirpath=lightning_module.path_dict["checkpoints_path"],
         filename="{epoch:02d}-{val_map:.2f}",
         save_top_k=1,

@@ -53,6 +53,9 @@ def logging_setup(config_path: str = "") -> None:
     else:
         logging_level = logging.INFO
 
+    # restrict logging for specific modules
+    logging.getLogger("PIL").setLevel(logging.WARNING)
+
     log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(
         level=logging_level,
