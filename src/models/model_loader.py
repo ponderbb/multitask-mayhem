@@ -11,7 +11,7 @@ from torchvision.models.detection import (
 )
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
-from torchvision.models.detection.ssdlite import SSDLiteClassificationHead, SSDLiteHead
+from torchvision.models.detection.ssdlite import SSDLiteClassificationHead
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 
@@ -34,10 +34,21 @@ class ModelLoader:
         else:
             raise ValueError("Model not supported")
 
-        logging.info(f"Model loaded: {self.config['model']}")
         # TODO: model summary, params, weights, etc
 
         return self.model
+
+    def get_type(self):  # TODO: load losses for models also from here
+        if self.config["model"] in ["fasterrcnn", "fasterrcnn_mobilenetv3"]:
+            return "detection", "map"
+        elif self.config["model"] == "ssdlite":
+            return "detection", "map"
+        elif self.config["model"] == "deeplabv3":
+            return "segmentation", "miou"
+        elif self.config["model"] == "maskrcnn":
+            return "segmentation", "miou"
+        else:
+            raise ValueError("Model not supported")
 
     ### DETECTION BASELINES ###
 
@@ -68,7 +79,7 @@ class ModelLoader:
 
     def _load_deeplabv3(self):
         self.model = deeplabv3_mobilenet_v3_large(pretrained=True, weights="DEFAULT")
-        self.model.classifier = DeepLabHead(960, 1)
+        self.model.classifier = DeepLabHead(960, self.config["segmentation_classes"] - 1)
 
     def _load_maskrcnn(self):
         # fastercnn based on resnet50 backbone

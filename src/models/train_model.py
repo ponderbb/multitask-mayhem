@@ -1,5 +1,4 @@
 import argparse
-import os
 
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
@@ -20,7 +19,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "-c",
     "--config",
-    default="configs/deeplabv3_mobilnetv3.yaml",
+    default="configs/debug_foo.yaml",
     help="Path to pipeline configuration file",
 )
 args = parser.parse_args()
@@ -71,7 +70,7 @@ if not (lightning_datamodule.config["debug"]) and lightning_module.config["loggi
     checkpoint_callback = ModelCheckpoint(
         monitor="val_{}".format(lightning_module.val_metric),
         dirpath=lightning_module.path_dict["checkpoints_path"],
-        filename="{epoch:02d}-{val_map:.2f}",
+        filename="{epoch:02d}-{val_metric:.2f}",
         save_top_k=1,
         mode="max",
     )
