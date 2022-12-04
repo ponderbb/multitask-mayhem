@@ -78,6 +78,7 @@ class mtlMayhemModule(pl.LightningModule):
 
         # update configuration of hyperparams in wandb
         if self.config["logging"]:
+            wandb.config["model_type"] = self.model_type
             wandb.config.update(self.config)
 
     def configure_optimizers(self) -> Any:
@@ -125,7 +126,7 @@ class mtlMayhemModule(pl.LightningModule):
         if isinstance(images, tuple):
             images = self.tuple_of_tensors_to_tensor(images)
 
-        ### model specific forward pass ###
+        # model specific forward pass #
 
         if self.model_type == "detection":
             loss_dict = self.model(images, targets)
@@ -141,7 +142,7 @@ class mtlMayhemModule(pl.LightningModule):
             loss = torch.nn.BCELoss()
             train_loss = loss(preds, targets.type(torch.float32))
 
-        ### _endof model specific forward pass ###
+        # _endof model specific forward pass #
 
         if self.config["logging"]:
             self.log("train_loss", train_loss, on_step=True, on_epoch=True, batch_size=self.config["batch_size"])
@@ -250,7 +251,7 @@ class mtlMayhemModule(pl.LightningModule):
 
         # boxes_filtered = prediction[0]["boxes"][score_mask]
         masks_filtered = prediction[0]["masks"][score_mask]
-        labels_filtered = prediction[0]["labels"][score_mask]
+        # labels_filtered = prediction[0]["labels"][score_mask]
 
         img = wandb.Image(
             image,
