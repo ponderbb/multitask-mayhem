@@ -18,14 +18,14 @@ segmentation_classes: 2 # including background
 # training pipeline
 model_out_path: "models"
 model: "ssdlite"
-attribute: "sgd" # optional, can be left empty
+attribute: "baseline" # optional, can be left empty
 
 # callbacks
 optimizer:
-  name: "sgd"
-  lr: 0.005
+  name: "adam"
+  lr: 0.001
   momentum: 0.9
-  weight_decay: 0.0005
+  weight_decay: 0.0001
 lr_scheduler:
   name: "steplr" # can be None
   step_size: 5

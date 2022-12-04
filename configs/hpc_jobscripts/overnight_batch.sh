@@ -3,13 +3,13 @@
 ### –- specify queue --
 #BSUB -q gpua100
 ### -- set the job Name --
-#BSUB -J 12h_batch 
+#BSUB -J 4h_batch 
 ### -- ask for number of cores (default: 1) --
 #BSUB -n 1
 ### -- Select the resources: 1 gpu in exclusive process mode --
 #BSUB -gpu "num=1:mode=exclusive_process"
 ### -- set walltime limit: hh:mm --  maximum 24 hours for GPU-queues right now
-#BSUB -W 12:00
+#BSUB -W 4:00
 # request GB of system-memory
 #BSUB -R "rusage[mem=16GB]"
 ### -- set the email address --
@@ -32,11 +32,10 @@
 source ~/miniconda3/bin/activate
 conda activate multitask-mayhem
 
-python src/models/train_model.py -c configs/model-zoo/deeplabv3_mobilnetv3.yaml
-python src/models/train_model.py -c configs/model-zoo/fasterrcnn_mobilenetv3_b1.yaml
-python src/models/train_model.py -c configs/model-zoo/fasterrcnn_mobilenetv3_b2.yaml
+python src/models/train_model.py -c configs/model-zoo/ssdlite.yaml
+python src/models/train_model.py -c configs/model-zoo/deeplabv3.yaml
+python src/models/train_model.py -c configs/model-zoo/fasterrcnn_mobilenetv3.yaml
 python src/models/train_model.py -c configs/model-zoo/fasterrcnn.yaml
-python src/models/train_model.py -c configs/model-zoo/ssdlite_b1.yaml
-python src/models/train_model.py -c configs/model-zoo/ssdlite_b2.yaml
+
 
 ## submit by using: bsub < configs/hpc_jobscripts/overnight_batch.sh 

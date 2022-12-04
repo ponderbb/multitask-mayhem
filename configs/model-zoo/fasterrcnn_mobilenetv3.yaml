@@ -18,7 +18,7 @@ segmentation_classes: 2 # including background
 # training pipeline
 model_out_path: "models"
 model: "fasterrcnn_mobilenetv3"
-attribute: "adam" # optional, can be left empty
+attribute: "baseline" # optional, can be left empty
 
 # callbacks
 optimizer:
