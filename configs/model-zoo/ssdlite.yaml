@@ -28,11 +28,11 @@ optimizer:
   weight_decay: 0.0001
 lr_scheduler:
   name: "steplr" # can be None
-  step_size: 5
+  step_size: 10
   gamma: 0.1
 early_stop:
   delta: 0.0000
-  patience: 3
+  patience: 5
 
 # loader configs
 batch_size: 8

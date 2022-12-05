@@ -1,7 +1,9 @@
 import logging
+import random
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pytorch_lightning as pl
 import torch
 import torchvision.transforms as T
@@ -156,6 +158,7 @@ class mtlMayhemModule(pl.LightningModule):
             self.log("epoch_sanity", torch.as_tensor(self.epoch, dtype=torch.float32), on_epoch=True)
 
     def on_validation_start(self) -> None:
+        self.val_images = []
         self.val_targets = []
         self.val_preds = []
         self.val_losses = []
@@ -174,6 +177,7 @@ class mtlMayhemModule(pl.LightningModule):
         if self.model_type == "detection":
             preds = self.model(images)
 
+            self.val_images.extend(images)
             self.val_targets.extend(list(targets))
             self.val_preds.extend(preds)
 
@@ -184,6 +188,7 @@ class mtlMayhemModule(pl.LightningModule):
             preds = self.model(images)
             activation = torch.nn.Sigmoid()
             preds = activation(preds["out"])
+
             val_loss = jaccard_index(
                 preds=preds,
                 target=targets,
@@ -193,6 +198,9 @@ class mtlMayhemModule(pl.LightningModule):
             if self.config["logging"]:
                 self.log("val_{}".format(self.val_metric), val_loss, on_step=True, on_epoch=True, prog_bar=True)
 
+            self.val_images.extend(images)
+            self.val_preds.extend(preds)
+            self.val_targets.extend(targets)
             self.val_losses.append(val_loss)
 
     def on_validation_epoch_end(self) -> None:
@@ -223,6 +231,11 @@ class mtlMayhemModule(pl.LightningModule):
                 self.current_result = torch.mean(torch.stack(self.val_losses))
                 self._save_model(save_on="max")
 
+            # self._log_validation_images(
+            #     image_batch=self.val_images,
+            #     prediction_batch=self.val_preds,
+            #     target_batch=self.val_targets,)
+
             logging.info("Current validation {}: {:.6f}".format(self.val_metric, self.current_result))
             logging.info("Best validation {}: {:.6f}".format(self.val_metric, self.best_result))
 
@@ -244,30 +257,67 @@ class mtlMayhemModule(pl.LightningModule):
             else:
                 logging.warning("DEBUG MODE: model weights are not saved")
 
-    def _log_validation_images(self, prediction, target):
-        image = T.ToPILImage()(prediction[0].mul(255).type(torch.uint8))
-        scores = prediction[0]["scores"]
-        score_mask = scores > 0.8
+    def _log_validation_images(self, image_batch, prediction_batch, target_batch):
 
-        # boxes_filtered = prediction[0]["boxes"][score_mask]
-        masks_filtered = prediction[0]["masks"][score_mask]
-        # labels_filtered = prediction[0]["labels"][score_mask]
+        # if self.epoch%5 == 0:
 
-        img = wandb.Image(
-            image,
-            masks={
-                "predictions": {
-                    "mask_data": masks_filtered,
-                    "class_labels": self.class_lookup["sseg_rev"],
-                },
-                "ground_truth": {
-                    "mask_data": target[0]["masks"],
-                    "class_labels": self.class_lookup["sseg_rev"],
-                },
-            },
-        )
+        img_list = []
+        # table = wandb.Table(columns=['ID', 'Image'])
 
-        self.log("Val_Image", img, on_epoch=True)
+        for image, prediction, target in zip(image_batch[:10], prediction_batch[:10], target_batch[:10]):
+
+            if self.model_type == "segmentation":
+                image = image.mul(255).permute(1, 2, 0).detach().cpu().numpy().astype(np.uint8)
+                prediction = prediction.squeeze(0).detach().cpu().numpy().astype(np.uint8)
+                target = target.squeeze(0).detach().cpu().numpy().astype(np.uint8)
+
+                img = wandb.Image(
+                    image,
+                    masks={
+                        "predictions": {
+                            "mask_data": prediction,
+                            "class_labels": self.class_lookup["sseg_rev"],
+                        },
+                        "ground_truth": {
+                            "mask_data": target,
+                            "class_labels": self.class_lookup["sseg_rev"],
+                        },
+                    },
+                )
+
+            elif self.model_type == "detection":
+                image = image.mul(255).permute(1, 2, 0).detach().cpu().numpy().astype(np.uint8)
+
+                box_data_list = []
+
+                for box, label, score in zip(prediction["boxes"], prediction["labels"], prediction["scores"]):
+                    box_data_list.append(
+                        {
+                            "position": {
+                                "minX": box[0].item(),
+                                "maxX": box[2].item(),
+                                "minY": box[1].item(),
+                                "maxY": box[3].item(),
+                            },
+                            "class_id": label.item(),
+                            "scores": {"acc": score.item()},
+                        }
+                    )
+
+                img = wandb.Image(
+                    image,
+                    boxes={
+                        "predictions": {
+                            "box_data": box_data_list,
+                            "class_labels": self.class_lookup["bbox_rev"],
+                        },
+                    },
+                )
+
+            img_list.append(img)
+            # table.add_data(id+1, img)
+
+        wandb.log({"val_images": img_list})
 
     @staticmethod  # TODO: move to utils
     def tuple_of_tensors_to_tensor(tuple_of_tensors):
