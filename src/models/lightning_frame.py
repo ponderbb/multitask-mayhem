@@ -265,7 +265,7 @@ class mtlMayhemModule(pl.LightningModule):
 
             img_list = []
 
-            print_list = random.sample(range(len(image_batch)))
+            print_list = random.sample(range(len(image_batch)), 10)
 
             for idx, (image, prediction, target) in enumerate(zip(image_batch, prediction_batch, target_batch)):
                 if idx in print_list:
