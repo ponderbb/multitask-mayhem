@@ -8,7 +8,7 @@ import pytorch_lightning as pl
 import torch
 import torchvision.transforms as T
 import wandb
-from torchmetrics.functional import jaccard_index
+from torchmetrics.functional.classification import binary_jaccard_index
 
 import src.utils as utils
 from src.models.metrics import compute_metrics
@@ -139,10 +139,8 @@ class mtlMayhemModule(pl.LightningModule):
             targets = self.tuple_of_tensors_to_tensor(targets)
 
             preds = self.model(images)
-            activation = torch.nn.Sigmoid()
-            preds = activation(preds["out"])
-            loss = torch.nn.BCELoss()
-            train_loss = loss(preds, targets.type(torch.float32))
+            loss = torch.nn.BCEWithLogitsLoss()
+            train_loss = loss(preds["out"], targets.type(torch.float32))
 
         # _endof model specific forward pass #
 
@@ -184,19 +182,22 @@ class mtlMayhemModule(pl.LightningModule):
         elif self.model_type == "segmentation":
             # targets only contain masks as torch.BoolTensor
             targets = self.tuple_of_tensors_to_tensor(targets)
-
             preds = self.model(images)
-            activation = torch.nn.Sigmoid()
-            preds = activation(preds["out"])
 
-            val_loss = jaccard_index(
-                preds=preds,
-                target=targets,
-                num_classes=self.config["segmentation_classes"],
+            val_loss = binary_jaccard_index(
+                preds=preds["out"],
+                target=targets.long(),
                 ignore_index=self.class_lookup["sseg"]["background"],
             )
             if self.config["logging"]:
-                self.log("val_{}".format(self.val_metric), val_loss, on_step=True, on_epoch=True, prog_bar=True)
+                self.log(
+                    "val_{}".format(self.val_metric),
+                    val_loss,
+                    on_step=True,
+                    on_epoch=True,
+                    prog_bar=True,
+                    batch_size=self.config["batch_size"]
+                    )
 
             self.val_images.extend(images)
             self.val_preds.extend(preds)
@@ -322,3 +323,8 @@ class mtlMayhemModule(pl.LightningModule):
     @staticmethod  # TODO: move to utils
     def tuple_of_tensors_to_tensor(tuple_of_tensors):
         return torch.stack(list(tuple_of_tensors), dim=0)
+
+    def get_progress_bar_dict(self):
+        tqdm_dict = super().get_progress_bar_dict()
+        tqdm_dict.pop("v_num", None)
+        return tqdm_dict
