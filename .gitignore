@@ -82,6 +82,7 @@ target/
 /data/processed/*
 /data/rosbags/*
 /data/annotations/*
+/data/test/*
 /models/
 .logging/
 notebooks/*/*.png
