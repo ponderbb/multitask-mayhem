@@ -58,17 +58,15 @@ class mtlDataModule(pl.LightningDataModule):
 
     def setup(self, stage) -> None:
 
-        transforms = self._compose_transforms(stage)
-
         if stage == "fit":
-            self.train_dataset = self.datasetObject(self.train_split, transforms)
-            self.valid_dataset = self.datasetObject(self.valid_split, transforms)
+            self.train_dataset = self.datasetObject(self.train_split, self._compose_transforms())
+            self.valid_dataset = self.datasetObject(self.valid_split, self._compose_transforms(eval=True))
 
         if stage == "validate":
-            self.valid_dataset = self.datasetObject(self.valid_split, transforms)
+            self.valid_dataset = self.datasetObject(self.valid_split, self._compose_transforms(eval=True))
 
         if stage == "test":  # TODO: split rest to [train, test]
-            self.test_dataset = self.datasetObject(self.test_split, transforms)
+            self.test_dataset = self.datasetObject(self.test_split, self._compose_transforms(eval=True))
 
     def train_dataloader(self):
         return DataLoader(
@@ -106,10 +104,11 @@ class mtlDataModule(pl.LightningDataModule):
         """
         return tuple(zip(*batch))
 
-    def _compose_transforms(self, stage: str):
+    def _compose_transforms(self, eval=False):
 
         transforms_list = []
-        if stage == "fit":
+
+        if not eval:
             if self.config["vflip"]["apply"]:
                 transforms_list.append(A.VerticalFlip(p=self.config["vflip"]["p"]))
             if self.config["hflip"]["apply"]:
@@ -123,37 +122,26 @@ class mtlDataModule(pl.LightningDataModule):
                         value=0,
                     )
                 )
-            if self.config["normalize"]["apply"]:
-                transforms_list.append(
-                    A.Normalize(
-                        mean=self.config["normalize"]["mean"],
-                        std=self.config["normalize"]["std"],
-                        max_pixel_value=self.config["normalize"]["max_pixel_value"],
-                    )
+        if self.config["normalize"]["apply"]:
+            transforms_list.append(
+                A.Normalize(
+                    mean=self.config["normalize"]["mean"],
+                    std=self.config["normalize"]["std"],
+                    max_pixel_value=self.config["normalize"]["max_pixel_value"],
                 )
-            transforms_list.append(ToTensorV2())
-
-        elif stage == "validate" or stage == "test":
-            if self.config["normalize"]["apply"]:
-                transforms_list.append(
-                    A.Normalize(
-                        mean=self.config["normalize"]["mean"],
-                        std=self.config["normalize"]["std"],
-                        max_pixel_value=self.config["normalize"]["max_pixel_value"],
-                    )
-                )
-            transforms_list.append(ToTensorV2())
+            )
+        transforms_list.append(ToTensorV2())
 
         if self.model_type == "detection":
             transforms = A.Compose(
                 transforms_list, bbox_params=A.BboxParams(format="pascal_voc", label_fields=["class_labels"])
             )
+
         elif self.model_type == "segmentation":
             transforms = A.Compose(transforms_list)
         else:
             raise NotImplementedError("Model type {} not implemented yet".format(self.model_type))
 
-        logging.info("Transforms for {} stage -> {}".format(stage, transforms))
         return transforms
 
 

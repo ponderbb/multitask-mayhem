@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "-c",
     "--config",
-    default="configs/test_wandb.yaml",
+    default="configs/ssdlite.yaml",
     help="Path to pipeline configuration file",
 )
 args = parser.parse_args()

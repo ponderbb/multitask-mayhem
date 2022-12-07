@@ -6,12 +6,14 @@ from typing import Any
 import numpy as np
 import pytorch_lightning as pl
 import torch
+import torchvision.transforms as T
 import wandb
 from torchmetrics.functional.classification import binary_jaccard_index
 
 import src.utils as utils
 from src.models.metrics import compute_metrics
 from src.models.model_loader import ModelLoader
+from src.visualization.draw_things import draw_bounding_boxes
 
 
 class mtlMayhemModule(pl.LightningModule):
@@ -264,6 +266,8 @@ class mtlMayhemModule(pl.LightningModule):
 
             img_list = []
 
+            utils.set_seeds()
+
             zipped_batch = list(zip(image_batch, prediction_batch, target_batch))
             sampled_batch = random.sample(zipped_batch, self.config["sanity_num"])
 
@@ -292,33 +296,16 @@ class mtlMayhemModule(pl.LightningModule):
                     )
 
                 elif self.model_type == "detection":
-                    image = image.mul(255).permute(1, 2, 0).detach().cpu().numpy().astype(np.uint8)
 
-                    box_data_list = []
+                    prediction = self._filter_predicitions(prediction, score_threshold=0.3)
 
-                    for box, label, score in zip(prediction["boxes"], prediction["labels"], prediction["scores"]):
-                        box_data_list.append(
-                            {
-                                "position": {
-                                    "minX": box[0].item(),
-                                    "maxX": box[2].item(),
-                                    "minY": box[1].item(),
-                                    "maxY": box[3].item(),
-                                },
-                                "class_id": label.item(),
-                                "scores": {"acc": score.item()},
-                            }
-                        )
-
-                    img = wandb.Image(
-                        image,
-                        boxes={
-                            "predictions": {
-                                "box_data": box_data_list,
-                                "class_labels": self.class_lookup["bbox_rev"],
-                            },
-                        },
+                    drawn_image = draw_bounding_boxes(
+                        image=image.mul(255).type(torch.uint8).squeeze(0),
+                        boxes=prediction["boxes"],
+                        labels=[self.class_lookup["bbox_rev"][label.item()] for label in prediction["labels"]],
+                        scores=prediction["scores"],
                     )
+                    img = wandb.Image(T.ToPILImage()(drawn_image))
 
                 img_list.append(img)
 
@@ -328,7 +315,11 @@ class mtlMayhemModule(pl.LightningModule):
     def tuple_of_tensors_to_tensor(tuple_of_tensors):
         return torch.stack(list(tuple_of_tensors), dim=0)
 
-    def get_progress_bar_dict(self):
-        tqdm_dict = super().get_progress_bar_dict()
-        tqdm_dict.pop("v_num", None)
-        return tqdm_dict
+    @staticmethod
+    def _filter_predicitions(predictions, score_threshold):
+        """filter predictions with score below threshold"""
+        score_mask = predictions["scores"] > score_threshold
+        predictions["boxes"] = predictions["boxes"][score_mask]
+        predictions["labels"] = predictions["labels"][score_mask]
+        predictions["scores"] = predictions["scores"][score_mask]
+        return predictions
