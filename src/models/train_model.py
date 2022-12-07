@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "-c",
     "--config",
-    default="configs/debug_foo.yaml",
+    default="configs/test_wandb.yaml",
     help="Path to pipeline configuration file",
 )
 args = parser.parse_args()
@@ -45,7 +45,7 @@ if lightning_module.config["logging"]:
 else:
     logger = None
 
-### CALLBACKS ###
+# CALLBACKS #
 callbacks_list = []
 
 # learning rate scheduler
@@ -76,7 +76,7 @@ if not (lightning_datamodule.config["debug"]) and lightning_module.config["loggi
     )
     callbacks_list.append(checkpoint_callback)
 
-### TRAINER ###
+# TRAINER #
 trainer = pl.Trainer(
     logger=logger,
     accelerator="auto",

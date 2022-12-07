@@ -23,8 +23,7 @@ class mtlMayhemModule(pl.LightningModule):
         self.class_lookup = utils.load_yaml("configs/class_lookup.yaml")
 
         # initialize model loader and metrics
-        self.model_loader = ModelLoader(self.config)
-        self.model_type, self.val_metric = self.model_loader.get_type()
+        self.model_type, self.val_metric = ModelLoader.get_type(self.config)
 
         # check if config file is for trained model or not
         if utils.check_if_model_timestamped(config_path):
@@ -62,7 +61,7 @@ class mtlMayhemModule(pl.LightningModule):
     def setup(self, stage: str) -> None:
 
         # load model
-        self.model = self.model_loader.grab_model()
+        self.model = ModelLoader.grab_model(config=self.config)
 
         # initialize variables
         self.best_result = 0
@@ -266,7 +265,7 @@ class mtlMayhemModule(pl.LightningModule):
             img_list = []
 
             zipped_batch = list(zip(image_batch, prediction_batch, target_batch))
-            sampled_batch = random.sample(zipped_batch, 10)
+            sampled_batch = random.sample(zipped_batch, self.config["sanity_num"])
 
             for value in sampled_batch:
 

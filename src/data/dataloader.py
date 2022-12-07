@@ -1,16 +1,19 @@
 import argparse
 import logging
 
+import albumentations as A
+import cv2
+import numpy as np
 import pytorch_lightning as pl
 import torch
-import torchvision.transforms as transforms
+from albumentations.pytorch import ToTensorV2
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset, random_split
 from torch.utils.data.dataset import Subset
-from torchvision.io import read_image
 
 import src.utils as utils
 from src.data.manifests import generate_manifest
+from src.models.model_loader import ModelLoader
 
 
 class mtlDataModule(pl.LightningDataModule):
@@ -29,6 +32,8 @@ class mtlDataModule(pl.LightningDataModule):
             self.manifests = generate_manifest(
                 collections=self.config["collections"], data_root=self.config["data_root"], create_mask=False
             )
+
+        self.model_type, self.val_metric = ModelLoader.get_type(self.config)
 
     def prepare_data(self) -> None:
         # split manifest file
@@ -52,15 +57,18 @@ class mtlDataModule(pl.LightningDataModule):
         logging.info("Loading dataset object -> {}".format(self.datasetObject))
 
     def setup(self, stage) -> None:
+
+        transforms = self._compose_transforms(stage)
+
         if stage == "fit":
-            self.train_dataset = self.datasetObject(self.train_split)
-            self.valid_dataset = self.datasetObject(self.valid_split)
+            self.train_dataset = self.datasetObject(self.train_split, transforms)
+            self.valid_dataset = self.datasetObject(self.valid_split, transforms)
 
         if stage == "validate":
-            self.valid_dataset = self.datasetObject(self.valid_split)
+            self.valid_dataset = self.datasetObject(self.valid_split, transforms)
 
         if stage == "test":  # TODO: split rest to [train, test]
-            self.test_dataset = self.datasetObject(self.test_split)
+            self.test_dataset = self.datasetObject(self.test_split, transforms)
 
     def train_dataloader(self):
         return DataLoader(
@@ -98,71 +106,116 @@ class mtlDataModule(pl.LightningDataModule):
         """
         return tuple(zip(*batch))
 
+    def _compose_transforms(self, stage: str):
 
-class CustomDataset(Dataset):
-    """
-    dataloader for the self-collected warehouse dataset with cvat labels
-    returns a tuple with the following
-    - rgb image tensor [C, H, W]
-    - mask tensor [C, H, W]
-    - bbox list of tuples [(class, [corner points])]
-    """
+        transforms_list = []
+        if stage == "fit":
+            if self.config["vflip"]["apply"]:
+                transforms_list.append(A.VerticalFlip(p=self.config["vflip"]["p"]))
+            if self.config["hflip"]["apply"]:
+                transforms_list.append(A.HorizontalFlip(p=self.config["hflip"]["p"]))
+            if self.config["rotate"]["apply"]:
+                transforms_list.append(
+                    A.Rotate(
+                        limit=self.config["rotate"]["limit"],
+                        p=self.config["rotate"]["p"],
+                        border_mode=cv2.BORDER_CONSTANT,
+                        value=0,
+                    )
+                )
+            if self.config["normalize"]["apply"]:
+                transforms_list.append(
+                    A.Normalize(
+                        mean=self.config["normalize"]["mean"],
+                        std=self.config["normalize"]["std"],
+                        max_pixel_value=self.config["normalize"]["max_pixel_value"],
+                    )
+                )
+            transforms_list.append(ToTensorV2())
 
-    def __init__(self, data_split: Subset):
-        self.dataset = data_split
+        elif stage == "validate" or stage == "test":
+            if self.config["normalize"]["apply"]:
+                transforms_list.append(
+                    A.Normalize(
+                        mean=self.config["normalize"]["mean"],
+                        std=self.config["normalize"]["std"],
+                        max_pixel_value=self.config["normalize"]["max_pixel_value"],
+                    )
+                )
+            transforms_list.append(ToTensorV2())
 
-    def __len__(self):
-        return len(self.dataset)
+        if self.model_type == "detection":
+            transforms = A.Compose(
+                transforms_list, bbox_params=A.BboxParams(format="pascal_voc", label_fields=["class_labels"])
+            )
+        elif self.model_type == "segmentation":
+            transforms = A.Compose(transforms_list)
+        else:
+            raise NotImplementedError("Model type {} not implemented yet".format(self.model_type))
 
-    def __getitem__(self, index):
-        image = read_image(self.dataset[index]["path"])
-        mask = read_image(self.dataset[index]["mask"])
-        bbox_tuple = [(bbox["class"], bbox["corners"]) for bbox in self.dataset[index]["bbox"]]
-        return image, mask, bbox_tuple
+        logging.info("Transforms for {} stage -> {}".format(stage, transforms))
+        return transforms
 
 
 class FasterRCNNDataset(Dataset):
-    def __init__(self, data_split: Subset) -> None:
+    def __init__(self, data_split: Subset, transforms: A.Compose) -> None:
         self.dataset = data_split
-        self.transforms = transforms.Compose([transforms.ToTensor()])
+        self.transforms = transforms
         super().__init__()
 
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, index):
-        image = self.transforms(Image.open(self.dataset[index]["path"]))
-        mask = self.transforms(Image.open(self.dataset[index]["mask"]))
 
-        # check for images without bounding boxes
         if "bbox" in self.dataset[index].keys():
-            boxes = torch.FloatTensor([bbox["corners"] for bbox in self.dataset[index]["bbox"]])
-            labels = torch.LongTensor([bbox["class"] for bbox in self.dataset[index]["bbox"]])
+            boxes = [bbox["corners"] for bbox in self.dataset[index]["bbox"]]
+            labels = [bbox["class"] for bbox in self.dataset[index]["bbox"]]
         else:
+            boxes = []
+            labels = []
+
+        transformed = self.transforms(
+            image=np.array(Image.open(self.dataset[index]["path"]), copy=True),
+            mask=np.array(Image.open(self.dataset[index]["mask"]), copy=True),
+            bboxes=boxes,
+            class_labels=labels,
+        )
+        image = transformed["image"].div(255)
+        masks = transformed["mask"].type(torch.BoolTensor).unsqueeze(0)
+
+        if len(transformed["bboxes"]) == 0:
             boxes = torch.empty(size=[0, 4], dtype=torch.float32)
             labels = torch.empty(size=[0], dtype=torch.int64)
+        else:
+            boxes = torch.FloatTensor(transformed["bboxes"])
+            labels = torch.LongTensor(transformed["class_labels"])
 
         target = {
-            "boxes": boxes,
-            "labels": labels,
-            "masks": torch.as_tensor(mask, dtype=torch.bool),
+            "boxes": boxes,  # N x 4
+            "labels": labels,  # N
+            "masks": masks,  # C x H x W
         }
 
         return image, target
 
 
 class DeepLabV3Dataset(Dataset):
-    def __init__(self, data_split: Subset) -> None:
+    def __init__(self, data_split: Subset, transforms: A.Compose) -> None:
         self.dataset = data_split
-        self.transforms = transforms.Compose([transforms.ToTensor()])
+        self.transforms = transforms
         super().__init__()
 
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, index):
-        image = self.transforms(Image.open(self.dataset[index]["path"]))
-        mask = read_image(self.dataset[index]["mask"]).type(torch.BoolTensor)
+        transformed = self.transforms(
+            image=np.array(Image.open(self.dataset[index]["path"]), copy=True),
+            mask=np.array(Image.open(self.dataset[index]["mask"]), copy=True),
+        )
+        image = transformed["image"].div(255)  # C x H x W
+        mask = transformed["mask"].type(torch.BoolTensor).unsqueeze(0)  # 1 x H x W
 
         return image, mask
 
@@ -176,7 +229,7 @@ def main():
     parser.add_argument(
         "-c",
         "--config",
-        default="configs/dummy_training.yaml",
+        default="configs/debug_foo.yaml",
         help="Path to pipeline configuration file",
     )
     args = parser.parse_args()
@@ -185,7 +238,7 @@ def main():
 
     data_module = mtlDataModule(args.config)
     data_module.prepare_data()
-    data_module.setup(stage="validate")
+    data_module.setup(stage="fit")
     # dataloader = data_module.val_dataloader()
     # it = iter(dataloader)
     # first = next(it)
