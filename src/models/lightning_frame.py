@@ -6,7 +6,6 @@ from typing import Any
 import numpy as np
 import pytorch_lightning as pl
 import torch
-import torchvision.transforms as T
 import wandb
 from torchmetrics.functional.classification import binary_jaccard_index
 
@@ -196,8 +195,8 @@ class mtlMayhemModule(pl.LightningModule):
                     on_step=True,
                     on_epoch=True,
                     prog_bar=True,
-                    batch_size=self.config["batch_size"]
-                    )
+                    batch_size=self.config["batch_size"],
+                )
 
             self.val_images.extend(images)
             self.val_preds.extend(preds["out"])
@@ -231,12 +230,13 @@ class mtlMayhemModule(pl.LightningModule):
             elif self.model_type == "segmentation":
                 self.current_result = torch.mean(torch.stack(self.val_losses))
                 self._save_model(save_on="max")
-            
+
             if self.config["logging"]:
                 self._log_validation_images(
                     image_batch=self.val_images,
                     prediction_batch=self.val_preds,
-                    target_batch=self.val_targets,)
+                    target_batch=self.val_targets,
+                )
 
             logging.info("Current validation {}: {:.6f}".format(self.val_metric, self.current_result))
             logging.info("Best validation {}: {:.6f}".format(self.val_metric, self.best_result))
@@ -261,65 +261,67 @@ class mtlMayhemModule(pl.LightningModule):
 
     def _log_validation_images(self, image_batch, prediction_batch, target_batch):
 
-        if self.epoch%3 == 0:
+        if self.epoch == 1 or self.epoch % self.config["sanity_epoch"] == 0:
 
             img_list = []
 
-            print_list = random.sample(range(len(image_batch)), 10)
+            zipped_batch = list(zip(image_batch, prediction_batch, target_batch))
+            sampled_batch = random.sample(zipped_batch, 10)
 
-            for idx, (image, prediction, target) in enumerate(zip(image_batch, prediction_batch, target_batch)):
-                if idx in print_list:
-                    if self.model_type == "segmentation":
-                        image = image.mul(255).permute(1, 2, 0).detach().cpu().numpy().astype(np.uint8)
-                        prediction = (torch.sigmoid(prediction)>0.5)
-                        prediction = prediction.squeeze(0).detach().cpu().numpy().astype(np.uint8)
-                        target = target.squeeze(0).detach().cpu().numpy().astype(np.uint8)
+            for value in sampled_batch:
 
-                        img = wandb.Image(
-                            image,
-                            masks={
-                                "predictions": {
-                                    "mask_data": prediction,
-                                    "class_labels": self.class_lookup["sseg_rev"],
-                                },
-                                "ground_truth": {
-                                    "mask_data": target,
-                                    "class_labels": self.class_lookup["sseg_rev"],
-                                },
+                image, prediction, target = value[0], value[1], value[2]
+
+                if self.model_type == "segmentation":
+                    image = image.mul(255).permute(1, 2, 0).detach().cpu().numpy().astype(np.uint8)
+                    prediction = torch.sigmoid(prediction) > 0.5
+                    prediction = prediction.squeeze(0).detach().cpu().numpy().astype(np.uint8)
+                    target = target.squeeze(0).detach().cpu().numpy().astype(np.uint8)
+
+                    img = wandb.Image(
+                        image,
+                        masks={
+                            "predictions": {
+                                "mask_data": prediction,
+                                "class_labels": self.class_lookup["sseg_rev"],
                             },
+                            "ground_truth": {
+                                "mask_data": target,
+                                "class_labels": self.class_lookup["sseg_rev"],
+                            },
+                        },
+                    )
+
+                elif self.model_type == "detection":
+                    image = image.mul(255).permute(1, 2, 0).detach().cpu().numpy().astype(np.uint8)
+
+                    box_data_list = []
+
+                    for box, label, score in zip(prediction["boxes"], prediction["labels"], prediction["scores"]):
+                        box_data_list.append(
+                            {
+                                "position": {
+                                    "minX": box[0].item(),
+                                    "maxX": box[2].item(),
+                                    "minY": box[1].item(),
+                                    "maxY": box[3].item(),
+                                },
+                                "class_id": label.item(),
+                                "scores": {"acc": score.item()},
+                            }
                         )
 
-                    elif self.model_type == "detection":
-                        image = image.mul(255).permute(1, 2, 0).detach().cpu().numpy().astype(np.uint8)
-
-                        box_data_list = []
-
-                        for box, label, score in zip(prediction["boxes"], prediction["labels"], prediction["scores"]):
-                            box_data_list.append(
-                                {
-                                    "position": {
-                                        "minX": box[0].item(),
-                                        "maxX": box[2].item(),
-                                        "minY": box[1].item(),
-                                        "maxY": box[3].item(),
-                                    },
-                                    "class_id": label.item(),
-                                    "scores": {"acc": score.item()},
-                                }
-                            )
-
-                        img = wandb.Image(
-                            image,
-                            boxes={
-                                "predictions": {
-                                    "box_data": box_data_list,
-                                    "class_labels": self.class_lookup["bbox_rev"],
-                                },
+                    img = wandb.Image(
+                        image,
+                        boxes={
+                            "predictions": {
+                                "box_data": box_data_list,
+                                "class_labels": self.class_lookup["bbox_rev"],
                             },
-                        )
+                        },
+                    )
 
-                    img_list.append(img)
-
+                img_list.append(img)
 
             wandb.log({"val_images": img_list})
 
