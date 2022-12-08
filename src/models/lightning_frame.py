@@ -1,9 +1,7 @@
 import logging
-import random
-from pathlib import Path
+import os
 from typing import Any
 
-import numpy as np
 import pytorch_lightning as pl
 import torch
 import torchvision.transforms as T
@@ -11,6 +9,7 @@ import wandb
 from torchmetrics.functional.classification import binary_jaccard_index
 
 import src.utils as utils
+from src.models.lightning_utils import plUtils
 from src.models.metrics import compute_metrics
 from src.models.model_loader import ModelLoader
 from src.visualization.draw_things import draw_bounding_boxes
@@ -27,32 +26,7 @@ class mtlMayhemModule(pl.LightningModule):
         # initialize model loader and metrics
         self.model_type, self.val_metric = ModelLoader.get_type(self.config)
 
-        # check if config file is for trained model or not
-        if utils.check_if_model_timestamped(config_path):
-            # model name is loaded from paths of config file
-            self.model_name = str(Path(config_path).stem)
-
-            self.path_dict = utils.create_paths(
-                model_name=self.model_name,
-                model_folder=self.config["model_out_path"],
-            )
-
-        else:
-            # create timestamped name for model
-            self.model_name = utils.model_timestamp(model_name=self.config["model"], attribute=self.config["attribute"])
-
-            # create paths for training
-            self.path_dict = utils.create_paths(
-                model_name=self.model_name, model_folder=self.config["model_out_path"], assert_paths=False
-            )
-
-            if not self.config["debug"]:
-                # create folders for weights and checkpoints
-                utils.create_model_folders(
-                    config_old_path=config_path,
-                    manifest_old_path=self.config["data_root"] + "/manifest.json",
-                    path_dict=self.path_dict,
-                )
+        self.model_name, self.path_dict = plUtils.resolve_paths(config_path)
 
         logging.info(
             "Running model instance with ID: {} type: {} metric: {}".format(
@@ -61,7 +35,6 @@ class mtlMayhemModule(pl.LightningModule):
         )
 
     def setup(self, stage: str) -> None:
-
         # load model
         self.model = ModelLoader.grab_model(config=self.config)
 
@@ -73,10 +46,17 @@ class mtlMayhemModule(pl.LightningModule):
         if stage == "test" or stage == "validate":
             self.config["logging"] = False
 
-            if Path(self.path_dict["weights_path"]).exists():
+            if os.listdir(self.path_dict["weights_path"]):
                 self.model.load_state_dict(torch.load(self.path_dict["weights_path"] + "/best.pth"))
             else:
                 raise FileExistsError("No trained model found.")
+
+        elif stage == "fit":
+            if os.listdir(self.path_dict["weights_path"]):
+                logging.info("Resuming training from checkpoint")
+                raise NotImplementedError("Resume training from checkpoint not implemented yet.")
+            else:
+                logging.info("No trained model found, strap in for the ride.")
 
         # update configuration of hyperparams in wandb
         if self.config["logging"]:
@@ -126,7 +106,7 @@ class mtlMayhemModule(pl.LightningModule):
 
         # format to [B,C,H,W] tensor
         if isinstance(images, tuple):
-            images = self.tuple_of_tensors_to_tensor(images)
+            images = plUtils.tuple_of_tensors_to_tensor(images)
 
         # model specific forward pass #
 
@@ -136,7 +116,7 @@ class mtlMayhemModule(pl.LightningModule):
 
         elif self.model_type == "segmentation":
             # targets only contain masks as torch.BoolTensor
-            targets = self.tuple_of_tensors_to_tensor(targets)
+            targets = plUtils.tuple_of_tensors_to_tensor(targets)
 
             preds = self.model(images)
             loss = torch.nn.BCEWithLogitsLoss()
@@ -170,7 +150,7 @@ class mtlMayhemModule(pl.LightningModule):
 
         # format to [B,C,H,W] tensor
         if isinstance(images, tuple):
-            images = self.tuple_of_tensors_to_tensor(images)
+            images = plUtils.tuple_of_tensors_to_tensor(images)
 
         if self.model_type == "detection":
             preds = self.model(images)
@@ -181,7 +161,7 @@ class mtlMayhemModule(pl.LightningModule):
 
         elif self.model_type == "segmentation":
             # targets only contain masks as torch.BoolTensor
-            targets = self.tuple_of_tensors_to_tensor(targets)
+            targets = plUtils.tuple_of_tensors_to_tensor(targets)
             preds = self.model(images)
 
             val_loss = binary_jaccard_index(
@@ -226,14 +206,18 @@ class mtlMayhemModule(pl.LightningModule):
 
                 self.current_result = results["map"]
 
-                self._save_model(save_on="max")
-
             elif self.model_type == "segmentation":
                 self.current_result = torch.mean(torch.stack(self.val_losses))
-                self._save_model(save_on="max")
+
+            self._save_model(save_on="max")
 
             if self.config["logging"]:
-                self._log_validation_images(
+                plUtils._log_validation_images(
+                    epoch=self.epoch,
+                    class_lookup=self.class_lookup,
+                    model_type=self.model_type,
+                    sanity_epoch=self.config["sanity_epoch"],
+                    sanity_num=self.config["sanity_num"],
                     image_batch=self.val_images,
                     prediction_batch=self.val_preds,
                     target_batch=self.val_targets,

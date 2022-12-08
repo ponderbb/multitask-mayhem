@@ -17,17 +17,18 @@ from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 
 
 class ModelLoader:
-    def grab_model(config: dict):
+    @classmethod
+    def grab_model(cls, config: dict):
         logging.info(f"Loading model: {config['model']}")
 
         if config["model"] in ["fasterrcnn", "fasterrcnn_mobilenetv3"]:
-            model = ModelLoader._load_fastercnn(config)
+            model = cls._load_fastercnn(config)
         elif config["model"] == "ssdlite":
-            model = ModelLoader._load_ssdlite(config)
+            model = cls._load_ssdlite(config)
         elif config["model"] == "deeplabv3":
-            model = ModelLoader._load_deeplabv3(config)
+            model = cls._load_deeplabv3(config)
         elif config["model"] == "maskrcnn":
-            model = ModelLoader._load_maskrcnn(config)
+            model = cls._load_maskrcnn(config)
         else:
             raise ValueError("Model not supported")
 
