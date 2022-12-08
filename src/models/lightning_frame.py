@@ -236,6 +236,8 @@ class mtlMayhemModule(pl.LightningModule):
 
         if save_model:
             self.best_result = self.current_result
+            self.log("best_val", self.best_result)
+
             if not self.config["debug"]:
                 logging.info("Saving model weights.")
                 torch.save(self.model.state_dict(), self.path_dict["weights_path"] + "/best.pth")

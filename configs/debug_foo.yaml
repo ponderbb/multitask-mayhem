@@ -36,13 +36,13 @@ early_stop:
 
 # augmentation
 vflip:
-  apply: True
+  apply: False
   p: 0.5
 hflip:
-  apply: True
+  apply: False
   p: 0.1
 rotate:
-  apply: True
+  apply: False
   p: 0.1
   limit: 30
 normalize:

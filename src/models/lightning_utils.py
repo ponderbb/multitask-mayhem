@@ -71,6 +71,7 @@ class plUtils:
 
             for (image, prediction, target) in sampled_batch:
 
+                image_tensor = image.mul(255).type(torch.uint8).squeeze(0)
                 image = image.mul(255).permute(1, 2, 0).detach().cpu().numpy().astype(np.uint8)
 
                 if model_type == "segmentation":
@@ -111,7 +112,7 @@ class plUtils:
                     prediction = cls._filter_predicitions(prediction, score_threshold=0.3)
 
                     drawn_image = draw_bounding_boxes(
-                        image=image,
+                        image=image_tensor,
                         boxes=prediction["boxes"],
                         labels=[class_lookup["bbox_rev"][label.item()] for label in prediction["labels"]],
                         scores=prediction["scores"],
