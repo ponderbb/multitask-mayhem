@@ -65,6 +65,7 @@ class plUtils:
 
         if epoch == 1 or epoch % sanity_epoch == 0:
 
+            utils.set_seeds()
             zipped_batch = list(zip(image_batch, prediction_batch, target_batch))
             sampled_batch = random.sample(zipped_batch, sanity_num)
             img_list = []
