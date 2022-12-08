@@ -4,7 +4,6 @@ from typing import Any
 
 import pytorch_lightning as pl
 import torch
-import torchvision.transforms as T
 import wandb
 from torchmetrics.functional.classification import binary_jaccard_index
 
@@ -12,7 +11,6 @@ import src.utils as utils
 from src.models.lightning_utils import plUtils
 from src.models.metrics import compute_metrics
 from src.models.model_loader import ModelLoader
-from src.visualization.draw_things import draw_bounding_boxes
 
 
 class mtlMayhemModule(pl.LightningModule):
@@ -243,67 +241,3 @@ class mtlMayhemModule(pl.LightningModule):
                 torch.save(self.model.state_dict(), self.path_dict["weights_path"] + "/best.pth")
             else:
                 logging.warning("DEBUG MODE: model weights are not saved")
-
-    def _log_validation_images(self, image_batch, prediction_batch, target_batch):
-
-        if self.epoch == 1 or self.epoch % self.config["sanity_epoch"] == 0:
-
-            img_list = []
-
-            utils.set_seeds()
-
-            zipped_batch = list(zip(image_batch, prediction_batch, target_batch))
-            sampled_batch = random.sample(zipped_batch, self.config["sanity_num"])
-
-            for value in sampled_batch:
-
-                image, prediction, target = value[0], value[1], value[2]
-
-                if self.model_type == "segmentation":
-                    image = image.mul(255).permute(1, 2, 0).detach().cpu().numpy().astype(np.uint8)
-                    prediction = torch.sigmoid(prediction) > 0.5
-                    prediction = prediction.squeeze(0).detach().cpu().numpy().astype(np.uint8)
-                    target = target.squeeze(0).detach().cpu().numpy().astype(np.uint8)
-
-                    img = wandb.Image(
-                        image,
-                        masks={
-                            "predictions": {
-                                "mask_data": prediction,
-                                "class_labels": self.class_lookup["sseg_rev"],
-                            },
-                            "ground_truth": {
-                                "mask_data": target,
-                                "class_labels": self.class_lookup["sseg_rev"],
-                            },
-                        },
-                    )
-
-                elif self.model_type == "detection":
-
-                    prediction = self._filter_predicitions(prediction, score_threshold=0.3)
-
-                    drawn_image = draw_bounding_boxes(
-                        image=image.mul(255).type(torch.uint8).squeeze(0),
-                        boxes=prediction["boxes"],
-                        labels=[self.class_lookup["bbox_rev"][label.item()] for label in prediction["labels"]],
-                        scores=prediction["scores"],
-                    )
-                    img = wandb.Image(T.ToPILImage()(drawn_image))
-
-                img_list.append(img)
-
-            wandb.log({"val_images": img_list})
-
-    @staticmethod  # TODO: move to utils
-    def tuple_of_tensors_to_tensor(tuple_of_tensors):
-        return torch.stack(list(tuple_of_tensors), dim=0)
-
-    @staticmethod
-    def _filter_predicitions(predictions, score_threshold):
-        """filter predictions with score below threshold"""
-        score_mask = predictions["scores"] > score_threshold
-        predictions["boxes"] = predictions["boxes"][score_mask]
-        predictions["labels"] = predictions["labels"][score_mask]
-        predictions["scores"] = predictions["scores"][score_mask]
-        return predictions

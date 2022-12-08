@@ -8,9 +8,11 @@ from typing import Tuple
 
 import numpy as np
 import torch
+import torchvision.transforms as T
 import wandb
 
 import src.utils as utils
+from src.visualization.draw_things import draw_bounding_boxes
 
 
 class plUtils:
@@ -91,19 +93,30 @@ class plUtils:
 
                 elif model_type == "detection":
 
-                    box_data_list = cls._wandb_bbox_formatting(
-                        prediction["boxes"], prediction["labels"], prediction["scores"]
-                    )
+                    # box_data_list = cls._wandb_bbox_formatting(
+                    #     prediction["boxes"], prediction["labels"], prediction["scores"]
+                    # )
 
-                    img = wandb.Image(
-                        image,
-                        boxes={
-                            "predictions": {
-                                "box_data": box_data_list,
-                                "class_labels": class_lookup["bbox_rev"],
-                            },
-                        },
+                    # img = wandb.Image(
+                    #     image,
+                    #     boxes={
+                    #         "predictions": {
+                    #             "box_data": box_data_list,
+                    #             "class_labels": class_lookup["bbox_rev"],
+                    #         },
+                    #     },
+                    # )
+
+                    # FIXME: solve wandb logging
+                    prediction = cls._filter_predicitions(prediction, score_threshold=0.3)
+
+                    drawn_image = draw_bounding_boxes(
+                        image=image,
+                        boxes=prediction["boxes"],
+                        labels=[class_lookup["bbox_rev"][label.item()] for label in prediction["labels"]],
+                        scores=prediction["scores"],
                     )
+                    img = wandb.Image(T.ToPILImage()(drawn_image))
 
                 img_list.append(img)
 
@@ -221,3 +234,12 @@ class plUtils:
         # logs
         logging.info("model folder created: {}".format(path_dict["folder_path"]))
         logging.info("config file moved: {}".format(Path(config_old_path).name))
+
+    @staticmethod
+    def _filter_predicitions(predictions, score_threshold):
+        """filter predictions with score below threshold"""
+        score_mask = predictions["scores"] > score_threshold
+        predictions["boxes"] = predictions["boxes"][score_mask]
+        predictions["labels"] = predictions["labels"][score_mask]
+        predictions["scores"] = predictions["scores"][score_mask]
+        return predictions
