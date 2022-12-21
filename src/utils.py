@@ -170,4 +170,4 @@ def list_files_with_extension(path: str, extension: str, format: str) -> list:
         files_list = [Path(file).stem for file in files_list]
     elif format == "name":
         files_list = [Path(file).name for file in files_list]
-    return files_list
+    return sorted(files_list)
