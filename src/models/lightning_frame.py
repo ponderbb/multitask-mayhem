@@ -50,9 +50,10 @@ class mtlMayhemModule(pl.LightningModule):
                 raise FileExistsError("No trained model found.")
 
         elif stage == "fit":
-            if os.listdir(self.path_dict["weights_path"]):
-                logging.info("Resuming training from checkpoint")
-                raise NotImplementedError("Resume training from checkpoint not implemented yet.")
+            if os.path.exists(self.path_dict["weights_path"]):
+                if os.listdir(self.path_dict["weights_path"]):
+                    logging.info("Resuming training from checkpoint")
+                    raise NotImplementedError("Resume training from checkpoint not implemented yet.")
             else:
                 logging.info("No trained model found, strap in for the ride.")
 
@@ -114,11 +115,15 @@ class mtlMayhemModule(pl.LightningModule):
 
         elif self.model_type == "segmentation":
             # targets only contain masks as torch.BoolTensor
+            targets = tuple([target["masks"] for target in targets])
             targets = plUtils.tuple_of_tensors_to_tensor(targets)
 
             preds = self.model(images)
             loss = torch.nn.BCEWithLogitsLoss()
             train_loss = loss(preds["out"], targets.type(torch.float32))
+
+        elif self.model_type == "hybrid":
+            train_loss = None  # TODO: complete training pass
 
         # _endof model specific forward pass #
 
@@ -159,6 +164,7 @@ class mtlMayhemModule(pl.LightningModule):
 
         elif self.model_type == "segmentation":
             # targets only contain masks as torch.BoolTensor
+            targets = tuple([target["masks"] for target in targets])
             targets = plUtils.tuple_of_tensors_to_tensor(targets)
             preds = self.model(images)
 
@@ -181,6 +187,10 @@ class mtlMayhemModule(pl.LightningModule):
             self.val_preds.extend(preds["out"])
             self.val_targets.extend(targets)
             self.val_losses.append(val_loss)
+
+        elif self.model_type == "hybrid":
+            # complete
+            val_loss = None  # TODO: complete validation pass
 
     def on_validation_epoch_end(self) -> None:
         # skip sanity check
@@ -206,6 +216,9 @@ class mtlMayhemModule(pl.LightningModule):
 
             elif self.model_type == "segmentation":
                 self.current_result = torch.mean(torch.stack(self.val_losses))
+
+            elif self.model_type == "hybrid":
+                self.current_result = None  # TODO: complete this with a combined loss term
 
             self._save_model(save_on="max")
 

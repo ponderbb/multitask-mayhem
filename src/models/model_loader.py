@@ -1,7 +1,9 @@
 import logging
+from collections import OrderedDict
 from functools import partial
 
 import torch.nn as nn
+from torch import Tensor
 from torchvision.models.detection import _utils as det_utils
 from torchvision.models.detection import (
     fasterrcnn_mobilenet_v3_large_320_fpn,
@@ -9,9 +11,16 @@ from torchvision.models.detection import (
     maskrcnn_resnet50_fpn,
     ssdlite320_mobilenet_v3_large,
 )
+from torchvision.models.detection.anchor_utils import DefaultBoxGenerator
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
+from torchvision.models.detection.ssd import SSD, SSDScoringHead
 from torchvision.models.detection.ssdlite import SSDLiteClassificationHead
+from torchvision.models.mobilenetv3 import (
+    MobileNet_V3_Large_Weights,
+    MobileNetV3,
+    mobilenet_v3_large,
+)
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 
@@ -29,6 +38,8 @@ class ModelLoader:
             model = cls._load_deeplabv3(config)
         elif config["model"] == "maskrcnn":
             model = cls._load_maskrcnn(config)
+        elif config["model"] == "maskrcnn":
+            model = cls._load_hybrid(config)
         else:
             raise ValueError("Model not supported")
 
@@ -45,6 +56,8 @@ class ModelLoader:
             return "segmentation", "miou"
         elif config["model"] == "maskrcnn":
             return "segmentation", "miou"
+        elif config["model"] == "hybrid":
+            return "hybrid", ["miou", "map"]
         else:
             raise ValueError("Model not supported")
 
@@ -97,3 +110,41 @@ class ModelLoader:
             in_features_mask, hidden_layer, config["segmentation_classes"]
         )
         return model
+
+    @staticmethod
+    def _load_hybrid(config):
+
+        # backbone from mobilenet with COCO weights
+        weights_backbone = MobileNet_V3_Large_Weights.verify(
+            weights_backbone
+        )  # NOTE: this might just be the weights for the backbone
+        backbone = mobilenet_v3_large(weights=weights_backbone, dilated=True)
+
+        segmentation_head = DeepLabHead(960, config["segmentation_classes"] - 1)
+
+        anchor_generator = DefaultBoxGenerator([[2, 3] for _ in range(6)], min_ratio=0.2, max_ratio=0.95)
+        out_channels = det_utils.retrieve_out_channels(backbone, (320, 320))
+        num_anchors = anchor_generator.num_anchors_per_location()
+
+        return None
+
+
+class HybridModel(nn.Module):
+    def __init__(self, backbone: nn.Module, detection_head: nn.Module, segmentation_head: nn.Module) -> None:
+        super().__init__()
+        self.backbone = backbone
+        self.detection_head = detection_head
+        self.segmentation_head = segmentation_head
+
+    def forward(self, x: Tensor):
+        input_shape = x.shape[-2:]
+        # contract: features is a dict of tensors
+        features = self.backbone(x)
+
+        result = OrderedDict()
+        x = features["out"]
+        x = self.classifier(x)
+        x = F.interpolate(x, size=input_shape, mode="bilinear", align_corners=False)
+        result["out"] = x
+
+        return result

@@ -46,13 +46,7 @@ class mtlDataModule(pl.LightningDataModule):
         )
         self.train_split, self.valid_split, self.test_split = random_split(self.manifests, self.config["split_ratio"])
 
-        # specific loaders for specific formats models take
-        if self.config["model"] in ["fasterrcnn", "fasterrcnn_mobilenetv3", "ssdlite"]:
-            self.datasetObject = FasterRCNNDataset
-        elif self.config["model"] in ["deeplabv3"]:
-            self.datasetObject = DeepLabV3Dataset
-        else:
-            raise NotImplementedError("Dataloader could not be found for {}".format(self.config["model"]))
+        self.datasetObject = UniversalDataloader
 
         logging.info("Loading dataset object -> {}".format(self.datasetObject))
 
@@ -138,14 +132,17 @@ class mtlDataModule(pl.LightningDataModule):
             )
 
         elif self.model_type == "segmentation":
-            transforms = A.Compose(transforms_list)
+            # transforms = A.Compose(transforms_list)
+            transforms = A.Compose(
+                transforms_list, bbox_params=A.BboxParams(format="pascal_voc", label_fields=["class_labels"])
+            )
         else:
             raise NotImplementedError("Model type {} not implemented yet".format(self.model_type))
 
         return transforms
 
 
-class FasterRCNNDataset(Dataset):
+class UniversalDataloader(Dataset):
     def __init__(self, data_split: Subset, transforms: A.Compose) -> None:
         self.dataset = data_split
         self.transforms = transforms
@@ -169,10 +166,12 @@ class FasterRCNNDataset(Dataset):
             bboxes=boxes,
             class_labels=labels,
         )
+
         image = transformed["image"].div(255)
         masks = transformed["mask"].type(torch.BoolTensor).unsqueeze(0)
 
         if len(transformed["bboxes"]) == 0:
+            # dummy bbox and label variables
             boxes = torch.empty(size=[0, 4], dtype=torch.float32)
             labels = torch.empty(size=[0], dtype=torch.int64)
         else:
@@ -186,26 +185,6 @@ class FasterRCNNDataset(Dataset):
         }
 
         return image, target
-
-
-class DeepLabV3Dataset(Dataset):
-    def __init__(self, data_split: Subset, transforms: A.Compose) -> None:
-        self.dataset = data_split
-        self.transforms = transforms
-        super().__init__()
-
-    def __len__(self):
-        return len(self.dataset)
-
-    def __getitem__(self, index):
-        transformed = self.transforms(
-            image=np.array(Image.open(self.dataset[index]["path"]), copy=True),
-            mask=np.array(Image.open(self.dataset[index]["mask"]), copy=True),
-        )
-        image = transformed["image"].div(255)  # C x H x W
-        mask = transformed["mask"].type(torch.BoolTensor).unsqueeze(0)  # 1 x H x W
-
-        return image, mask
 
 
 def main():
