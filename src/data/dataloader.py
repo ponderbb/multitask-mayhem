@@ -126,16 +126,13 @@ class mtlDataModule(pl.LightningDataModule):
             )
         transforms_list.append(ToTensorV2())
 
-        if self.model_type == "detection":
+        if self.model_type in ["detection", "hybrid"]:
             transforms = A.Compose(
                 transforms_list, bbox_params=A.BboxParams(format="pascal_voc", label_fields=["class_labels"])
             )
 
         elif self.model_type == "segmentation":
-            # transforms = A.Compose(transforms_list)
-            transforms = A.Compose(
-                transforms_list, bbox_params=A.BboxParams(format="pascal_voc", label_fields=["class_labels"])
-            )
+            transforms = A.Compose(transforms_list)
         else:
             raise NotImplementedError("Model type {} not implemented yet".format(self.model_type))
 

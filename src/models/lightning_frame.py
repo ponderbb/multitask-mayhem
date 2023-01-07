@@ -123,7 +123,7 @@ class mtlMayhemModule(pl.LightningModule):
             train_loss = loss(preds["out"], targets.type(torch.float32))
 
         elif self.model_type == "hybrid":
-            train_loss = None  # TODO: complete training pass
+            dummy_result = self.model(images)  # TODO: complete training pass
 
         # _endof model specific forward pass #
 
@@ -190,7 +190,8 @@ class mtlMayhemModule(pl.LightningModule):
 
         elif self.model_type == "hybrid":
             # complete
-            val_loss = None  # TODO: complete validation pass
+            dummy_result = self.model(images)  # TODO: complete validation pass
+            print("Validation step completed!")
 
     def on_validation_epoch_end(self) -> None:
         # skip sanity check

@@ -15,7 +15,10 @@ from torchvision.models.detection.anchor_utils import DefaultBoxGenerator
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from torchvision.models.detection.ssd import SSD, SSDScoringHead
-from torchvision.models.detection.ssdlite import SSDLiteClassificationHead, _mobilenet_extractor
+from torchvision.models.detection.ssdlite import (
+    SSDLiteClassificationHead,
+    _mobilenet_extractor,
+)
 from torchvision.models.mobilenetv3 import (
     MobileNet_V3_Large_Weights,
     MobileNetV3,
@@ -38,7 +41,7 @@ class ModelLoader:
             model = cls._load_deeplabv3(config)
         elif config["model"] == "maskrcnn":
             model = cls._load_maskrcnn(config)
-        elif config["model"] == "maskrcnn":
+        elif config["model"] == "hybrid":
             model = cls._load_hybrid(config)
         else:
             raise ValueError("Model not supported")
@@ -96,32 +99,24 @@ class ModelLoader:
         model.classifier = DeepLabHead(960, config["segmentation_classes"] - 1)
         return model
 
-
     @staticmethod
     def _load_hybrid(config):
-
         # backbone from mobilenet with COCO weights
-        weights_backbone = MobileNet_V3_Large_Weights.verify(
-            weights_backbone
-        )  # NOTE: this might just be the weights for the backbone
+        weights_backbone = MobileNet_V3_Large_Weights.DEFAULT
         backbone = mobilenet_v3_large(weights=weights_backbone, dilated=True)
 
         segmentation_head = DeepLabHead(960, config["segmentation_classes"] - 1)
 
-        detection_backbone = _mobilenet_extractor(backbone=backbone) # extracting the correct feature layers for ssdlite
+        detection_backbone = _mobilenet_extractor(
+            backbone=backbone
+        )  # extracting the correct feature layers for ssdlite
         anchor_generator = DefaultBoxGenerator([[2, 3] for _ in range(6)], min_ratio=0.2, max_ratio=0.95)
         out_channels = det_utils.retrieve_out_channels(detection_backbone, (320, 320))
         num_anchors = anchor_generator.num_anchors_per_location()
 
         detection_head = None
 
-
-
-        model = HybridModel(
-            backbone=backbone,
-            detection_head=detection_head,
-            segmentation_head=segmentation_head
-        )
+        model = HybridModel(backbone=backbone, detection_head=detection_head, segmentation_head=segmentation_head)
 
         return None
 
