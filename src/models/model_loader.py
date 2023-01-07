@@ -15,7 +15,7 @@ from torchvision.models.detection.anchor_utils import DefaultBoxGenerator
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 from torchvision.models.detection.ssd import SSD, SSDScoringHead
-from torchvision.models.detection.ssdlite import SSDLiteClassificationHead
+from torchvision.models.detection.ssdlite import SSDLiteClassificationHead, _mobilenet_extractor
 from torchvision.models.mobilenetv3 import (
     MobileNet_V3_Large_Weights,
     MobileNetV3,
@@ -96,20 +96,6 @@ class ModelLoader:
         model.classifier = DeepLabHead(960, config["segmentation_classes"] - 1)
         return model
 
-    @staticmethod
-    def _load_maskrcnn(config):
-        # fastercnn based on resnet50 backbone
-        model = maskrcnn_resnet50_fpn(pretrained=True, weights="DEFAULT")
-        in_features = model.roi_heads.box_predictor.cls_score.in_features
-        model.roi_heads.box_predictor = FastRCNNPredictor(in_features, config["segmentation_classes"])
-
-        # maskrcnn based on resnet50 backbone
-        in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
-        hidden_layer = 256
-        model.roi_heads.mask_predictor = MaskRCNNPredictor(
-            in_features_mask, hidden_layer, config["segmentation_classes"]
-        )
-        return model
 
     @staticmethod
     def _load_hybrid(config):
@@ -122,9 +108,20 @@ class ModelLoader:
 
         segmentation_head = DeepLabHead(960, config["segmentation_classes"] - 1)
 
+        detection_backbone = _mobilenet_extractor(backbone=backbone) # extracting the correct feature layers for ssdlite
         anchor_generator = DefaultBoxGenerator([[2, 3] for _ in range(6)], min_ratio=0.2, max_ratio=0.95)
-        out_channels = det_utils.retrieve_out_channels(backbone, (320, 320))
+        out_channels = det_utils.retrieve_out_channels(detection_backbone, (320, 320))
         num_anchors = anchor_generator.num_anchors_per_location()
+
+        detection_head = None
+
+
+
+        model = HybridModel(
+            backbone=backbone,
+            detection_head=detection_head,
+            segmentation_head=segmentation_head
+        )
 
         return None
 
