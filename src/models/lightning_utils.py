@@ -40,11 +40,15 @@ class plUtils:
             logging.info("Config file is not timestamped, creating paths for new model")
 
             # create timestamped name for model
-            model_name = cls._model_timestamp(model_name=config["model"], attribute=config["attribute"])
+            model_name = cls._model_timestamp(
+                model_name=config["model"], attribute=config["attribute"]
+            )
 
             # create paths for training
             path_dict = cls._create_paths(
-                model_name=model_name, model_folder=config["model_out_path"], assert_paths=False
+                model_name=model_name,
+                model_folder=config["model_out_path"],
+                assert_paths=False,
             )
 
             if not config["debug"]:
@@ -60,24 +64,43 @@ class plUtils:
 
     @classmethod
     def _log_validation_images(
-        cls, epoch, class_lookup, model_type, sanity_epoch, sanity_num, image_batch, prediction_batch, target_batch
+        cls,
+        epoch,
+        class_lookup,
+        model_type,
+        sanity_epoch,
+        sanity_num,
+        image_batch,
+        prediction_batch,
+        target_batch,
     ):
 
         if epoch == 1 or epoch % sanity_epoch == 0:
 
             utils.set_seeds()
-            zipped_batch = list(zip(image_batch, prediction_batch, target_batch))
+            zipped_batch = list(zip(image_batch, prediction_batch["detection"], prediction_batch["segmentation"], target_batch))
             sampled_batch = random.sample(zipped_batch, sanity_num)
             img_list = []
 
-            for (image, prediction, target) in sampled_batch:
+            
+
+            for (image, detection_pred, segmentation_pred, target) in sampled_batch:
 
                 image_tensor = image.mul(255).type(torch.uint8).squeeze(0)
-                image = image.mul(255).permute(1, 2, 0).detach().cpu().numpy().astype(np.uint8)
+                image = (
+                    image.mul(255)
+                    .permute(1, 2, 0)
+                    .detach()
+                    .cpu()
+                    .numpy()
+                    .astype(np.uint8)
+                )
 
                 if model_type == "segmentation":
 
-                    prediction, target = cls._wandb_segmentation_formatting(prediction, target)
+                    prediction, target = cls._wandb_segmentation_formatting(
+                        segmentation_pred, target["masks"]
+                    )
 
                     img = wandb.Image(
                         image,
@@ -93,7 +116,7 @@ class plUtils:
                         },
                     )
 
-                elif model_type == "detection":
+                elif model_type in ["detection", "hybrid"]:
 
                     # box_data_list = cls._wandb_bbox_formatting(
                     #     prediction["boxes"], prediction["labels"], prediction["scores"]
@@ -110,15 +133,41 @@ class plUtils:
                     # )
 
                     # FIXME: solve wandb logging
-                    prediction = cls._filter_predicitions(prediction, score_threshold=0.3)
+                    prediction = cls._filter_predicitions(
+                        detection_pred, score_threshold=0.3
+                    )
 
                     drawn_image = draw_bounding_boxes(
                         image=image_tensor,
-                        boxes=prediction["boxes"],
-                        labels=[class_lookup["bbox_rev"][label.item()] for label in prediction["labels"]],
-                        scores=prediction["scores"],
+                        boxes=detection_pred["boxes"],
+                        labels=[
+                            class_lookup["bbox_rev"][label.item()]
+                            for label in detection_pred["labels"]
+                        ],
+                        scores=detection_pred["scores"],
                     )
                     img = wandb.Image(T.ToPILImage()(drawn_image))
+
+                if model_type == "hybrid":
+
+                    prediction, target = cls._wandb_segmentation_formatting(
+                        segmentation_pred, target["masks"]
+                    )
+
+                    img = wandb.Image(
+                        img,
+                        masks={
+                            "predictions": {
+                                "mask_data": prediction,
+                                "class_labels": class_lookup["sseg_rev"],
+                            },
+                            "ground_truth": {
+                                "mask_data": target,
+                                "class_labels": class_lookup["sseg_rev"],
+                            },
+                        },
+                    )
+
 
                 img_list.append(img)
 
@@ -201,11 +250,21 @@ class plUtils:
 
         if assert_paths:
             # assertions as sanity check
-            assert Path(folder_path).exists(), "model folder {} does not exist".format(folder_path)
-            assert Path(weights_path).exists(), "weights folder {} does not exist".format(weights_path)
-            assert Path(checkpoints_path).exists(), "checkpoints folder {} does not exist".format(checkpoints_path)
-            assert Path(config_path).exists(), "config file {} does not exist".format(config_path)
-            assert Path(manifest_path).exists(), "manifest file {} does not exist".format(manifest_path)
+            assert Path(folder_path).exists(), "model folder {} does not exist".format(
+                folder_path
+            )
+            assert Path(
+                weights_path
+            ).exists(), "weights folder {} does not exist".format(weights_path)
+            assert Path(
+                checkpoints_path
+            ).exists(), "checkpoints folder {} does not exist".format(checkpoints_path)
+            assert Path(config_path).exists(), "config file {} does not exist".format(
+                config_path
+            )
+            assert Path(
+                manifest_path
+            ).exists(), "manifest file {} does not exist".format(manifest_path)
 
         return {
             "folder_path": folder_path,
