@@ -154,26 +154,28 @@ class HybridModel(SSD):
             num_classes=config["detection_classes"],
             head=head,
             size=size,
-            anchor_generator=anchor_generator
+            anchor_generator=anchor_generator,
         )
+
 
         self.segmenation_backbone = segmentation_backbone
         self.segmentation_head = segmentation_head
 
     def forward(self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
-        return super().forward(images, targets) #, self.segmentation_forward(images)
+        return super().forward(images, targets), self.segmentation_forward(images)
 
-    def segmentation_forward(self, x: Tensor) -> Dict[str, Tensor]:
+    def segmentation_forward(self, x: Tensor, **kwargs) -> Dict[str, Tensor]:
         input_shape = x.shape[-2:]
         # contract: features is a dict of tensors
-        features = self.segmentation_backbone(x)
+        # seg_backbone = IntermediateLayerGetter(self.segmenation_backbone.features, return_layers={"16": "out"})
+        seg_backbone = self.segmenation_backbone
+        features = self.segmenation_backbone(x)
 
         result = OrderedDict()
         x = features["out"]
         x = self.segmentation_head(x)
         x = F.interpolate(x, size=input_shape, mode="bilinear", align_corners=False)
         result["out"] = x
-
         return result
 
 
