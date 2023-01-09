@@ -128,9 +128,11 @@ class mtlMayhemModule(pl.LightningModule):
             preds = self.model(images, targets)
 
             train_loss["det"] = sum(loss for loss in preds["detection"].values())
-            train_loss["seg"] = self.loss["segmentation"](preds["segmentation"]["out"], target_masks.type(torch.float32))
+            train_loss["seg"] = self.loss["segmentation"](
+                preds["segmentation"]["out"], target_masks.type(torch.float32)
+            )
 
-            train_loss["master"] = train_loss["det"]*0.5+train_loss["seg"]*0.5
+            train_loss["master"] = train_loss["det"] * 0.5 + train_loss["seg"] * 0.5
 
         # _endof model specific forward pass #
 
@@ -161,10 +163,7 @@ class mtlMayhemModule(pl.LightningModule):
         self.val_targets = []
         self.val_target_masks = []
         self.val_losses = {}
-        self.val_preds = {
-            "det":[],
-            "seg":[]
-        }
+        self.val_preds = {"det": [], "seg": []}
         self.metric_box = self.loss["detection"]
 
     def validation_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
@@ -173,7 +172,6 @@ class mtlMayhemModule(pl.LightningModule):
         targets: dictionary with keys "boxes", "masks", "labels"
         """
         images, targets = batch
-        val_loss = {}
 
         # format to [B,C,H,W] tensor
         if isinstance(images, tuple):
@@ -201,9 +199,7 @@ class mtlMayhemModule(pl.LightningModule):
             if "detection" in self.model_type:
                 # compute metrics
                 results = compute_metrics(
-                    metric_box=self.metric_box,
-                    preds=self.val_preds["det"],
-                    targets=self.val_targets
+                    metric_box=self.metric_box, preds=self.val_preds["det"], targets=self.val_targets
                 )
 
                 # extract mAP overall and for each class
@@ -224,12 +220,12 @@ class mtlMayhemModule(pl.LightningModule):
                         ignore_index=self.class_lookup["sseg"]["background"],
                     )
                     segmentation_losses.append(seg_loss)
-                segmentation_losses = torch.nan_to_num(torch.stack(segmentation_losses)) #FIXME: zeroed out NaNs
+                segmentation_losses = torch.nan_to_num(torch.stack(segmentation_losses))  # FIXME: zeroed out NaNs
                 val_loss["seg"] = torch.mean(segmentation_losses)
                 val_loss["master"] = val_loss["seg"]
 
             if len(self.model_type) != 1:
-                val_loss["master"] = val_loss["det"]*0.5+val_loss["seg"]*0.5
+                val_loss["master"] = val_loss["det"] * 0.5 + val_loss["seg"] * 0.5
 
             if self.config["logging"]:
                 for key, value in val_loss.items():
@@ -239,7 +235,7 @@ class mtlMayhemModule(pl.LightningModule):
                         on_epoch=True,
                         batch_size=self.config["batch_size"],
                     )
-            
+
             self.current_result = val_loss["master"]
 
             self._save_model(save_on="max")
@@ -256,8 +252,8 @@ class mtlMayhemModule(pl.LightningModule):
                     target_batch=self.val_targets,
                 )
 
-            logging.info("Current validation {}: {:.6f}".format(self.val_metric, self.current_result))
-            logging.info("Best validation {}: {:.6f}".format(self.val_metric, self.best_result))
+            logging.info("Current validation: {:.6f}".format(self.current_result))
+            logging.info("Best validation: {:.6f}".format(self.best_result))
 
     def _save_model(self, save_on: str):
         """save model on best validation result

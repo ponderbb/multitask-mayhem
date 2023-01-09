@@ -76,34 +76,14 @@ class plUtils:
         if epoch == 1 or epoch % sanity_epoch == 0:
 
             utils.set_seeds()
-            zipped_batch = list(
-                zip(image_batch, prediction_batch["det"], prediction_batch["seg"], target_batch)
-            )
+            zipped_batch = list(zip(image_batch, prediction_batch["det"], prediction_batch["seg"], target_batch))
             sampled_batch = random.sample(zipped_batch, sanity_num)
             img_list = []
 
             for (image, detection_pred, segmentation_pred, target) in sampled_batch:
 
-                image_tensor = image.mul(255).type(torch.uint8).squeeze(0)
-                image = image.mul(255).permute(1, 2, 0).detach().cpu().numpy().astype(np.uint8)
-
-                if "segmentation" in model_type:
-
-                    prediction, target = cls._wandb_segmentation_formatting(segmentation_pred, target["masks"])
-
-                    img = wandb.Image(
-                        image,
-                        masks={
-                            "predictions": {
-                                "mask_data": prediction,
-                                "class_labels": class_lookup["sseg_rev"],
-                            },
-                            "ground_truth": {
-                                "mask_data": target,
-                                "class_labels": class_lookup["sseg_rev"],
-                            },
-                        },
-                    )
+                image_tensor = image.mul(255).type(torch.uint8).squeeze(0)  # FIXME: naming is misleading
+                img = image.mul(255).permute(1, 2, 0).detach().cpu().numpy().astype(np.uint8)
 
                 if "detection" in model_type:
                     """
@@ -134,8 +114,7 @@ class plUtils:
                     )
                     img = wandb.Image(T.ToPILImage()(drawn_image))
 
-                if model_type == "hybrid":
-
+                if "segmentation" in model_type:
                     prediction, target = cls._wandb_segmentation_formatting(segmentation_pred, target["masks"])
 
                     img = wandb.Image(
