@@ -33,7 +33,7 @@ class mtlDataModule(pl.LightningDataModule):
                 collections=self.config["collections"], data_root=self.config["data_root"], create_mask=False
             )
 
-        self.model_type, self.val_metric = ModelLoader.get_type(self.config)
+        self.model_type, _ , _ = ModelLoader.get_type(self.config)
 
     def prepare_data(self) -> None:
         # split manifest file
@@ -126,15 +126,9 @@ class mtlDataModule(pl.LightningDataModule):
             )
         transforms_list.append(ToTensorV2())
 
-        if self.model_type in ["detection", "hybrid"]:
-            transforms = A.Compose(
-                transforms_list, bbox_params=A.BboxParams(format="pascal_voc", label_fields=["class_labels"])
-            )
-
-        elif self.model_type == "segmentation":
-            transforms = A.Compose(transforms_list)
-        else:
-            raise NotImplementedError("Model type {} not implemented yet".format(self.model_type))
+        transforms = A.Compose(
+            transforms_list, bbox_params=A.BboxParams(format="pascal_voc", label_fields=["class_labels"])
+        )
 
         return transforms
 

@@ -21,16 +21,13 @@ class mtlMayhemModule(pl.LightningModule):
         self.config = utils.load_yaml(config_path)
         self.class_lookup = utils.load_yaml("configs/class_lookup.yaml")
 
-        # initialize model loader and metrics
-        self.model_type, self.val_metric = ModelLoader.get_type(self.config)
-
-        if self.model_type in ["segmentation", "hybrid"]:
-            self.loss = torch.nn.BCEWithLogitsLoss()
+        # initialize tasks, metrics and losses
+        self.model_type, self.val_metric, self.loss = ModelLoader.get_type(self.config)
 
         self.model_name, self.path_dict = plUtils.resolve_paths(config_path)
 
         logging.info(
-            "Running model instance with ID: {} type: {} metric: {}".format(
+            "Running model instance with ID: {}\ntask(s): {}\nmetric(s): {}".format(
                 self.model_name, self.model_type, self.val_metric
             )
         )
@@ -107,50 +104,47 @@ class mtlMayhemModule(pl.LightningModule):
         targets: dictionary with keys "boxes", "masks", "labels"
         """
         images, targets = batch
+        train_loss = {}
 
         # format to [B,C,H,W] tensor
         if isinstance(images, tuple):
             images = plUtils.tuple_of_tensors_to_tensor(images)
+            # targets only contain masks as torch.BoolTensor
+            target_masks = tuple([target["masks"] for target in targets])
+            target_masks = plUtils.tuple_of_tensors_to_tensor(target_masks)
 
         # model specific forward pass #
+        if len(self.model_type) == 1:
+            if "detection" in self.model_type:
+                preds = self.model(images, targets)
+                train_loss["det"] = sum(loss for loss in preds.values())
+                train_loss["master"] = train_loss["det"]
 
-        if self.model_type == "detection":
-            loss_dict = self.model(images, targets)
-            train_loss = sum(loss for loss in loss_dict.values())
-
-        elif self.model_type == "segmentation":
-            # targets only contain masks as torch.BoolTensor
-            targets = tuple([target["masks"] for target in targets])
-            targets = plUtils.tuple_of_tensors_to_tensor(targets)
-
-            preds = self.model(images)
-            train_loss = self.loss(preds["out"], targets.type(torch.float32))
-
-        elif self.model_type == "hybrid":
+            if "segmentation" in self.model_type:
+                preds = self.model(images, targets)
+                train_loss["seg"] = self.loss["segmentation"](preds["out"], target_masks.type(torch.float32))
+                train_loss["master"] = train_loss["seg"]
+        else:
             preds = self.model(images, targets)
 
-            detection_loss = sum(loss for loss in preds["detection"].values())
+            train_loss["det"] = sum(loss for loss in preds["detection"].values())
+            train_loss["seg"] = self.loss["segmentation"](preds["segmentation"]["out"], target_masks.type(torch.float32))
 
-            # FIXME: find a fitting format to both
-            targets = tuple([target["masks"] for target in targets])
-            targets = plUtils.tuple_of_tensors_to_tensor(targets)
-
-            segmentation_loss = self.loss(preds["segmentation"]["out"], targets.type(torch.float32))
-
-            train_loss = (detection_loss * 0.5) + (segmentation_loss * 0.5)
+            train_loss["master"] = train_loss["det"]*0.5+train_loss["seg"]*0.5
 
         # _endof model specific forward pass #
 
         if self.config["logging"]:
-            self.log(
-                "train_loss",
-                train_loss,
-                on_step=True,
-                on_epoch=True,
-                batch_size=self.config["batch_size"],
-            )
+            for key, value in train_loss.items():
+                self.log(
+                    "train_{}".format(key),
+                    value,
+                    on_step=True,
+                    on_epoch=True,
+                    batch_size=self.config["batch_size"],
+                )
 
-        return train_loss
+        return train_loss["master"]
 
     def on_train_epoch_start(self) -> None:
         # initialize epoch counter
@@ -165,11 +159,10 @@ class mtlMayhemModule(pl.LightningModule):
     def on_validation_start(self) -> None:
         self.val_images = []
         self.val_targets = []
-        self.val_preds = {
-            "detection": [],
-            "segmentation": [],
-        }
-        self.val_losses = []
+        self.val_target_masks = []
+        self.val_losses = {}
+        self.val_preds = {}
+        self.metric_box = self.loss["detection"]
 
     def validation_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
         """forward pass and loss calculation
@@ -177,10 +170,16 @@ class mtlMayhemModule(pl.LightningModule):
         targets: dictionary with keys "boxes", "masks", "labels"
         """
         images, targets = batch
+        val_loss = {}
 
         # format to [B,C,H,W] tensor
         if isinstance(images, tuple):
             images = plUtils.tuple_of_tensors_to_tensor(images)
+            # targets only contain masks as torch.BoolTensor
+            target_masks = tuple([target["masks"] for target in targets])
+            target_masks = plUtils.tuple_of_tensors_to_tensor(target_masks)
+
+        preds = self.model(images)
 
         if self.model_type == "detection":
             preds = self.model(images)
@@ -190,9 +189,6 @@ class mtlMayhemModule(pl.LightningModule):
             self.val_preds["detection"].extend(preds)
 
         elif self.model_type == "segmentation":
-            # targets only contain masks as torch.BoolTensor
-            targets = tuple([target["masks"] for target in targets])
-            targets = plUtils.tuple_of_tensors_to_tensor(targets)
             preds = self.model(images)
 
             val_loss = binary_jaccard_index(
@@ -219,29 +215,18 @@ class mtlMayhemModule(pl.LightningModule):
             # complete
             preds = self.model(images)
 
-            self.val_images.extend(images)
-            self.val_targets.extend(list(targets))
-            self.val_preds["detection"].extend(preds["detection"])
-            self.val_preds["segmentation"].extend(preds["segmentation"]["out"])
-
-            targets = tuple([target["masks"] for target in targets])
-            targets = plUtils.tuple_of_tensors_to_tensor(targets)
 
             val_loss = binary_jaccard_index(
                 preds=preds["segmentation"]["out"],
                 target=targets.long(),
                 ignore_index=self.class_lookup["sseg"]["background"],
             )
-            self.val_losses.append(val_loss)
-            # if self.config["logging"]:
-            #     self.log(
-            #         "val_{}".format(self.val_metric),
-            #         val_loss,
-            #         on_step=True,
-            #         on_epoch=True,
-            #         prog_bar=True,
-            #         batch_size=self.config["batch_size"],
-            #     )
+
+        self.val_images.extend(images)
+        self.val_targets.extend(list(targets))
+        self.val_target_masks.extend(target_masks)
+        self.val_preds["det"].extend(preds["detection"])
+        self.val_preds["seg"].extend(preds["segmentation"]["out"])
 
     def on_validation_epoch_end(self) -> None:
         # skip sanity check
@@ -249,7 +234,11 @@ class mtlMayhemModule(pl.LightningModule):
 
             if self.model_type == "detection":
                 # compute metrics
-                results = compute_metrics(preds=self.val_preds["detection"], targets=self.val_targets)
+                results = compute_metrics(
+                    metric_box=self.metric_box,
+                    preds=self.val_preds["detection"],
+                    targets=self.val_targets
+                )
 
                 # extract mAP overall and for each class
                 results_map = results["map"].item()
@@ -282,6 +271,13 @@ class mtlMayhemModule(pl.LightningModule):
                 results_classes_map = {
                     self.class_lookup["bbox_rev"][idx + 1]: map for idx, map in enumerate(classes_map)
                 }
+
+                
+                val_loss = binary_jaccard_index(
+                    preds=preds["segmentation"]["out"],
+                    target=targets.long(),
+                    ignore_index=self.class_lookup["sseg"]["background"],
+                )
 
                 self.segmentation_result = torch.mean(torch.stack(self.val_losses))
 
