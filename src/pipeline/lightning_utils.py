@@ -77,7 +77,7 @@ class plUtils:
 
             utils.set_seeds()
             zipped_batch = list(
-                zip(image_batch, prediction_batch["detection"], prediction_batch["segmentation"], target_batch)
+                zip(image_batch, prediction_batch["det"], prediction_batch["seg"], target_batch)
             )
             sampled_batch = random.sample(zipped_batch, sanity_num)
             img_list = []
@@ -87,7 +87,7 @@ class plUtils:
                 image_tensor = image.mul(255).type(torch.uint8).squeeze(0)
                 image = image.mul(255).permute(1, 2, 0).detach().cpu().numpy().astype(np.uint8)
 
-                if model_type == "segmentation":
+                if "segmentation" in model_type:
 
                     prediction, target = cls._wandb_segmentation_formatting(segmentation_pred, target["masks"])
 
@@ -105,7 +105,7 @@ class plUtils:
                         },
                     )
 
-                elif model_type in ["detection", "hybrid"]:
+                if "detection" in model_type:
                     """
                     box_data_list = cls._wandb_bbox_formatting(
                         prediction["boxes"], prediction["labels"], prediction["scores"]

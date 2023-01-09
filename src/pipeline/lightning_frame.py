@@ -161,7 +161,10 @@ class mtlMayhemModule(pl.LightningModule):
         self.val_targets = []
         self.val_target_masks = []
         self.val_losses = {}
-        self.val_preds = {}
+        self.val_preds = {
+            "det":[],
+            "seg":[]
+        }
         self.metric_box = self.loss["detection"]
 
     def validation_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
@@ -181,118 +184,63 @@ class mtlMayhemModule(pl.LightningModule):
 
         preds = self.model(images)
 
-        if self.model_type == "detection":
-            preds = self.model(images)
-
-            self.val_images.extend(images)
-            self.val_targets.extend(list(targets))
-            self.val_preds["detection"].extend(preds)
-
-        elif self.model_type == "segmentation":
-            preds = self.model(images)
-
-            val_loss = binary_jaccard_index(
-                preds=preds["out"],
-                target=targets.long(),
-                ignore_index=self.class_lookup["sseg"]["background"],
-            )
-            if self.config["logging"]:
-                self.log(
-                    "val_{}".format(self.val_metric),
-                    val_loss,
-                    on_step=True,
-                    on_epoch=True,
-                    prog_bar=True,
-                    batch_size=self.config["batch_size"],
-                )
-
-            self.val_images.extend(images)
-            self.val_preds["segmentation"].extend(preds["out"])
-            self.val_targets.extend(targets)
-            self.val_losses.append(val_loss)
-
-        elif self.model_type == "hybrid":
-            # complete
-            preds = self.model(images)
-
-
-            val_loss = binary_jaccard_index(
-                preds=preds["segmentation"]["out"],
-                target=targets.long(),
-                ignore_index=self.class_lookup["sseg"]["background"],
-            )
-
         self.val_images.extend(images)
         self.val_targets.extend(list(targets))
-        self.val_target_masks.extend(target_masks)
-        self.val_preds["det"].extend(preds["detection"])
-        self.val_preds["seg"].extend(preds["segmentation"]["out"])
+        self.val_target_masks.extend(target_masks.long())
+        if "detection" in preds.keys():
+            self.val_preds["det"].extend(preds["detection"])
+        if "segmentation" in preds.keys():
+            self.val_preds["seg"].extend(preds["segmentation"]["out"])
 
     def on_validation_epoch_end(self) -> None:
         # skip sanity check
         if self.epoch > 0:
 
-            if self.model_type == "detection":
+            val_loss = {}
+
+            if "detection" in self.model_type:
                 # compute metrics
                 results = compute_metrics(
                     metric_box=self.metric_box,
-                    preds=self.val_preds["detection"],
+                    preds=self.val_preds["det"],
                     targets=self.val_targets
                 )
 
                 # extract mAP overall and for each class
-                results_map = results["map"].item()
-                classes_map = results["map_per_class"].tolist()
+                val_loss["det"] = results["map"].item()
 
-                results_classes_map = {
+                classes_map = results["map_per_class"].tolist()
+                val_loss["det_class"] = {
                     self.class_lookup["bbox_rev"][idx + 1]: map for idx, map in enumerate(classes_map)
                 }
+                val_loss["master"] = val_loss["det"]
 
-                if self.config["logging"]:
-                    self.log("val_{}".format(self.val_metric), results_map, on_epoch=True)
-                    self.log(
-                        "class_{}".format(self.val_metric),
-                        results_classes_map,
-                        on_epoch=True,
+            if "segmentation" in self.model_type:
+                segmentation_losses = []
+                for (pred, target) in zip(self.val_preds["seg"], self.val_target_masks):
+                    seg_loss = binary_jaccard_index(
+                        preds=pred,
+                        target=target,
+                        ignore_index=self.class_lookup["sseg"]["background"],
                     )
+                    segmentation_losses.append(seg_loss)
+                segmentation_losses = torch.nan_to_num(torch.stack(segmentation_losses)) #FIXME: zeroed out NaNs
+                val_loss["seg"] = torch.mean(segmentation_losses)
+                val_loss["master"] = val_loss["seg"]
 
-                self.current_result = results["map"]
+            if len(self.model_type) != 1:
+                val_loss["master"] = val_loss["det"]*0.5+val_loss["seg"]*0.5
 
-            elif self.model_type == "segmentation":
-                self.current_result = torch.mean(torch.stack(self.val_losses))
-
-            elif self.model_type == "hybrid":
-                results = compute_metrics(preds=self.val_preds["detection"], targets=self.val_targets)
-
-                # extract mAP overall and for each class
-                results_map = results["map"].item()
-                classes_map = results["map_per_class"].tolist()
-
-                results_classes_map = {
-                    self.class_lookup["bbox_rev"][idx + 1]: map for idx, map in enumerate(classes_map)
-                }
-
-                
-                val_loss = binary_jaccard_index(
-                    preds=preds["segmentation"]["out"],
-                    target=targets.long(),
-                    ignore_index=self.class_lookup["sseg"]["background"],
-                )
-
-                self.segmentation_result = torch.mean(torch.stack(self.val_losses))
-
-                self.detection_result = results["map"]
-
-                self.current_result = (self.segmentation_result * 0.5) + (self.detection_result * 0.5)
-
-                if self.config["logging"]:
-                    logging.info("VALIDATION {}: {:.6f}".format(self.val_metric, self.current_result))
-                    self.log("val_{}".format(self.val_metric), self.current_result, on_epoch=True)
+            if self.config["logging"]:
+                for key, value in val_loss.items():
                     self.log(
-                        "class_map",
-                        results_classes_map,
+                        "val_{}".format(key),
+                        value,
                         on_epoch=True,
+                        batch_size=self.config["batch_size"],
                     )
+            
+            self.current_result = val_loss["master"]
 
             self._save_model(save_on="max")
 
