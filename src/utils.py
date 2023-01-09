@@ -13,6 +13,12 @@ import numpy as np
 import torch
 import yaml
 
+""" General function utility files concerning:
+    - path handling
+    - os related listing and folder creation
+    - seed setting
+"""
+
 
 def peek(iterable):
     try:

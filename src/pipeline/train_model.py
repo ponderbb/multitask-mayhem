@@ -7,7 +7,7 @@ from pytorch_lightning.loggers.wandb import WandbLogger
 
 import src.utils as utils
 from src.data.dataloader import mtlDataModule
-from src.models.lightning_frame import mtlMayhemModule
+from src.pipeline.lightning_frame import mtlMayhemModule
 
 # import logging
 

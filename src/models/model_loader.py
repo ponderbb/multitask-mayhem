@@ -1,28 +1,21 @@
 import logging
-from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-import torch
 import torch.nn as nn
-from torch import Tensor
-from torch.nn import functional as F
-from torchvision.models._utils import IntermediateLayerGetter
 from torchvision.models.detection import _utils as det_utils
 from torchvision.models.detection import (
-    fasterrcnn_mobilenet_v3_large_320_fpn, fasterrcnn_resnet50_fpn,
-    ssdlite320_mobilenet_v3_large)
-from torchvision.models.detection.anchor_utils import DefaultBoxGenerator
+    fasterrcnn_mobilenet_v3_large_320_fpn,
+    fasterrcnn_resnet50_fpn,
+    ssdlite320_mobilenet_v3_large,
+)
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from torchvision.models.detection.ssd import SSD
-from torchvision.models.detection.ssdlite import (SSDLiteClassificationHead,
-                                                  SSDLiteHead,
-                                                  _mobilenet_extractor)
+from torchvision.models.detection.ssdlite import SSDLiteClassificationHead
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
-from torchvision.models.mobilenetv3 import (MobileNet_V3_Large_Weights,
-                                            mobilenet_v3_large)
+from torchvision.models.mobilenetv3 import MobileNet_V3_Large_Weights
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
+
+from src.models.hybridDeepLabSSD import HybridModel
 
 
 class ModelLoader:
@@ -67,13 +60,9 @@ class ModelLoader:
         if config["model"] == "fasterrcnn":
             model = fasterrcnn_resnet50_fpn(pretrained=True, weights="DEFAULT")
         elif config["model"] == "fasterrcnn_mobilenetv3":
-            model = fasterrcnn_mobilenet_v3_large_320_fpn(
-                pretrained=True, weights="DEFAULT"
-            )
+            model = fasterrcnn_mobilenet_v3_large_320_fpn(pretrained=True, weights="DEFAULT")
         in_features = model.roi_heads.box_predictor.cls_score.in_features
-        model.roi_heads.box_predictor = FastRCNNPredictor(
-            in_features, config["detection_classes"]
-        )
+        model.roi_heads.box_predictor = FastRCNNPredictor(in_features, config["detection_classes"])
         return model
 
     @staticmethod
@@ -110,78 +99,7 @@ class ModelLoader:
         model.classifier = DeepLabHead(960, config["segmentation_classes"] - 1)
         return model
 
+    # Multi-task models #
     @staticmethod
     def _load_hybrid(config):
         return HybridModel(config)
-
-
-class HybridModel(SSD):
-    def __init__(self, config):
-        # pure mobilenet backbone
-        # weights_backbone = MobileNet_V3_Large_Weights.verify(MobileNet_V3_Large_Weights.IMAGENET1K_V1)
-        norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.03)
-        backbone = mobilenet_v3_large(
-            weights=MobileNet_V3_Large_Weights.IMAGENET1K_V1,
-            progress=True,
-            norm_layer=norm_layer,
-            reduced_tail=False,
-        )
-
-        # backbone for detection
-        detection_backbone = _mobilenet_extractor(
-            backbone, trainable_layers=6, norm_layer=norm_layer
-        )  # NOTE: extacts backbone.features within
-
-        # backbone for segmentation
-        segmentation_backbone = IntermediateLayerGetter(
-            backbone.features, return_layers={"16": "out"}
-        )
-        segmentation_head = DeepLabHead(
-            in_channels=backbone.features[16].out_channels,
-            num_classes=config["segmentation_classes"] - 1,
-        )
-
-        # detection head
-        size = (640, 480)
-        anchor_generator = DefaultBoxGenerator(
-            [[2, 3] for _ in range(6)], min_ratio=0.2, max_ratio=0.95
-        )
-        num_anchors = anchor_generator.num_anchors_per_location()
-        in_features = det_utils.retrieve_out_channels(detection_backbone, size=size)
-        head = SSDLiteHead(
-            in_channels=in_features,
-            num_anchors=num_anchors,
-            num_classes=config["detection_classes"],
-            norm_layer=norm_layer,
-        )
-
-        super().__init__(
-            backbone=detection_backbone,
-            num_classes=config["detection_classes"],
-            head=head,
-            size=size,
-            anchor_generator=anchor_generator,
-        )
-
-        self.segmenation_backbone = segmentation_backbone
-        self.segmentation_head = segmentation_head
-
-    def forward(
-        self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None
-    ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
-        return {
-            "detection": super().forward(images, targets),
-            "segmentation": self.segmentation_forward(images),
-        }
-
-    def segmentation_forward(self, x: Tensor, **kwargs) -> Dict[str, Tensor]:
-        input_shape = x.shape[-2:]
-        # contract: features is a dict of tensors
-        features = self.segmenation_backbone(x)
-
-        result = OrderedDict()
-        x = features["out"]
-        x = self.segmentation_head(x)
-        x = F.interpolate(x, size=input_shape, mode="bilinear", align_corners=False)
-        result["out"] = x
-        return result

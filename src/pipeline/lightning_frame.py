@@ -8,9 +8,9 @@ import wandb
 from torchmetrics.functional.classification import binary_jaccard_index
 
 import src.utils as utils
-from src.models.lightning_utils import plUtils
-from src.models.metrics import compute_metrics
+from src.features.metrics import compute_metrics
 from src.models.model_loader import ModelLoader
+from src.pipeline.lightning_utils import plUtils
 
 
 class mtlMayhemModule(pl.LightningModule):
@@ -48,9 +48,7 @@ class mtlMayhemModule(pl.LightningModule):
             self.config["logging"] = False
 
             if os.listdir(self.path_dict["weights_path"]):
-                self.model.load_state_dict(
-                    torch.load(self.path_dict["weights_path"] + "/best.pth")
-                )
+                self.model.load_state_dict(torch.load(self.path_dict["weights_path"] + "/best.pth"))
             else:
                 raise FileExistsError("No trained model found.")
 
@@ -58,9 +56,7 @@ class mtlMayhemModule(pl.LightningModule):
             if os.path.exists(self.path_dict["weights_path"]):
                 if os.listdir(self.path_dict["weights_path"]):
                     logging.info("Resuming training from checkpoint")
-                    raise NotImplementedError(
-                        "Resume training from checkpoint not implemented yet."
-                    )
+                    raise NotImplementedError("Resume training from checkpoint not implemented yet.")
             else:
                 logging.info("No trained model found, strap in for the ride.")
 
@@ -101,9 +97,7 @@ class mtlMayhemModule(pl.LightningModule):
         elif lr_config["name"] is None:
             self.lr_scheduler = None
         else:
-            raise ModuleNotFoundError(
-                "Learning rate scheduler name can be [steplr or None]."
-            )
+            raise ModuleNotFoundError("Learning rate scheduler name can be [steplr or None].")
 
         return [self.optimizer], [self.lr_scheduler]
 
@@ -134,7 +128,7 @@ class mtlMayhemModule(pl.LightningModule):
 
         elif self.model_type == "hybrid":
             preds = self.model(images, targets)
-            
+
             detection_loss = sum(loss for loss in preds["detection"].values())
 
             # FIXME: find a fitting format to both
@@ -249,31 +243,24 @@ class mtlMayhemModule(pl.LightningModule):
             #         batch_size=self.config["batch_size"],
             #     )
 
-
-
     def on_validation_epoch_end(self) -> None:
         # skip sanity check
         if self.epoch > 0:
 
             if self.model_type == "detection":
                 # compute metrics
-                results = compute_metrics(
-                    preds=self.val_preds["detection"], targets=self.val_targets
-                )
+                results = compute_metrics(preds=self.val_preds["detection"], targets=self.val_targets)
 
                 # extract mAP overall and for each class
                 results_map = results["map"].item()
                 classes_map = results["map_per_class"].tolist()
 
                 results_classes_map = {
-                    self.class_lookup["bbox_rev"][idx + 1]: map
-                    for idx, map in enumerate(classes_map)
+                    self.class_lookup["bbox_rev"][idx + 1]: map for idx, map in enumerate(classes_map)
                 }
 
                 if self.config["logging"]:
-                    self.log(
-                        "val_{}".format(self.val_metric), results_map, on_epoch=True
-                    )
+                    self.log("val_{}".format(self.val_metric), results_map, on_epoch=True)
                     self.log(
                         "class_{}".format(self.val_metric),
                         results_classes_map,
@@ -286,37 +273,25 @@ class mtlMayhemModule(pl.LightningModule):
                 self.current_result = torch.mean(torch.stack(self.val_losses))
 
             elif self.model_type == "hybrid":
-                results = compute_metrics(
-                    preds=self.val_preds["detection"], targets=self.val_targets
-                )
+                results = compute_metrics(preds=self.val_preds["detection"], targets=self.val_targets)
 
                 # extract mAP overall and for each class
                 results_map = results["map"].item()
                 classes_map = results["map_per_class"].tolist()
 
                 results_classes_map = {
-                    self.class_lookup["bbox_rev"][idx + 1]: map
-                    for idx, map in enumerate(classes_map)
+                    self.class_lookup["bbox_rev"][idx + 1]: map for idx, map in enumerate(classes_map)
                 }
 
                 self.segmentation_result = torch.mean(torch.stack(self.val_losses))
 
                 self.detection_result = results["map"]
 
-                self.current_result = (
-                    self.segmentation_result * 0.5) + (
-                    self.detection_result * 0.5
-                )
+                self.current_result = (self.segmentation_result * 0.5) + (self.detection_result * 0.5)
 
                 if self.config["logging"]:
-                    logging.info(
-                        "VALIDATION {}: {:.6f}".format(
-                            self.val_metric, self.current_result
-                        )
-                    )
-                    self.log(
-                        "val_{}".format(self.val_metric), self.current_result, on_epoch=True
-                    )
+                    logging.info("VALIDATION {}: {:.6f}".format(self.val_metric, self.current_result))
+                    self.log("val_{}".format(self.val_metric), self.current_result, on_epoch=True)
                     self.log(
                         "class_map",
                         results_classes_map,
@@ -337,14 +312,8 @@ class mtlMayhemModule(pl.LightningModule):
                     target_batch=self.val_targets,
                 )
 
-            logging.info(
-                "Current validation {}: {:.6f}".format(
-                    self.val_metric, self.current_result
-                )
-            )
-            logging.info(
-                "Best validation {}: {:.6f}".format(self.val_metric, self.best_result)
-            )
+            logging.info("Current validation {}: {:.6f}".format(self.val_metric, self.current_result))
+            logging.info("Best validation {}: {:.6f}".format(self.val_metric, self.best_result))
 
     def _save_model(self, save_on: str):
         """save model on best validation result
