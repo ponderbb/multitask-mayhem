@@ -22,6 +22,7 @@ from torchvision.ops import boxes as box_ops
 # IMAGENET_MEAN = [0.485, 0.456, 0.406]
 # IMAGENET_STD = [0.229, 0.224, 0.225]
 
+
 class HybridModel(SSD):
     def __init__(self, config):
         # pure mobilenet backbone
@@ -159,41 +160,3 @@ class HybridModel(SSD):
         x = self.segmentation_head(features)
         x = F.interpolate(x, size=input_shape, mode="bilinear", align_corners=False)
         return x
-
-    # def forward(
-    #     self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None
-    # ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
-
-    #     x = images
-    #     output = []
-
-    #     x, _ = self.transform(images)
-    #     x = x.tensors
-
-    #     x_ref = self.mobilenet_backbone._modules["features"](x)
-
-    #     for idx, block in enumerate(self.mobilenet_backbone._modules["features"]):
-    #         x = block(x)
-
-    #         print("BLOCK {}: {}".format(idx, block))
-    #         print("FEATURE SHAPE: {}".format(x.shape))
-    #         output.append(x)
-
-    #     # assert x == x_ref
-
-    #     return {
-    #         "detection": super().forward(images, targets),
-    #         "segmentation": self.segmentation_forward(images),
-    #     }
-
-    # def segmentation_forward(self, x: Tensor, **kwargs) -> Dict[str, Tensor]:
-    #     input_shape = x.shape[-2:]
-    #     # contract: features is a dict of tensors
-    #     features = self.segmenation_backbone(x)
-
-    #     result = OrderedDict()
-    #     x = features["out"]
-    #     x = self.segmentation_head(x)
-    #     x = F.interpolate(x, size=input_shape, mode="bilinear", align_corners=False)
-    #     result["out"] = x
-    #     return result
