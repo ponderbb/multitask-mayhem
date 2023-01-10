@@ -1,11 +1,12 @@
+import warnings
 from collections import OrderedDict
 from functools import partial
 from typing import Dict, List, Optional, Tuple
 
+import torch
 import torch.nn as nn
 from torch import Tensor
 from torch.nn import functional as F
-from torchvision.models._utils import IntermediateLayerGetter
 from torchvision.models.detection import _utils as det_utils
 from torchvision.models.detection.anchor_utils import DefaultBoxGenerator
 from torchvision.models.detection.ssd import SSD
@@ -15,7 +16,11 @@ from torchvision.models.mobilenetv3 import (
     mobilenet_v3_large,
 )
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
+from torchvision.ops import boxes as box_ops
 
+# IMAGE_SIZE = (640, 480)
+# IMAGENET_MEAN = [0.485, 0.456, 0.406]
+# IMAGENET_STD = [0.229, 0.224, 0.225]
 
 class HybridModel(SSD):
     def __init__(self, config):
@@ -31,14 +36,7 @@ class HybridModel(SSD):
         # backbone for detection
         detection_backbone = _mobilenet_extractor(
             backbone, trainable_layers=6, norm_layer=norm_layer
-        )  # NOTE: extacts backbone.features within
-
-        # backbone for segmentation
-        segmentation_backbone = IntermediateLayerGetter(backbone.features, return_layers={"16": "out"})
-        segmentation_head = DeepLabHead(
-            in_channels=backbone.features[16].out_channels,
-            num_classes=config["segmentation_classes"] - 1,
-        )
+        )  # constructs the extra SSD features on top of the mobilenet
 
         # detection head
         size = (640, 480)
@@ -60,25 +58,142 @@ class HybridModel(SSD):
             anchor_generator=anchor_generator,
         )
 
-        self.segmenation_backbone = segmentation_backbone
-        self.segmentation_head = segmentation_head
+        # backbone for segmentation
+        self.segmentation_head = DeepLabHead(
+            in_channels=detection_backbone.features[1]._modules["3"].out_channels,
+            num_classes=config["segmentation_classes"] - 1,
+        )
 
     def forward(
         self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None
     ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
-        return {
-            "detection": super().forward(images, targets),
-            "segmentation": self.segmentation_forward(images),
-        }
+        if self.training:
+            if targets is None:
+                torch._assert(False, "targets should not be none when in training mode")
+            else:
+                for target in targets:
+                    boxes = target["boxes"]
+                    if isinstance(boxes, torch.Tensor):
+                        torch._assert(
+                            len(boxes.shape) == 2 and boxes.shape[-1] == 4,
+                            f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.",
+                        )
+                    else:
+                        torch._assert(False, f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
-    def segmentation_forward(self, x: Tensor, **kwargs) -> Dict[str, Tensor]:
-        input_shape = x.shape[-2:]
-        # contract: features is a dict of tensors
-        features = self.segmenation_backbone(x)
+        # get the original image sizes
+        original_image_sizes: List[Tuple[int, int]] = []
+        for img in images:
+            val = img.shape[-2:]
+            torch._assert(
+                len(val) == 2,
+                f"expecting the last two dimensions of the Tensor to be H and W instead got {img.shape[-2:]}",
+            )
+            original_image_sizes.append((val[0], val[1]))
 
-        result = OrderedDict()
-        x = features["out"]
-        x = self.segmentation_head(x)
+        # transform the input
+        images, targets = self.transform(images, targets)
+
+        # Check for degenerate boxes
+        if targets is not None:
+            for target_idx, target in enumerate(targets):
+                boxes = target["boxes"]
+                degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
+                if degenerate_boxes.any():
+                    bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
+                    degen_bb: List[float] = boxes[bb_idx].tolist()
+                    torch._assert(
+                        False,
+                        "All bounding boxes should have positive height and width."
+                        f" Found invalid box {degen_bb} for target at index {target_idx}.",
+                    )
+
+        # get the features from the backbone
+        features = self.backbone(images.tensors)
+        if isinstance(features, torch.Tensor):
+            features = OrderedDict([("0", features)])
+
+        features = list(features.values())
+
+        # compute the ssd heads outputs using the features
+        head_outputs = self.head(features)
+
+        # create the set of anchors
+        anchors = self.anchor_generator(images, features)
+
+        losses = {}
+        detections: List[Dict[str, Tensor]] = []
+        if self.training:
+            matched_idxs = []
+            if targets is None:
+                torch._assert(False, "targets should not be none when in training mode")
+            else:
+                for anchors_per_image, targets_per_image in zip(anchors, targets):
+                    if targets_per_image["boxes"].numel() == 0:
+                        matched_idxs.append(
+                            torch.full(
+                                (anchors_per_image.size(0),), -1, dtype=torch.int64, device=anchors_per_image.device
+                            )
+                        )
+                        continue
+
+                    match_quality_matrix = box_ops.box_iou(targets_per_image["boxes"], anchors_per_image)
+                    matched_idxs.append(self.proposal_matcher(match_quality_matrix))
+
+                losses = self.compute_loss(targets, head_outputs, anchors, matched_idxs)
+        else:
+            detections = self.postprocess_detections(head_outputs, anchors, images.image_sizes)
+            detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)
+
+        if torch.jit.is_scripting():
+            if not self._has_warned:
+                warnings.warn("SSD always returns a (Losses, Detections) tuple in scripting")
+                self._has_warned = True
+            return losses, detections
+
+        seg_output = self.segmentation_decoder(features=features[1], input_shape=original_image_sizes[0])
+
+        return {"detection": self.eager_outputs(losses, detections), "segmentation": seg_output}
+
+    def segmentation_decoder(self, features, input_shape):
+        x = self.segmentation_head(features)
         x = F.interpolate(x, size=input_shape, mode="bilinear", align_corners=False)
-        result["out"] = x
-        return result
+        return x
+
+    # def forward(
+    #     self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None
+    # ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
+
+    #     x = images
+    #     output = []
+
+    #     x, _ = self.transform(images)
+    #     x = x.tensors
+
+    #     x_ref = self.mobilenet_backbone._modules["features"](x)
+
+    #     for idx, block in enumerate(self.mobilenet_backbone._modules["features"]):
+    #         x = block(x)
+
+    #         print("BLOCK {}: {}".format(idx, block))
+    #         print("FEATURE SHAPE: {}".format(x.shape))
+    #         output.append(x)
+
+    #     # assert x == x_ref
+
+    #     return {
+    #         "detection": super().forward(images, targets),
+    #         "segmentation": self.segmentation_forward(images),
+    #     }
+
+    # def segmentation_forward(self, x: Tensor, **kwargs) -> Dict[str, Tensor]:
+    #     input_shape = x.shape[-2:]
+    #     # contract: features is a dict of tensors
+    #     features = self.segmenation_backbone(x)
+
+    #     result = OrderedDict()
+    #     x = features["out"]
+    #     x = self.segmentation_head(x)
+    #     x = F.interpolate(x, size=input_shape, mode="bilinear", align_corners=False)
+    #     result["out"] = x
+    #     return result

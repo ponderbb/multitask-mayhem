@@ -3,6 +3,7 @@ from functools import partial
 
 import torch
 import torch.nn as nn
+from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from torchvision.models.detection import _utils as det_utils
 from torchvision.models.detection import (
     fasterrcnn_mobilenet_v3_large_320_fpn,
@@ -15,8 +16,6 @@ from torchvision.models.detection.transform import GeneralizedRCNNTransform
 from torchvision.models.mobilenetv3 import MobileNet_V3_Large_Weights
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
-
-from torchmetrics.detection.mean_ap import MeanAveragePrecision
 
 from src.models.hybridDeepLabSSD import HybridModel
 
@@ -44,33 +43,29 @@ class ModelLoader:
             raise ValueError("Model not supported")
 
         # TODO: model summary, params, weights, etc
+        logging.info(model)
 
         return model
 
     def get_type(config):  # TODO: load losses for models also from here
         if config["model"] in ["fasterrcnn", "fasterrcnn_mobilenetv3"]:
-            metrics = {"detection":"map"}
+            metrics = {"detection": "map"}
             losses = {
                 "detection": MeanAveragePrecision(iou_type="bbox", class_metrics=True),
             }
         elif config["model"] == "ssdlite":
-            metrics = {"detection":"map"}
+            metrics = {"detection": "map"}
             losses = {
                 "detection": MeanAveragePrecision(iou_type="bbox", class_metrics=True),
             }
         elif config["model"] == "deeplabv3":
-            metrics = {"segmentation":"miou"}
-            losses = {
-                "segmentation":torch.nn.BCEWithLogitsLoss()
-            }
+            metrics = {"segmentation": "miou"}
+            losses = {"segmentation": torch.nn.BCEWithLogitsLoss()}
         elif config["model"] == "hybrid":
-            metrics = {
-                "detection":"map",
-                "segmentation":"miou"
-            }
+            metrics = {"detection": "map", "segmentation": "miou"}
             losses = {
                 "detection": MeanAveragePrecision(iou_type="bbox", class_metrics=True),
-                "segmentation":torch.nn.BCEWithLogitsLoss()
+                "segmentation": torch.nn.BCEWithLogitsLoss(),
             }
         else:
             raise ValueError("Model not supported")

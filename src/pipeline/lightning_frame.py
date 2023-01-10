@@ -127,10 +127,8 @@ class mtlMayhemModule(pl.LightningModule):
         else:
             preds = self.model(images, targets)
 
-            train_loss["det"] = sum(loss for loss in preds["detection"].values())
-            train_loss["seg"] = self.loss["segmentation"](
-                preds["segmentation"]["out"], target_masks.type(torch.float32)
-            )
+            train_loss["det"] = sum(loss for loss in preds["detection"].values()) / len(preds["detection"].values())
+            train_loss["seg"] = self.loss["segmentation"](preds["segmentation"], target_masks.type(torch.float32))
 
             train_loss["master"] = train_loss["det"] * 0.5 + train_loss["seg"] * 0.5
 
@@ -188,7 +186,7 @@ class mtlMayhemModule(pl.LightningModule):
         if "detection" in preds.keys():
             self.val_preds["det"].extend(preds["detection"])
         if "segmentation" in preds.keys():
-            self.val_preds["seg"].extend(preds["segmentation"]["out"])
+            self.val_preds["seg"].extend(preds["segmentation"])
 
     def on_validation_epoch_end(self) -> None:
         # skip sanity check
