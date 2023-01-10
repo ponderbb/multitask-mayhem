@@ -52,7 +52,7 @@ def logging_setup(config_path: str = "") -> None:
     if config_path != "":
         config = load_yaml(config_path)
     else:
-        config = {"debug": True}
+        config = {"debug": False}
 
     if config["debug"]:
         logging_level = logging.DEBUG
