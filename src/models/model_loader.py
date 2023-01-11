@@ -17,6 +17,7 @@ from torchvision.models.mobilenetv3 import MobileNet_V3_Large_Weights
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 
+from src.models.hybridDeepLabFasterRCNN import HybridModel2
 from src.models.hybridDeepLabSSD import HybridModel
 
 IMAGE_SIZE = (640, 480)
@@ -39,6 +40,8 @@ class ModelLoader:
             model = cls._load_maskrcnn(config)
         elif config["model"] == "hybrid":
             model = cls._load_hybrid(config)
+        elif config["model"] == "hybrid2":
+            model = cls._load_hybrid2(config)
         else:
             raise ValueError("Model not supported")
 
@@ -61,7 +64,7 @@ class ModelLoader:
         elif config["model"] == "deeplabv3":
             metrics = {"segmentation": "miou"}
             losses = {"segmentation": torch.nn.BCEWithLogitsLoss()}
-        elif config["model"] == "hybrid":
+        elif config["model"] in ["hybrid", "hybrid2"]:
             metrics = {"detection": "map", "segmentation": "miou"}
             losses = {
                 "detection": MeanAveragePrecision(iou_type="bbox", class_metrics=True),
@@ -122,3 +125,7 @@ class ModelLoader:
     @staticmethod
     def _load_hybrid(config):
         return HybridModel(config)
+
+    @staticmethod
+    def _load_hybrid2(config):
+        return HybridModel2(config)
