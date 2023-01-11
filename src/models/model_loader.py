@@ -42,11 +42,13 @@ class ModelLoader:
             model = cls._load_hybrid(config)
         elif config["model"] == "hybrid2":
             model = cls._load_hybrid2(config)
+        elif config["model"] == "hybrid2":
+            model = cls._load_hybrid2(config)
         else:
             raise ValueError("Model not supported")
 
         # TODO: model summary, params, weights, etc
-        logging.info(model)
+        logging.debug(model)
 
         return model
 

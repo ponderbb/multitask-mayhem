@@ -7,18 +7,13 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from torch.nn import functional as F
-from torchvision.models.detection import _utils as det_utils
-from torchvision.models.detection.anchor_utils import DefaultBoxGenerator
 from torchvision.models.detection.backbone_utils import _mobilenet_extractor
 from torchvision.models.detection.faster_rcnn import FasterRCNN
-from torchvision.models.detection.ssd import SSD
-from torchvision.models.detection.ssdlite import SSDLiteHead, _mobilenet_extractor
 from torchvision.models.mobilenetv3 import (
     MobileNet_V3_Large_Weights,
     mobilenet_v3_large,
 )
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
-from torchvision.ops import boxes as box_ops
 
 
 class HybridModel2(FasterRCNN):
@@ -98,8 +93,8 @@ class HybridModel2(FasterRCNN):
                         f" Found invalid box {degen_bb} for target at index {target_idx}.",
                     )
 
-        features_deeplab = self.backbone._modules["0"](images.tensors)
-        features = self.backbone._modules["1"](features_deeplab)
+        # features_deeplab = self.backbone._modules["0"](images.tensors)
+        # features = self.backbone._modules["1"](features_deeplab)
 
         features = self.backbone(images.tensors)
 
