@@ -185,10 +185,8 @@ class mtlMayhemModule(pl.LightningModule):
         self.val_target_masks.extend(target_masks.long())
         if "detection" in self.val_metric.keys():
             self.val_preds["det"].extend(preds["detection"])
-        elif "segmentation" in self.val_metric.keys():
+        if "segmentation" in self.val_metric.keys():
             self.val_preds["seg"].extend(preds["segmentation"])
-        else:
-            raise NotImplementedError
 
     def on_validation_epoch_end(self) -> None:
         # skip sanity check
