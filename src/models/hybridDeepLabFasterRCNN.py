@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from torch.nn import functional as F
+from torchvision.models.detection.anchor_utils import AnchorGenerator
 from torchvision.models.detection.backbone_utils import _mobilenet_extractor
 from torchvision.models.detection.faster_rcnn import FasterRCNN
 from torchvision.models.mobilenetv3 import (
@@ -27,11 +28,23 @@ class HybridModel2(FasterRCNN):
             reduced_tail=False,
         )
 
-        fastercnn_backbone = _mobilenet_extractor(backbone=backbone, fpn=False, trainable_layers=6)
+        fastercnn_backbone = _mobilenet_extractor(backbone=backbone, fpn=True, trainable_layers=6)
+
+        anchor_sizes = (
+            (
+                32,
+                64,
+                128,
+                256,
+                512,
+            ),
+        ) * 3
+        aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
 
         super().__init__(
             backbone=fastercnn_backbone,
             num_classes=config["detection_classes"],
+            rpn_anchor_generator=AnchorGenerator(anchor_sizes, aspect_ratios),
         )
 
         # backbone for segmentation
@@ -93,10 +106,8 @@ class HybridModel2(FasterRCNN):
                         f" Found invalid box {degen_bb} for target at index {target_idx}.",
                     )
 
-        # features_deeplab = self.backbone._modules["0"](images.tensors)
-        # features = self.backbone._modules["1"](features_deeplab)
-
-        features = self.backbone(images.tensors)
+        features_deeplab = self.backbone._modules["body"](images.tensors)
+        features = self.backbone._modules["fpn"](features_deeplab)
 
         if isinstance(features, torch.Tensor):
             features = OrderedDict([("0", features)])
@@ -108,7 +119,7 @@ class HybridModel2(FasterRCNN):
         losses.update(detector_losses)
         losses.update(proposal_losses)
 
-        seg_output = self.segmentation_decoder(features=features_deeplab, input_shape=original_image_sizes[0])
+        seg_output = self.segmentation_decoder(features=features_deeplab["1"], input_shape=original_image_sizes[0])
 
         if torch.jit.is_scripting():
             if not self._has_warned:

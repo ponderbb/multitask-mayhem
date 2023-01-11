@@ -183,10 +183,13 @@ class mtlMayhemModule(pl.LightningModule):
         self.val_images.extend(images)
         self.val_targets.extend(list(targets))
         self.val_target_masks.extend(target_masks.long())
-        if "detection" in preds.keys():
-            self.val_preds["det"].extend(preds["detection"])
-        if "segmentation" in preds.keys():
-            self.val_preds["seg"].extend(preds["segmentation"])
+        if len(self.model_type) == 1:
+            if "detection" in self.val_metric.keys():
+                self.val_preds["det"].extend(preds["detection"])
+            elif "segmentation" in self.val_metric.keys():
+                self.val_preds["seg"].extend(preds["segmentation"])
+            else:
+                raise NotImplementedError
 
     def on_validation_epoch_end(self) -> None:
         # skip sanity check
