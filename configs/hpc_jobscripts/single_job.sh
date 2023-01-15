@@ -9,7 +9,7 @@
 ### -- Select the resources: 1 gpu in exclusive process mode --
 #BSUB -gpu "num=1:mode=exclusive_process"
 ### -- set walltime limit: hh:mm --  maximum 24 hours for GPU-queues right now
-#BSUB -W 2:00
+#BSUB -W 3:00
 # request GB of system-memory
 #BSUB -R "rusage[mem=16GB]"
 ### -- set the email address --
@@ -32,6 +32,6 @@
 source ~/miniconda3/bin/activate
 conda activate multitask-mayhem
 
-python src/models/train_model.py -c configs/debug_foo.yaml
+python src/pipeline/train_model.py -c configs/debug_foo.yaml
 
 ## submit by using: bsub < configs/hpc_jobscripts/single_job.sh 
