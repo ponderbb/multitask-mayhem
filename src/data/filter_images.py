@@ -186,7 +186,6 @@ class filterImages:
     @staticmethod
     def _similarity_check(im1, im2):
         ssim_res = skiSSIM(im1, im2, win_size=111)  # higher the more similar
-        # TODO: find correct window size
         nrmse_res = skiNRMSE(im1, im2)  # lower the more similar
         similarity_index = ssim_res * 0.4 + (1 - nrmse_res) * 0.6  # TODO: better define the ratio
         return similarity_index

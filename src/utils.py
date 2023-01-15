@@ -13,6 +13,12 @@ import numpy as np
 import torch
 import yaml
 
+""" General function utility files concerning:
+    - path handling
+    - os related listing and folder creation
+    - seed setting
+"""
+
 
 def peek(iterable):
     try:
@@ -46,7 +52,7 @@ def logging_setup(config_path: str = "") -> None:
     if config_path != "":
         config = load_yaml(config_path)
     else:
-        config = {"debug": True}
+        config = {"debug": False}
 
     if config["debug"]:
         logging_level = logging.DEBUG

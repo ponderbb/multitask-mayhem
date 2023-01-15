@@ -105,7 +105,6 @@ def cvat_to_dict(xml_file, collection, data_root, create_mask: bool = True):
     - extract cvat labels to readable format
     - check for corresponding image paths
     - return dataloader manifest
-    - #FIXME: too complex, break to pieces
     """
 
     label_dicts_list = []

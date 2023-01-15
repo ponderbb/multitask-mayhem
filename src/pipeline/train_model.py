@@ -7,7 +7,7 @@ from pytorch_lightning.loggers.wandb import WandbLogger
 
 import src.utils as utils
 from src.data.dataloader import mtlDataModule
-from src.models.lightning_frame import mtlMayhemModule
+from src.pipeline.lightning_frame import mtlMayhemModule
 
 # import logging
 
@@ -57,7 +57,7 @@ if lightning_module.config["logging"]:
     es_config = lightning_module.config["early_stop"]
     callbacks_list.append(
         EarlyStopping(
-            monitor="val_{}".format(lightning_module.val_metric),
+            monitor="val_master",
             min_delta=es_config["delta"],
             patience=es_config["patience"],
             verbose=False,
@@ -68,7 +68,7 @@ if lightning_module.config["logging"]:
 # model checkpointing
 if not (lightning_datamodule.config["debug"]) and lightning_module.config["logging"]:
     checkpoint_callback = ModelCheckpoint(
-        monitor="val_{}".format(lightning_module.val_metric),
+        monitor="val_master",
         dirpath=lightning_module.path_dict["checkpoints_path"],
         filename="{epoch:02d}-{val_metric:.2f}",
         save_top_k=1,
