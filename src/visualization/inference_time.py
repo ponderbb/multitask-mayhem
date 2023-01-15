@@ -6,10 +6,10 @@ from tqdm import tqdm
 import logging
 
 configs_list = [
-    "configs/model-zoo/deeplabv3.yaml",
-    "configs/model-zoo/fasterrcnn_mob.yaml",
-    "configs/model-zoo/fasterrcnn_res.yaml",
-    "configs/model-zoo/ssdlite.yaml",
+    # "configs/model-zoo/deeplabv3.yaml",
+    # "configs/model-zoo/fasterrcnn_mob.yaml",
+    # "configs/model-zoo/fasterrcnn_res.yaml",
+    # "configs/model-zoo/ssdlite.yaml",
     "configs/hybrid_dryrun.yaml"
 ]
 
