@@ -1,7 +1,7 @@
 #!/bin/sh
 ### General options
 ### –- specify queue --
-#BSUB -q gpua100
+#BSUB -q gpuv100
 ### -- set the job Name --
 #BSUB -J 8h_batch 
 ### -- ask for number of cores (default: 1) --
@@ -9,7 +9,7 @@
 ### -- Select the resources: 1 gpu in exclusive process mode --
 #BSUB -gpu "num=1:mode=exclusive_process"
 ### -- set walltime limit: hh:mm --  maximum 24 hours for GPU-queues right now
-#BSUB -W 8:00
+#BSUB -W 10:00
 # request GB of system-memory
 #BSUB -R "rusage[mem=16GB]"
 ### -- set the email address --
@@ -32,10 +32,13 @@
 source ~/miniconda3/bin/activate
 conda activate multitask-mayhem
 
-python src/models/train_model.py -c configs/model-zoo/deeplabv3.yaml
-python src/models/train_model.py -c configs/model-zoo/ssdlite.yaml
-python src/models/train_model.py -c configs/model-zoo/fasterrcnn_mob.yaml
-python src/models/train_model.py -c configs/model-zoo/fasterrcnn_res.yaml
+# python src/pipeline/train_model.py -c configs/model-zoo/deeplabv3.yaml
+# python src/pipeline/train_model.py -c configs/model-zoo/ssdlite.yaml
+# python src/pipeline/train_model.py -c configs/model-zoo/frcnn.yaml
+# python src/pipeline/train_model.py -c configs/model-zoo/frcnn-resnet.yaml
+
+python src/pipeline/train_model.py -c configs/model-zoo/frcnn-hybrid.yaml
+python src/pipeline/train_model.py -c configs/model-zoo/ssdlite-hybrid.yaml
 
 
 ## submit by using: bsub < configs/hpc_jobscripts/overnight_batch.sh 

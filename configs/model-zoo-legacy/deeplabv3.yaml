@@ -17,14 +17,13 @@ segmentation_classes: 2 # including background
 
 # training pipeline
 model_out_path: "/work3/s202821/models"
-model: "ssdlite" # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
-attribute: "baseline-v4" # optional description, can be left empty
-weight: "" # [equal, uncertainty, dwa]
+model: "deeplabv3"
+attribute: "baselinev3" # optional, can be left empty
 
 # callbacks
 optimizer:
   name: "adam"
-  lr: 0.001
+  lr: 0.0005
   momentum: 0.9
   weight_decay: 0.0001
 lr_scheduler:
@@ -33,7 +32,7 @@ lr_scheduler:
   gamma: 0.1
 early_stop:
   delta: 0.0000
-  patience: 10
+  patience: 8
 
 # augmentation
 vflip:
@@ -57,8 +56,7 @@ normalize:
 batch_size: 8 # minimum 2 for deeplabv3
 num_workers: 4
 shuffle: True
-max_epochs: 50
-class_metrics: False
+max_epochs: 30
 
 # logging
 logging: True

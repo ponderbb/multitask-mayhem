@@ -1,6 +1,6 @@
 # data
 dataset: "warehouse-nn"
-data_root: "data/interim"
+data_root: "/work3/s202821/data/interim"
 collections: [
   "2022-09-23-10-17-46",
   "2022-09-23-10-39-51",
@@ -16,9 +16,10 @@ detection_classes: 5 # including background
 segmentation_classes: 2 # including background
 
 # training pipeline
-model_out_path: "models"
-model: "hybrid2"
-attribute: "dryrun" # optional, can be left empty
+model_out_path: "/work3/s202821/models"
+model: "frcnn" # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
+attribute: "baseline-v4" # optional description, can be left empty
+weight: "" # [equal, uncertainty, dwa]
 
 # callbacks
 optimizer:
@@ -28,21 +29,21 @@ optimizer:
   weight_decay: 0.0001
 lr_scheduler:
   name: "steplr" # can be None
-  step_size: 3
+  step_size: 8
   gamma: 0.1
 early_stop:
   delta: 0.0000
-  patience: 5
+  patience: 10
 
 # augmentation
 vflip:
-  apply: False
+  apply: True
   p: 0.5
 hflip:
   apply: False
   p: 0.1
 rotate:
-  apply: False
+  apply: True
   p: 0.1
   limit: 30
 normalize:
@@ -53,13 +54,14 @@ normalize:
 
 
 # loader
-batch_size: 2 # minimum 2 for deeplabv3
-num_workers: 0
+batch_size: 8 # minimum 2 for deeplabv3
+num_workers: 4
 shuffle: True
-max_epochs: 15
+max_epochs: 50
+class_metrics: False
 
 # logging
-logging: False
+logging: True
 wandb_project: "multitask-mayhem"
 entity: "thesis-mayhem"
 local_logs: ".logging"

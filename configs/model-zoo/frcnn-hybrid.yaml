@@ -17,9 +17,9 @@ segmentation_classes: 2 # including background
 
 # training pipeline
 model_out_path: "/work3/s202821/models"
-model: "ssdlite" # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
-attribute: "baseline-v4" # optional description, can be left empty
-weight: "" # [equal, uncertainty, dwa]
+model: "frcnn-hybrid" # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
+attribute: "mtl-v1" # optional description, can be left empty
+weight: "uncertainty" # [equal, uncertainty, dwa]
 
 # callbacks
 optimizer:
