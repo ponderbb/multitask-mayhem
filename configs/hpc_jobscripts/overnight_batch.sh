@@ -32,13 +32,13 @@
 source ~/miniconda3/bin/activate
 conda activate multitask-mayhem
 
-# python src/pipeline/train_model.py -c configs/model-zoo/deeplabv3.yaml
-# python src/pipeline/train_model.py -c configs/model-zoo/ssdlite.yaml
-# python src/pipeline/train_model.py -c configs/model-zoo/frcnn.yaml
-# python src/pipeline/train_model.py -c configs/model-zoo/frcnn-resnet.yaml
+python src/pipeline/train_model.py -c configs/model-zoo/deeplabv3.yaml
+python src/pipeline/train_model.py -c configs/model-zoo/ssdlite.yaml
+python src/pipeline/train_model.py -c configs/model-zoo/frcnn.yaml
+python src/pipeline/train_model.py -c configs/model-zoo/frcnn-resnet.yaml
 
-python src/pipeline/train_model.py -c configs/model-zoo/frcnn-hybrid.yaml
-python src/pipeline/train_model.py -c configs/model-zoo/ssdlite-hybrid.yaml
+# python src/pipeline/train_model.py -c configs/model-zoo/frcnn-hybrid.yaml
+# python src/pipeline/train_model.py -c configs/model-zoo/ssdlite-hybrid.yaml
 
 
 ## submit by using: bsub < configs/hpc_jobscripts/overnight_batch.sh 

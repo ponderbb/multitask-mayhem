@@ -2,7 +2,6 @@ import logging
 import os
 from typing import Any
 
-import numpy as np
 import pytorch_lightning as pl
 import torch
 import wandb
@@ -139,13 +138,13 @@ class mtlMayhemModule(pl.LightningModule):
         # _endof model specific forward pass #
 
         if self.config["logging"]:
-                self.log(
-                    "train_loss",
-                    train_loss,
-                    on_step=True,
-                    on_epoch=True,
-                    batch_size=self.config["batch_size"],
-                )
+            self.log(
+                "train_loss",
+                train_loss,
+                on_step=True,
+                on_epoch=True,
+                batch_size=self.config["batch_size"],
+            )
 
         return train_loss["master"]
 
@@ -219,7 +218,7 @@ class mtlMayhemModule(pl.LightningModule):
                     }
 
                 val_loss["det"] = results["map"].item()
-                val_loss["master"] = val_loss["det"]
+                self.current_result = val_loss["det"]
 
             if "segmentation" in self.model_tasks:
                 segmentation_losses = []
@@ -232,20 +231,25 @@ class mtlMayhemModule(pl.LightningModule):
                     segmentation_losses.append(seg_loss)
                 segmentation_losses = torch.nan_to_num(torch.stack(segmentation_losses))  # FIXME: zeroed out NaNs
                 val_loss["seg"] = torch.mean(segmentation_losses)
-                val_loss["master"] = val_loss["seg"]
+                self.current_result = val_loss["seg"]
 
             if len(self.model_tasks) != 1:
                 val_loss["master"] = val_loss["det"] * 0.5 + val_loss["seg"] * 0.5
+                self.current_result = val_loss["master"]
 
             if self.config["logging"]:
-                    self.log(
-                        "val_loss",
-                        val_loss,
-                        on_epoch=True,
-                        batch_size=self.config["batch_size"],
-                    )
-
-            self.current_result = val_loss["master"]
+                self.log(
+                    "val_loss",
+                    val_loss,
+                    on_epoch=True,
+                    batch_size=self.config["batch_size"],
+                )
+                self.log(
+                    "earlystop",
+                    self.current_result,
+                    on_epoch=True,
+                    batch_size=self.config["batch_size"],
+                )  # BUG: redundant callback bugfix
 
             self._save_model(save_on="max")
 
@@ -311,7 +315,9 @@ class mtlMayhemModule(pl.LightningModule):
                 ]
 
                 if self.config["logging"]:
-                    self.log("loss_weight", {"det": self.logsigma[0], "seg": self.logsigma[1]},
+                    self.log(
+                        "loss_weight",
+                        {"det": self.logsigma[0], "seg": self.logsigma[1]},
                         on_epoch=True,
                     )
 
