@@ -195,7 +195,7 @@ class mtlMayhemModule(pl.LightningModule):
 
         if "segmentation" in self.val_metric.keys():
             if len(self.model_tasks) == 1:
-                self.val_preds["seg"].extend(preds)
+                self.val_preds["seg"].extend(preds["out"])
             else:
                 self.val_preds["seg"].extend(preds["segmentation"])
 
