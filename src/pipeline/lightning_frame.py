@@ -23,13 +23,13 @@ class mtlMayhemModule(pl.LightningModule):
         self.class_lookup = utils.load_yaml("configs/class_lookup.yaml")
 
         # initialize tasks, metrics and losses
-        self.model_type, self.val_metric, self.loss = ModelLoader.get_type(self.config)
+        self.model_tasks, self.val_metric, self.loss = ModelLoader.get_type(self.config)
 
         self.model_name, self.path_dict = plUtils.resolve_paths(config_path)
 
         logging.info(
             "Running model instance with ID: {}\ntask(s): {}\nmetric(s): {}".format(
-                self.model_name, self.model_type, self.val_metric
+                self.model_name, self.model_tasks, self.val_metric
             )
         )
 
@@ -60,7 +60,7 @@ class mtlMayhemModule(pl.LightningModule):
 
         # update configuration of hyperparams in wandb
         if self.config["logging"]:
-            wandb.config["model_type"] = self.model_type
+            wandb.config["model_type"] = self.model_tasks
             wandb.config.update(self.config)
 
     def configure_optimizers(self) -> Any:
@@ -118,14 +118,14 @@ class mtlMayhemModule(pl.LightningModule):
             target_masks = plUtils.tuple_of_tensors_to_tensor(target_masks)
 
         # model specific forward pass #
-        if len(self.model_type) == 1:
-            if "detection" in self.model_type:
+        if len(self.model_tasks) == 1:
+            if "detection" in self.model_tasks:
                 preds = self.model(images, targets)
                 train_loss["det"] = sum(loss for loss in preds.values())
                 train_loss["master"] = train_loss["det"]
 
-            if "segmentation" in self.model_type:
-                preds = self.model(images, targets)
+            if "segmentation" in self.model_tasks:
+                preds = self.model(images)
                 train_loss["seg"] = self.loss["segmentation"](preds["out"], target_masks.type(torch.float32))
                 train_loss["master"] = train_loss["seg"]
         else:
@@ -139,10 +139,9 @@ class mtlMayhemModule(pl.LightningModule):
         # _endof model specific forward pass #
 
         if self.config["logging"]:
-            for key, value in train_loss.items():
                 self.log(
-                    "train_{}".format(key),
-                    value,
+                    "train_loss",
+                    train_loss,
                     on_step=True,
                     on_epoch=True,
                     batch_size=self.config["batch_size"],
@@ -187,10 +186,18 @@ class mtlMayhemModule(pl.LightningModule):
         self.val_images.extend(images)
         self.val_targets.extend(list(targets))
         self.val_target_masks.extend(target_masks.long())
+
         if "detection" in self.val_metric.keys():
-            self.val_preds["det"].extend(preds["detection"])
+            if len(self.model_tasks) == 1:
+                self.val_preds["det"].extend(preds)
+            else:
+                self.val_preds["det"].extend(preds["detection"])
+
         if "segmentation" in self.val_metric.keys():
-            self.val_preds["seg"].extend(preds["segmentation"])
+            if len(self.model_tasks) == 1:
+                self.val_preds["seg"].extend(preds)
+            else:
+                self.val_preds["seg"].extend(preds["segmentation"])
 
     def on_validation_epoch_end(self) -> None:
         # skip sanity check
@@ -198,22 +205,23 @@ class mtlMayhemModule(pl.LightningModule):
 
             val_loss = {}
 
-            if "detection" in self.model_type:
+            if "detection" in self.model_tasks:
                 # compute metrics
                 results = compute_metrics(
                     metric_box=self.metric_box, preds=self.val_preds["det"], targets=self.val_targets
                 )
 
                 # extract mAP overall and for each class
-                val_loss["det"] = results["map"].item()
+                if self.config["class_metrics"]:
+                    classes_map = results["map_per_class"].tolist()
+                    val_loss["det_class"] = {
+                        self.class_lookup["bbox_rev"][idx + 1]: map for idx, map in enumerate(classes_map)
+                    }
 
-                classes_map = results["map_per_class"].tolist()
-                val_loss["det_class"] = {
-                    self.class_lookup["bbox_rev"][idx + 1]: map for idx, map in enumerate(classes_map)
-                }
+                val_loss["det"] = results["map"].item()
                 val_loss["master"] = val_loss["det"]
 
-            if "segmentation" in self.model_type:
+            if "segmentation" in self.model_tasks:
                 segmentation_losses = []
                 for (pred, target) in zip(self.val_preds["seg"], self.val_target_masks):
                     seg_loss = binary_jaccard_index(
@@ -226,14 +234,13 @@ class mtlMayhemModule(pl.LightningModule):
                 val_loss["seg"] = torch.mean(segmentation_losses)
                 val_loss["master"] = val_loss["seg"]
 
-            if len(self.model_type) != 1:
-                val_loss["master"] = val_loss["det"] + val_loss["seg"]
+            if len(self.model_tasks) != 1:
+                val_loss["master"] = val_loss["det"] * 0.5 + val_loss["seg"] * 0.5
 
             if self.config["logging"]:
-                for key, value in val_loss.items():
                     self.log(
-                        "val_{}".format(key),
-                        value,
+                        "val_loss",
+                        val_loss,
                         on_epoch=True,
                         batch_size=self.config["batch_size"],
                     )
@@ -246,7 +253,7 @@ class mtlMayhemModule(pl.LightningModule):
                 plUtils._log_validation_images(
                     epoch=self.epoch,
                     class_lookup=self.class_lookup,
-                    model_type=self.model_type,
+                    model_type=self.model_tasks,
                     sanity_epoch=self.config["sanity_epoch"],
                     sanity_num=self.config["sanity_num"],
                     image_batch=self.val_images,
@@ -282,7 +289,7 @@ class mtlMayhemModule(pl.LightningModule):
                 logging.warning("DEBUG MODE: model weights are not saved")
 
     def _initialize_loss_balancing(self):
-        task_count = len(self.model_type)
+        task_count = len(self.model_tasks)
         if task_count > 1:
             if self.config["weight"] == "uncertainty":
                 weights_init_tensor = torch.Tensor([-0.7] * task_count)
@@ -294,7 +301,7 @@ class mtlMayhemModule(pl.LightningModule):
 
     def _loss_balancing_step(self, train_loss: dict):
 
-        task_count = len(self.model_type)
+        task_count = len(self.model_tasks)
 
         if task_count > 1:
             train_loss_list = list(train_loss.values())
@@ -303,9 +310,8 @@ class mtlMayhemModule(pl.LightningModule):
                     1 / (2 * torch.exp(w)) * train_loss_list[i] + w / 2 for i, w in enumerate(self.logsigma)
                 ]
 
-                if self.config["logging"] & task_count > 1:
-                    self.log(
-                        {"det_weight": self.logsigma[0], "seg_weight": self.logsigma[1]},
+                if self.config["logging"]:
+                    self.log("loss_weight", {"det": self.logsigma[0], "seg": self.logsigma[1]},
                         on_epoch=True,
                     )
 

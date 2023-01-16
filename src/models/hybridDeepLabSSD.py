@@ -23,7 +23,7 @@ from torchvision.ops import boxes as box_ops
 # IMAGENET_STD = [0.229, 0.224, 0.225]
 
 
-class HybridModel(SSD):
+class SSDLiteHybridModel(SSD):
     def __init__(self, config):
         # pure mobilenet backbone
         norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.03)

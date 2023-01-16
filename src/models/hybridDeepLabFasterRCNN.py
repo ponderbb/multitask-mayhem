@@ -17,7 +17,7 @@ from torchvision.models.mobilenetv3 import (
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 
 
-class HybridModel2(FasterRCNN):
+class FRCNNHybridModel(FasterRCNN):
     def __init__(self, config):
         # pure mobilenet backbone
         norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.03)

@@ -1,6 +1,6 @@
 # data
 dataset: "warehouse-nn"
-data_root: "data/interim"
+data_root: "/work3/s202821/data/interim"
 collections: [
   # "2022-09-23-10-17-46",
   "2022-09-23-10-39-51",
@@ -17,9 +17,9 @@ segmentation_classes: 2 # including background
 
 # training pipeline
 model_out_path: "models"
-model: "hybrid"
-attribute: "debug" # optional, can be left empty
-weight: "equal" # [equal, uncertainty, dwa]
+model: "deeplabv3" # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
+attribute: "debug" # optional description, can be left empty
+weight: "uncertainty" # [equal, uncertainty, dwa]
 
 # callbacks
 optimizer:
@@ -57,7 +57,8 @@ normalize:
 batch_size: 2 # minimum 2 for deeplabv3
 num_workers: 0
 shuffle: True
-max_epochs: 15
+max_epochs: 50
+class_metrics: False
 
 # logging
 logging: False

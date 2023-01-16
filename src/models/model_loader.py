@@ -17,8 +17,8 @@ from torchvision.models.mobilenetv3 import MobileNet_V3_Large_Weights
 from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 
-from src.models.hybridDeepLabFasterRCNN import HybridModel2
-from src.models.hybridDeepLabSSD import HybridModel
+from src.models.hybridDeepLabFasterRCNN import FRCNNHybridModel
+from src.models.hybridDeepLabSSD import SSDLiteHybridModel
 
 IMAGE_SIZE = (640, 480)
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
@@ -30,44 +30,47 @@ class ModelLoader:
     def grab_model(cls, config: dict):
         logging.info(f"Loading model: {config['model']}")
 
-        if config["model"] in ["fasterrcnn", "fasterrcnn_mobilenetv3"]:
+        if config["model"] in ["frcnn-resnet", "frcnn"]:
             model = cls._load_fastercnn(config)
         elif config["model"] == "ssdlite":
             model = cls._load_ssdlite(config)
         elif config["model"] == "deeplabv3":
             model = cls._load_deeplabv3(config)
-        elif config["model"] == "maskrcnn":
-            model = cls._load_maskrcnn(config)
-        elif config["model"] == "hybrid":
-            model = cls._load_hybrid(config)
-        elif config["model"] == "hybrid2":
-            model = cls._load_hybrid2(config)
+        elif config["model"] == "ssdlite-hybrid":
+            model = cls._load_ssdlite_hybrid(config)
+        elif config["model"] == "frcnn-hybrid":
+            model = cls._load_frcnn_hybrid(config)
         else:
             raise ValueError("Model not supported")
 
         # TODO: model summary, params, weights, etc
-        logging.debug(model)
+        # logging.debug(model)
 
         return model
 
     def get_type(config):  # TODO: load losses for models also from here
-        if config["model"] in ["fasterrcnn", "fasterrcnn_mobilenetv3"]:
+        if config["model"] in ["frcnn-resnet", "frcnn"]:
             metrics = {"detection": "map"}
             losses = {
-                "detection": MeanAveragePrecision(iou_type="bbox", class_metrics=True),
+                "detection": MeanAveragePrecision(iou_type="bbox", class_metrics=config["class_metrics"]),
+                "segmentation": None
             }
         elif config["model"] == "ssdlite":
             metrics = {"detection": "map"}
             losses = {
-                "detection": MeanAveragePrecision(iou_type="bbox", class_metrics=True),
+                "detection": MeanAveragePrecision(iou_type="bbox", class_metrics=config["class_metrics"]),
+                "segmentation": None
             }
         elif config["model"] == "deeplabv3":
             metrics = {"segmentation": "miou"}
-            losses = {"segmentation": torch.nn.BCEWithLogitsLoss()}
-        elif config["model"] in ["hybrid", "hybrid2"]:
+            losses = {
+                "detection": None,
+                "segmentation": torch.nn.BCEWithLogitsLoss()
+            }
+        elif config["model"] in ["ssdlite-hybrid", "frcnn-hybrid"]:
             metrics = {"detection": "map", "segmentation": "miou"}
             losses = {
-                "detection": MeanAveragePrecision(iou_type="bbox", class_metrics=True),
+                "detection": MeanAveragePrecision(iou_type="bbox", class_metrics=config["class_metrics"]),
                 "segmentation": torch.nn.BCEWithLogitsLoss(),
             }
         else:
@@ -80,9 +83,9 @@ class ModelLoader:
     # DETECTION BASELINES #
     @staticmethod
     def _load_fastercnn(config):
-        if config["model"] == "fasterrcnn":
+        if config["model"] == "frcnn-resnet":
             model = fasterrcnn_resnet50_fpn(pretrained=True, weights="DEFAULT")
-        elif config["model"] == "fasterrcnn_mobilenetv3":
+        elif config["model"] == "frcnn":
             model = fasterrcnn_mobilenet_v3_large_320_fpn(pretrained=True, weights="DEFAULT")
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, config["detection_classes"])
@@ -123,9 +126,9 @@ class ModelLoader:
 
     # Multi-task models #
     @staticmethod
-    def _load_hybrid(config):
-        return HybridModel(config)
+    def _load_ssdlite_hybrid(config):
+        return SSDLiteHybridModel(config)
 
     @staticmethod
-    def _load_hybrid2(config):
-        return HybridModel2(config)
+    def _load_frcnn_hybrid(config):
+        return FRCNNHybridModel(config)
