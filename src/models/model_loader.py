@@ -42,8 +42,6 @@ class ModelLoader:
             model = cls._load_hybrid(config)
         elif config["model"] == "hybrid2":
             model = cls._load_hybrid2(config)
-        elif config["model"] == "hybrid2":
-            model = cls._load_hybrid2(config)
         else:
             raise ValueError("Model not supported")
 

@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Any
 
+import numpy as np
 import pytorch_lightning as pl
 import torch
 import wandb
@@ -67,6 +68,9 @@ class mtlMayhemModule(pl.LightningModule):
         optim_config = self.config["optimizer"]
         lr_config = self.config["lr_scheduler"]
 
+        # loss balancing params
+        self._initialize_loss_balancing()
+
         # choose optimizer
         if optim_config["name"] == "sgd":
             self.optimizer = torch.optim.SGD(
@@ -130,7 +134,7 @@ class mtlMayhemModule(pl.LightningModule):
             train_loss["det"] = sum(loss for loss in preds["detection"].values()) / len(preds["detection"].values())
             train_loss["seg"] = self.loss["segmentation"](preds["segmentation"], target_masks.type(torch.float32))
 
-            train_loss["master"] = train_loss["det"] * 0.5 + train_loss["seg"] * 0.5
+            train_loss = self._loss_balancing_step(train_loss=train_loss)
 
         # _endof model specific forward pass #
 
@@ -223,7 +227,7 @@ class mtlMayhemModule(pl.LightningModule):
                 val_loss["master"] = val_loss["seg"]
 
             if len(self.model_type) != 1:
-                val_loss["master"] = val_loss["det"] * 0.5 + val_loss["seg"] * 0.5
+                val_loss["master"] = val_loss["det"] + val_loss["seg"]
 
             if self.config["logging"]:
                 for key, value in val_loss.items():
@@ -276,3 +280,38 @@ class mtlMayhemModule(pl.LightningModule):
                 )
             else:
                 logging.warning("DEBUG MODE: model weights are not saved")
+
+    def _initialize_loss_balancing(self):
+        task_count = len(self.model_type)
+        if task_count > 1:
+            if self.config["weight"] == "uncertainty":
+                weights_init_tensor = torch.Tensor([-0.7] * task_count)
+                self.logsigma = torch.nn.parameter.Parameter(weights_init_tensor, requires_grad=True)
+        else:
+            logging.info("Single task detected, no loss weighting applied.")
+
+        return None
+
+    def _loss_balancing_step(self, train_loss: dict):
+
+        task_count = len(self.model_type)
+
+        if task_count > 1:
+            train_loss_list = list(train_loss.values())
+            if self.config["weight"] == "uncertainty":
+                balanced_loss = [
+                    1 / (2 * torch.exp(w)) * train_loss_list[i] + w / 2 for i, w in enumerate(self.logsigma)
+                ]
+
+                if self.config["logging"] & task_count > 1:
+                    self.log(
+                        {"det_weight": self.logsigma[0], "seg_weight": self.logsigma[1]},
+                        on_epoch=True,
+                    )
+
+            if self.config["weight"] in ["equal", "dynamic"]:
+                raise NotImplementedError
+
+            train_loss = {"master": sum(balanced_loss), "det": balanced_loss[0], "seg": balanced_loss[1]}
+
+        return train_loss
