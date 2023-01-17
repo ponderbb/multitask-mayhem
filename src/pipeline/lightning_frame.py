@@ -107,7 +107,7 @@ class mtlMayhemModule(pl.LightningModule):
         targets: dictionary with keys "boxes", "masks", "labels"
         """
         images, targets = batch
-        train_loss = {}
+        self.train_loss = {}
 
         # format to [B,C,H,W] tensor
         if isinstance(images, tuple):
@@ -120,42 +120,47 @@ class mtlMayhemModule(pl.LightningModule):
         if len(self.model_tasks) == 1:
             if "detection" in self.model_tasks:
                 preds = self.model(images, targets)
-                train_loss["det"] = sum(loss for loss in preds.values())
-                train_loss["master"] = train_loss["det"]
+                self.train_loss["det"] = sum(loss for loss in preds.values())
+                self.train_loss["master"] = self.train_loss["det"]
 
             if "segmentation" in self.model_tasks:
                 preds = self.model(images)
-                train_loss["seg"] = self.loss["segmentation"](preds["out"], target_masks.type(torch.float32))
-                train_loss["master"] = train_loss["seg"]
+                self.train_loss["seg"] = self.loss["segmentation"](preds["out"], target_masks.type(torch.float32))
+                self.train_loss["master"] = self.train_loss["seg"]
         else:
             preds = self.model(images, targets)
 
-            train_loss["det"] = sum(loss for loss in preds["detection"].values()) / len(preds["detection"].values())
-            train_loss["seg"] = self.loss["segmentation"](preds["segmentation"], target_masks.type(torch.float32))
+            self.train_loss["det"] = sum(loss for loss in preds["detection"].values()) / len(
+                preds["detection"].values()
+            )
+            self.train_loss["seg"] = self.loss["segmentation"](preds["segmentation"], target_masks.type(torch.float32))
 
             if self.config["logging"]:
                 self.log(
                     "train_loss_wo",
-                    train_loss,
+                    self.train_loss,
                     on_step=True,
                     on_epoch=True,
                     batch_size=self.config["batch_size"],
                 )
 
-            train_loss = self._loss_balancing_step(train_loss=train_loss)
+            self._loss_balancing_step()
 
         # _endof model specific forward pass #
 
         if self.config["logging"]:
             self.log(
                 "train_loss",
-                train_loss,
+                self.train_loss,
                 on_step=True,
                 on_epoch=True,
                 batch_size=self.config["batch_size"],
             )
 
-        return train_loss["master"]
+        return self.train_loss["master"]
+
+    def on_train_epoch_end(self) -> None:
+        self._loss_balancing_epoch_end()
 
     def on_train_epoch_start(self) -> None:
         # initialize epoch counter
@@ -166,6 +171,9 @@ class mtlMayhemModule(pl.LightningModule):
                 torch.as_tensor(self.epoch, dtype=torch.float32),
                 on_epoch=True,
             )
+
+        if self.config["weight"] == "dynamic":
+            self._calculate_lambda_weight()
 
     def on_validation_start(self) -> None:
         self.val_images = []
@@ -305,19 +313,32 @@ class mtlMayhemModule(pl.LightningModule):
         task_count = len(self.model_tasks)
         if task_count > 1:
             if self.config["weight"] == "uncertainty":
-                weights_init_tensor = torch.Tensor([1.0] * task_count)
+                weights_init_tensor = torch.Tensor([-0.7] * task_count)
                 self.logsigma = torch.nn.parameter.Parameter(weights_init_tensor, requires_grad=True)
+
+            if self.config["weight"] in ["equal", "dynamic"]:
+                self.temperature = 2.0
+                self.lambda_weight = torch.ones(task_count)
         else:
             logging.info("Single task detected, no loss weighting applied.")
 
         return None
 
-    def _loss_balancing_step(self, train_loss: dict):
+    def _calculate_lambda_weight(self):
+        if self.epoch > 2:
+            w = []
+            for n1, n2 in zip(self.nMinus1_loss, self.nMinus2_loss):
+                w.append(n1 / n2)
+            w = torch.softmax(torch.tensor(w) / self.temperature, dim=0)
+            self.lambda_weight = len(self.model_tasks) * w.numpy()
+
+    def _loss_balancing_step(self):
 
         task_count = len(self.model_tasks)
 
         if task_count > 1:
-            train_loss_list = list(train_loss.values())
+            train_loss_list = list(self.train_loss.values())
+
             if self.config["weight"] == "uncertainty":
                 balanced_loss = [
                     1 / (2 * torch.exp(w)) * train_loss_list[i] + w / 2 for i, w in enumerate(self.logsigma)
@@ -325,14 +346,33 @@ class mtlMayhemModule(pl.LightningModule):
 
                 if self.config["logging"]:
                     self.log(
-                        "loss_weight",
+                        "logsigma",
                         {"det": self.logsigma[0], "seg": self.logsigma[1]},
                         on_epoch=True,
                     )
 
             if self.config["weight"] in ["equal", "dynamic"]:
-                raise NotImplementedError
+                balanced_loss = [w * train_loss_list[i] for i, w in enumerate(self.lambda_weight)]
 
-            train_loss = {"master": sum(balanced_loss), "det": balanced_loss[0], "seg": balanced_loss[1]}
+                if self.config["logging"]:
+                    self.log(
+                        "lambda_weight",
+                        {"det": self.lambda_weight[0], "seg": self.lambda_weight[1]},
+                        on_epoch=True,
+                    )
 
-        return train_loss
+            self.train_loss = {"master": sum(balanced_loss), "det": balanced_loss[0], "seg": balanced_loss[1]}
+
+    def _loss_balancing_epoch_end(self):
+        if self.config["weight"] == "dynamic":
+
+            train_loss_detached = {k: v.detach() for k, v in self.train_loss.items()}
+            train_loss_detached.pop("master")
+
+            if self.epoch == 1:
+                self.nMinus2_loss = list(train_loss_detached.values())
+            elif self.epoch == 2:
+                self.nMinus1_loss = list(train_loss_detached.values())
+            else:
+                self.nMinus2_loss = self.nMinus1_loss
+                self.nMinus1_loss = list(train_loss_detached.values())
