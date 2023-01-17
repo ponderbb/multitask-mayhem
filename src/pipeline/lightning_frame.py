@@ -133,6 +133,15 @@ class mtlMayhemModule(pl.LightningModule):
             train_loss["det"] = sum(loss for loss in preds["detection"].values()) / len(preds["detection"].values())
             train_loss["seg"] = self.loss["segmentation"](preds["segmentation"], target_masks.type(torch.float32))
 
+            if self.config["logging"]:
+                self.log(
+                    "train_loss_wo",
+                    train_loss,
+                    on_step=True,
+                    on_epoch=True,
+                    batch_size=self.config["batch_size"],
+                )
+
             train_loss = self._loss_balancing_step(train_loss=train_loss)
 
         # _endof model specific forward pass #
@@ -296,7 +305,7 @@ class mtlMayhemModule(pl.LightningModule):
         task_count = len(self.model_tasks)
         if task_count > 1:
             if self.config["weight"] == "uncertainty":
-                weights_init_tensor = torch.Tensor([-0.7] * task_count)
+                weights_init_tensor = torch.Tensor([1.0] * task_count)
                 self.logsigma = torch.nn.parameter.Parameter(weights_init_tensor, requires_grad=True)
         else:
             logging.info("Single task detected, no loss weighting applied.")
