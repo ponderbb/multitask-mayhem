@@ -8,6 +8,7 @@ import wandb
 from torchmetrics.functional.classification import binary_jaccard_index
 
 import src.utils as utils
+from src.features.autolambda import AutoLambda
 from src.features.metrics import compute_metrics
 from src.models.model_loader import ModelLoader
 from src.pipeline.lightning_utils import plUtils
@@ -316,9 +317,17 @@ class mtlMayhemModule(pl.LightningModule):
                 weights_init_tensor = torch.Tensor([-0.7] * task_count)
                 self.logsigma = torch.nn.parameter.Parameter(weights_init_tensor, requires_grad=True)
 
-            if self.config["weight"] in ["equal", "dynamic"]:
+            if self.config["weight"] in ["dynamic", "equal"]:
                 self.temperature = 2.0
                 self.lambda_weight = torch.ones(task_count)
+
+            if self.config["weight"] == "constant":
+                self.lambda_weight = torch.Tensor(self.config["w_constant"])
+
+            # if self.config["weight"] == "autol":
+            #     params = self.model.parameters()
+            #     autol = AutoLambda(self.model, self.device, ["train_tasks"], pri_tasks)
+            #     meta_optimizer = torch.optim.Adam([autol.meta_weights], lr=self.config["optimizer"]["lr"])
         else:
             logging.info("Single task detected, no loss weighting applied.")
 
@@ -351,7 +360,7 @@ class mtlMayhemModule(pl.LightningModule):
                         on_epoch=True,
                     )
 
-            if self.config["weight"] in ["equal", "dynamic"]:
+            if self.config["weight"] in ["equal", "constant", "dynamic"]:
                 balanced_loss = [w * train_loss_list[i] for i, w in enumerate(self.lambda_weight)]
 
                 if self.config["logging"]:
@@ -361,7 +370,21 @@ class mtlMayhemModule(pl.LightningModule):
                         on_epoch=True,
                     )
 
+            if self.config["weight"] == "autol":
+                balanced_loss = [w * train_loss_list[i] for i, w in enumerate(autol.meta_weights)]
+
             self.train_loss = {"master": sum(balanced_loss), "det": balanced_loss[0], "seg": balanced_loss[1]}
+
+    # def _update_meta_weights(self):
+    #     if self.config["weight"] == "autol":
+    # val_data, val_target = val_dataset.next()
+    # val_data = val_data.to(device)
+    # val_target = {task_id: val_target[task_id].to(device) for task_id in train_tasks.keys()}
+
+    # meta_optimizer.zero_grad()
+    # autol.unrolled_backward(train_data, train_target, val_data, val_target,
+    #                         scheduler.get_last_lr()[0], optimizer)
+    # meta_optimizer.step()
 
     def _loss_balancing_epoch_end(self):
         if self.config["weight"] == "dynamic":
