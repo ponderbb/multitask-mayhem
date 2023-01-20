@@ -19,7 +19,8 @@ segmentation_classes: 2 # including background
 model_out_path: "models"
 model: "frcnn" # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
 attribute: "debug" # optional description, can be left empty
-weight: "uncertainty" # [equal, uncertainty, dwa]
+weight: "uncertainty" # [equal, uncertainty, dynamic, constant]
+w_constant: [1.0, 1.0] # detetion, segmentation
 
 # callbacks
 optimizer:
