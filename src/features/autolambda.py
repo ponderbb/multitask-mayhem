@@ -2,6 +2,8 @@ import copy
 
 import torch
 
+from src.pipeline.lightning_utils import plUtils
+
 
 class AutoLambda:
     def __init__(self, model, device, train_tasks, pri_tasks, weight_init=0.1):
@@ -10,6 +12,7 @@ class AutoLambda:
         self.meta_weights = torch.tensor([weight_init] * len(train_tasks), requires_grad=True, device=device)
         self.train_tasks = train_tasks
         self.pri_tasks = pri_tasks
+        self.device = device
 
     def virtual_step(self, train_x, train_y, alpha, model_optim):
         """
@@ -17,10 +20,10 @@ class AutoLambda:
         """
 
         # forward & compute loss
-        if type(train_x) == list:  # multi-domain setting [many-to-many]
-            train_pred = [self.model(x, t) for t, x in enumerate(train_x)]
-        else:  # single-domain setting [one-to-many]
-            train_pred = self.model(train_x)
+        # if type(train_x) == list:  # multi-domain setting [many-to-many]
+        #     train_pred = [self.model(x, t) for t, x in enumerate(train_x)]
+        # else:  # single-domain setting [one-to-many]
+        train_pred = self.model(train_x, train_y)
 
         train_loss = self.model_fit(train_pred, train_y)
 
@@ -55,10 +58,8 @@ class AutoLambda:
                 pri_weights += [0.0]
 
         # compute validation data loss on primary tasks
-        if type(val_x) == list:
-            val_pred = [self.model_(x, t) for t, x in enumerate(val_x)]
-        else:
-            val_pred = self.model_(val_x)
+        self.model_.eval()
+        val_pred = self.model_(val_x)
         val_loss = self.model_fit(val_pred, val_y)
         loss = sum([w * val_loss[i] for i, w in enumerate(pri_weights)])
 
@@ -114,7 +115,12 @@ class AutoLambda:
         """
         define task specific losses
         """
-        seg_loss = torch.nn.BCEWithLogitsLoss(pred, targets)
-        det_loss = sum(loss for loss in pred.values())
+        target_masks = tuple([target["masks"] for target in targets])
+        target_masks = plUtils.tuple_of_tensors_to_tensor(target_masks)
+        target_masks = target_masks.type(torch.float32).to(self.device)
+
+        criterion = torch.nn.BCEWithLogitsLoss()
+        seg_loss = criterion(pred["segmentation"], target_masks)
+        det_loss = sum(loss for loss in pred["detection"].values())
         loss = [det_loss, seg_loss]
         return loss
