@@ -2,12 +2,20 @@ import logging
 import os
 from typing import Any
 
+import numpy as np
 import pytorch_lightning as pl
 import torch
 import wandb
 from torchmetrics.functional.classification import binary_jaccard_index
 
 import src.utils as utils
+from src.features.gradient_framework import (
+    cagrad,
+    grad2vec,
+    graddrop,
+    overwrite_grad,
+    pcgrad,
+)
 from src.features.loss_balancing import LossBalancing
 from src.features.metrics import compute_metrics
 from src.models.model_loader import ModelLoader
@@ -21,6 +29,10 @@ class mtlMayhemModule(pl.LightningModule):
         # load configuration scrip and classes
         self.config = utils.load_yaml(config_path)
         self.class_lookup = utils.load_yaml("configs/class_lookup.yaml")
+
+        if self.config["grad_method"] != "None":
+            self.automatic_optimization = False
+            self.customOptimizer = None
 
         # initialize tasks, metrics and losses
         self.model_tasks, self.val_metric, self.loss = ModelLoader.get_type(self.config)
@@ -107,6 +119,15 @@ class mtlMayhemModule(pl.LightningModule):
             logger=self.log,
         )
 
+        # apply gradient methods
+        if self.config["grad_method"] != None:
+            self.rng = np.random.default_rng()
+            self.grad_dims = []
+            for mm in self.model.shared_modules():
+                for param in mm.parameters():
+                    self.grad_dims.append(param.data.numel())
+            self.grads = torch.Tensor(sum(self.grad_dims), len(self.model_tasks)).to(self.device)
+
         return [self.optimizer], [self.lr_scheduler]
 
     def on_train_epoch_start(self) -> None:
@@ -169,6 +190,8 @@ class mtlMayhemModule(pl.LightningModule):
 
             self.train_loss = self.balancer.loss_balancing_step(train_loss=self.train_loss)
 
+            self.train_loss_tmp = [self.train_loss["det"], self.train_loss["seg"]]
+
         # _endof model specific forward pass #
 
         if self.config["logging"]:
@@ -179,6 +202,35 @@ class mtlMayhemModule(pl.LightningModule):
                 on_epoch=True,
                 batch_size=self.config["batch_size"],
             )
+
+        if self.config["grad_method"] != "None":
+
+            if self.config["grad_method"] == "graddrop":
+                for i in range(len(self.model_tasks)):
+                    self.manual_backward(loss=self.train_loss_tmp[i], retain_graph=True)
+                    grad2vec(self.model, self.grads, self.grad_dims, i)
+                    self.model.zero_grad_shared_modules()
+                g = graddrop(self.grads)
+                overwrite_grad(self.model, g, self.grad_dims, len(self.model_tasks))
+                self.optimizer.step()
+
+            elif self.config["grad_method"] == "pcgrad":
+                for i in range(len(self.model_tasks)):
+                    self.manual_backward(loss=self.train_loss_tmp[i], retain_graph=True)
+                    grad2vec(self.model, self.grads, self.grad_dims, i)
+                    self.model.zero_grad_shared_modules()
+                g = pcgrad(self.grads, self.rng, len(self.model_tasks))
+                overwrite_grad(self.model, g, self.grad_dims, len(self.model_tasks))
+                self.optimizer.step()
+
+            elif self.config["grad_method"] == "cagrad":
+                for i in range(len(self.model_tasks)):
+                    self.manual_backward(loss=self.train_loss_tmp[i], retain_graph=True)
+                    grad2vec(self.model, self.grads, self.grad_dims, i)
+                    self.model.zero_grad_shared_modules()
+                g = cagrad(self.grads, len(self.model_tasks), 0.4, rescale=1)
+                overwrite_grad(self.model, g, self.grad_dims, len(self.model_tasks))
+                self.optimizer.step()
 
         return self.train_loss["master"]
 

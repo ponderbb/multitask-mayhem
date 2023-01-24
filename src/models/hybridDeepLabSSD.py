@@ -68,6 +68,14 @@ class SSDLiteHybridModel(SSD):
         )
 
         self.segmentation_loss = nn.BCEWithLogitsLoss()
+        self.shared_backbone = [detection_backbone]
+
+    def shared_modules(self):
+        return self.shared_backbone  # FIXME: this is stupid
+
+    def zero_grad_shared_modules(self):
+        for mm in self.shared_modules():
+            mm.zero_grad()
 
     def forward(
         self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None

@@ -56,6 +56,14 @@ class FRCNNHybridModel(FasterRCNN):
         )
 
         self.segmentation_loss = nn.BCEWithLogitsLoss()
+        self.shared_backbone = [fastercnn_backbone]
+
+    def shared_modules(self):
+        return self.shared_backbone  # FIXME: this is stupid
+
+    def zero_grad_shared_modules(self):
+        for mm in self.shared_modules():
+            mm.zero_grad()
 
     def forward(self, images, targets=None):
         # type: (List[Tensor], Optional[List[Dict[str, Tensor]]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
