@@ -16,10 +16,10 @@ detection_classes: 5 # including background
 segmentation_classes: 2 # including background
 
 # training pipeline
-model_out_path: "models"
-model: "frcnn" # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
+model_out_path: "/work3/s202821/models"
+model: "frcnn-hybrid" # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
 attribute: "debug" # optional description, can be left empty
-weight: "uncertainty" # [equal, uncertainty, dwa]
+weight: "autol" # [equal, uncertainty, dynamic, autol]
 
 # callbacks
 optimizer:

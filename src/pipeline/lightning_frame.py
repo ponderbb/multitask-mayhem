@@ -8,7 +8,7 @@ import wandb
 from torchmetrics.functional.classification import binary_jaccard_index
 
 import src.utils as utils
-from src.features.autolambda import AutoLambda
+from src.features.loss_balancing import LossBalancing
 from src.features.metrics import compute_metrics
 from src.models.model_loader import ModelLoader
 from src.pipeline.lightning_utils import plUtils
@@ -69,7 +69,7 @@ class mtlMayhemModule(pl.LightningModule):
         lr_config = self.config["lr_scheduler"]
 
         # loss balancing params
-        self._initialize_loss_balancing()
+        self.balancer = LossBalancing(config=self.config, model_tasks=self.model_tasks, logger=self.log)
 
         # choose optimizer
         if optim_config["name"] == "sgd":
@@ -102,6 +102,19 @@ class mtlMayhemModule(pl.LightningModule):
 
         return [self.optimizer], [self.lr_scheduler]
 
+    def on_train_epoch_start(self) -> None:
+        # initialize epoch counter
+        self.epoch += 1
+        if self.config["logging"]:
+            self.log(
+                "epoch_sanity",
+                torch.as_tensor(self.epoch, dtype=torch.float32),
+                on_epoch=True,
+            )
+
+        if self.config["weight"] == "dynamic":
+            self.balancer.calculate_lambda_weight(epoch=self.epoch)
+
     def training_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
         """forward pass and loss calculation
         images: [B,C,H,W]
@@ -113,9 +126,8 @@ class mtlMayhemModule(pl.LightningModule):
         # format to [B,C,H,W] tensor
         if isinstance(images, tuple):
             images = plUtils.tuple_of_tensors_to_tensor(images)
-            # targets only contain masks as torch.BoolTensor
-            target_masks = tuple([target["masks"] for target in targets])
-            target_masks = plUtils.tuple_of_tensors_to_tensor(target_masks)
+            # targets only contain masks as torch.BoolTensor, needed conversion for single deeplabv3
+            target_masks = plUtils.tuple_of_tensors_to_tensor(tuple([target["masks"] for target in targets]))
 
         # model specific forward pass #
         if len(self.model_tasks) == 1:
@@ -130,14 +142,14 @@ class mtlMayhemModule(pl.LightningModule):
                 self.train_loss["master"] = self.train_loss["seg"]
         else:
 
-            self._update_meta_weights(train_image=images, train_target=targets)
+            self.balancer.update_meta_weights(train_image=images, train_target=targets)
 
             preds = self.model(images, targets)
 
             self.train_loss["det"] = sum(loss for loss in preds["detection"].values()) / len(
                 preds["detection"].values()
             )
-            self.train_loss["seg"] = self.loss["segmentation"](preds["segmentation"], target_masks.type(torch.float32))
+            self.train_loss["seg"] = preds["segmentation"]
 
             if self.config["logging"]:
                 self.log(
@@ -148,7 +160,7 @@ class mtlMayhemModule(pl.LightningModule):
                     batch_size=self.config["batch_size"],
                 )
 
-            self._loss_balancing_step()
+            self.train_loss = self.balancer.loss_balancing_step(train_loss=self.train_loss)
 
         # _endof model specific forward pass #
 
@@ -164,20 +176,7 @@ class mtlMayhemModule(pl.LightningModule):
         return self.train_loss["master"]
 
     def on_train_epoch_end(self) -> None:
-        self._loss_balancing_epoch_end()
-
-    def on_train_epoch_start(self) -> None:
-        # initialize epoch counter
-        self.epoch += 1
-        if self.config["logging"]:
-            self.log(
-                "epoch_sanity",
-                torch.as_tensor(self.epoch, dtype=torch.float32),
-                on_epoch=True,
-            )
-
-        if self.config["weight"] == "dynamic":
-            self._calculate_lambda_weight()
+        self.balancer.loss_balancing_epoch_end(train_loss=self.train_loss)
 
     def on_validation_start(self) -> None:
         self.val_images = []
@@ -201,18 +200,22 @@ class mtlMayhemModule(pl.LightningModule):
             target_masks = tuple([target["masks"] for target in targets])
             target_masks = plUtils.tuple_of_tensors_to_tensor(target_masks)
 
+        # validation pass if no target passed, no backpropagation
         preds = self.model(images)
 
+        # collect validation relevant objects
         self.val_images.extend(images)
         self.val_targets.extend(list(targets))
         self.val_target_masks.extend(target_masks.long())
 
+        # collect validation outputs (different for MTL and single task)
         if "detection" in self.val_metric.keys():
             if len(self.model_tasks) == 1:
                 self.val_preds["det"].extend(preds)
             else:
                 self.val_preds["det"].extend(preds["detection"])
 
+        # collect validation outputs (different for MTL and single task)
         if "segmentation" in self.val_metric.keys():
             if len(self.model_tasks) == 1:
                 self.val_preds["seg"].extend(preds["out"])
@@ -250,6 +253,7 @@ class mtlMayhemModule(pl.LightningModule):
                         ignore_index=self.class_lookup["sseg"]["background"],
                     )
                     segmentation_losses.append(seg_loss)
+
                 segmentation_losses = torch.nan_to_num(torch.stack(segmentation_losses))  # FIXME: zeroed out NaNs
                 val_loss["seg"] = torch.mean(segmentation_losses)
                 self.current_result = val_loss["seg"]
@@ -272,10 +276,18 @@ class mtlMayhemModule(pl.LightningModule):
                     batch_size=self.config["batch_size"],
                 )  # BUG: redundant callback bugfix
 
-            self._save_model(save_on="max")
+            self.best_result = plUtils.save_model(
+                best_result=self.best_result,
+                current_result=self.current_result,
+                model=self.model,
+                debug=self.config["debug"],
+                path_dict=self.path_dict,
+                save_on="max",
+                logger=self.log,
+            )
 
             if self.config["logging"]:
-                plUtils._log_validation_images(
+                plUtils.log_validation_images(
                     epoch=self.epoch,
                     class_lookup=self.class_lookup,
                     model_type=self.model_tasks,
@@ -288,119 +300,3 @@ class mtlMayhemModule(pl.LightningModule):
 
             logging.info("Current validation: {:.6f}".format(self.current_result))
             logging.info("Best validation: {:.6f}".format(self.best_result))
-
-    def _save_model(self, save_on: str):
-        """save model on best validation result
-        DEBUG_MODE: model is not saved!
-        """
-
-        save_model = False
-        if save_on == "max":
-            save_model = self.best_result < self.current_result
-        if save_on == "min":
-            save_model = self.best_result > self.current_result
-
-        if save_model:
-            self.best_result = self.current_result
-            self.log("best_val", self.best_result)
-
-            if not self.config["debug"]:
-                logging.info("Saving model weights.")
-                torch.save(
-                    self.model.state_dict(),
-                    self.path_dict["weights_path"] + "/best.pth",
-                )
-            else:
-                logging.warning("DEBUG MODE: model weights are not saved")
-
-    def _initialize_loss_balancing(self):
-        task_count = len(self.model_tasks)
-        if task_count > 1:
-            if self.config["weight"] == "uncertainty":
-                weights_init_tensor = torch.Tensor([-0.7] * task_count)
-                self.logsigma = torch.nn.parameter.Parameter(weights_init_tensor, requires_grad=True)
-
-            if self.config["weight"] in ["dynamic", "equal"]:
-                self.temperature = 2.0
-                self.lambda_weight = torch.ones(task_count)
-
-            if self.config["weight"] == "constant":
-                self.lambda_weight = torch.Tensor(self.config["w_constant"])
-
-            if self.config["weight"] == "autol":
-                self.autol = AutoLambda(self.model, self.device, self.model_tasks, self.model_tasks)
-                self.meta_optimizer = torch.optim.Adam([self.autol.meta_weights], lr=self.config["optimizer"]["lr"])
-        else:
-            logging.info("Single task detected, no loss weighting applied.")
-
-        return None
-
-    def _calculate_lambda_weight(self):
-        if self.epoch > 2:
-            w = []
-            for n1, n2 in zip(self.nMinus1_loss, self.nMinus2_loss):
-                w.append(n1 / n2)
-            w = torch.softmax(torch.tensor(w) / self.temperature, dim=0)
-            self.lambda_weight = len(self.model_tasks) * w.numpy()
-
-    def _loss_balancing_step(self):
-
-        task_count = len(self.model_tasks)
-
-        if task_count > 1:
-            train_loss_list = list(self.train_loss.values())
-
-            if self.config["weight"] == "uncertainty":
-                balanced_loss = [
-                    1 / (2 * torch.exp(w)) * train_loss_list[i] + w / 2 for i, w in enumerate(self.logsigma)
-                ]
-
-                if self.config["logging"]:
-                    self.log(
-                        "logsigma",
-                        {"det": self.logsigma[0], "seg": self.logsigma[1]},
-                        on_epoch=True,
-                    )
-
-            if self.config["weight"] in ["equal", "constant", "dynamic"]:
-                balanced_loss = [w * train_loss_list[i] for i, w in enumerate(self.lambda_weight)]
-
-                if self.config["logging"]:
-                    self.log(
-                        "lambda_weight",
-                        {"det": self.lambda_weight[0], "seg": self.lambda_weight[1]},
-                        on_epoch=True,
-                    )
-
-            if self.config["weight"] == "autol":
-                balanced_loss = [w * train_loss_list[i] for i, w in enumerate(self.autol.meta_weights)]
-
-            self.train_loss = {"master": sum(balanced_loss), "det": balanced_loss[0], "seg": balanced_loss[1]}
-
-    def _update_meta_weights(self, train_image, train_target):
-        if self.config["weight"] == "autol":
-            val_image, val_target = self.trainer.datamodule.meta_dataloader()._next_data()
-
-            if isinstance(val_image, tuple):
-                val_image = plUtils.tuple_of_tensors_to_tensor(val_image).to(self.device)
-
-            self.meta_optimizer.zero_grad()
-            self.autol.unrolled_backward(
-                train_image, train_target, val_image, val_target, self.lr_scheduler.get_last_lr()[0], self.optimizer
-            )
-
-            self.meta_optimizer.step()
-
-    def _loss_balancing_epoch_end(self):
-        if self.config["weight"] == "dynamic":
-
-            train_loss_detached = {k: v.detach() for k, v in self.train_loss.items()}
-            train_loss_detached.pop("master")
-
-            if self.epoch == 1:
-                self.nMinus2_loss = list(train_loss_detached.values())
-            elif self.epoch == 2:
-                self.nMinus1_loss = list(train_loss_detached.values())
-            else:
-                self.nMinus2_loss = self.nMinus1_loss
-                self.nMinus1_loss = list(train_loss_detached.values())
