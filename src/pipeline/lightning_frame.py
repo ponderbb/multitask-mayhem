@@ -235,7 +235,7 @@ class mtlMayhemModule(pl.LightningModule):
         return self.train_loss["master"]
 
     def on_train_epoch_end(self) -> None:
-        self.balancer.loss_balancing_epoch_end(train_loss=self.train_loss)
+        self.balancer.loss_balancing_epoch_end(train_loss=self.train_loss, epoch=self.epoch)
 
     def on_validation_start(self) -> None:
         self.val_images = []

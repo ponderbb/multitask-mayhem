@@ -106,15 +106,15 @@ class LossBalancing:
 
             self.meta_optimizer.step()
 
-    def loss_balancing_epoch_end(self, train_loss: dict):
+    def loss_balancing_epoch_end(self, epoch, train_loss: dict):
         if self.config["weight"] == "dynamic":
 
             train_loss_detached = {k: v.detach() for k, v in train_loss.items()}
             train_loss_detached.pop("master")
 
-            if self.epoch == 1:
+            if epoch == 1:
                 self.nMinus2_loss = list(train_loss_detached.values())
-            elif self.epoch == 2:
+            elif epoch == 2:
                 self.nMinus1_loss = list(train_loss_detached.values())
             else:
                 self.nMinus2_loss = self.nMinus1_loss
