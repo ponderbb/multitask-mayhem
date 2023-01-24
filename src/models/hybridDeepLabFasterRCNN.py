@@ -16,6 +16,8 @@ from torchvision.models.mobilenetv3 import (
 )
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 
+from src.pipeline.lightning_utils import plUtils
+
 
 class FRCNNHybridModel(FasterRCNN):
     def __init__(self, config):
@@ -53,6 +55,8 @@ class FRCNNHybridModel(FasterRCNN):
             num_classes=config["segmentation_classes"] - 1,
         )
 
+        self.segmenatition_loss = nn.BCEWithLogitsLoss()
+
     def forward(self, images, targets=None):
         # type: (List[Tensor], Optional[List[Dict[str, Tensor]]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
         """
@@ -78,6 +82,8 @@ class FRCNNHybridModel(FasterRCNN):
                         )
                     else:
                         torch._assert(False, f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+
+            targets_original = targets
 
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
@@ -120,6 +126,12 @@ class FRCNNHybridModel(FasterRCNN):
         losses.update(proposal_losses)
 
         seg_output = self.segmentation_decoder(features=features_deeplab["1"], input_shape=original_image_sizes[0])
+
+        if self.training:
+            # output losses just like the detection module, if we provide targets
+            target_masks = tuple([target["masks"] for target in targets_original])
+            target_masks = plUtils.tuple_of_tensors_to_tensor(target_masks)
+            seg_output = self.segmenatition_loss(seg_output, target_masks.type(torch.float32))
 
         if torch.jit.is_scripting():
             if not self._has_warned:

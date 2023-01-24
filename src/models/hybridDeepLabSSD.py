@@ -18,6 +18,8 @@ from torchvision.models.mobilenetv3 import (
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 from torchvision.ops import boxes as box_ops
 
+from src.pipeline.lightning_utils import plUtils
+
 # IMAGE_SIZE = (640, 480)
 # IMAGENET_MEAN = [0.485, 0.456, 0.406]
 # IMAGENET_STD = [0.229, 0.224, 0.225]
@@ -81,6 +83,8 @@ class SSDLiteHybridModel(SSD):
                         )
                     else:
                         torch._assert(False, f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+
+            targets_original = targets
 
         # get the original image sizes
         original_image_sizes: List[Tuple[int, int]] = []
@@ -153,6 +157,11 @@ class SSDLiteHybridModel(SSD):
             return losses, detections
 
         seg_output = self.segmentation_decoder(features=features[1], input_shape=original_image_sizes[0])
+        if self.training:
+            # output losses just like the detection module, if we provide targets
+            target_masks = tuple([target["masks"] for target in targets_original])
+            target_masks = plUtils.tuple_of_tensors_to_tensor(target_masks)
+            seg_output = self.segmenatition_loss(seg_output, target_masks.type(torch.float32))
 
         return {"detection": self.eager_outputs(losses, detections), "segmentation": seg_output}
 
