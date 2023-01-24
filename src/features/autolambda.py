@@ -1,7 +1,11 @@
 import copy
 
 import torch
+from torchmetrics.detection.mean_ap import MeanAveragePrecision
+from torchmetrics.functional.classification import binary_jaccard_index
 
+import src.utils as utils
+from src.features.metrics import compute_metrics
 from src.pipeline.lightning_utils import plUtils
 
 
@@ -13,21 +17,21 @@ class AutoLambda:
         self.train_tasks = train_tasks
         self.pri_tasks = pri_tasks
         self.device = device
+        self.class_lookup = utils.load_yaml("configs/class_lookup.yaml")
 
     def virtual_step(self, train_x, train_y, alpha, model_optim):
         """
         Compute unrolled network theta' (virtual step)
         """
 
-        # forward & compute loss
-        # if type(train_x) == list:  # multi-domain setting [many-to-many]
-        #     train_pred = [self.model(x, t) for t, x in enumerate(train_x)]
-        # else:  # single-domain setting [one-to-many]
         train_pred = self.model(train_x, train_y)
 
-        train_loss = self.model_fit(train_pred, train_y)
+        # sum detection bbox_regression and cross-entropy
+        train_pred["detection"] = sum(loss for loss in train_pred["detection"].values())
 
-        loss = sum([w * train_loss[i] for i, w in enumerate(self.meta_weights)])
+        train_loss_list = list(train_pred.values())
+
+        loss = sum([w * train_loss_list[i] for i, w in enumerate(self.meta_weights)])
 
         # compute gradient
         gradients = torch.autograd.grad(loss, self.model.parameters())
@@ -58,10 +62,17 @@ class AutoLambda:
                 pri_weights += [0.0]
 
         # compute validation data loss on primary tasks
-        self.model_.eval()
-        val_pred = self.model_(val_x)
-        val_loss = self.model_fit(val_pred, val_y)
-        loss = sum([w * val_loss[i] for i, w in enumerate(pri_weights)])
+        # val_pred = self.model_(val_x)
+        # val_loss = self.model_fit(val_pred, val_y)
+
+        val_pred = self.model_(val_x, val_y)
+
+        # sum detection bbox_regression and cross-entropy
+        val_pred["detection"] = sum(loss for loss in val_pred["detection"].values())
+
+        val_loss_list = list(val_pred.values())
+
+        loss = sum([w * val_loss_list[i] for i, w in enumerate(pri_weights)])
 
         # compute hessian via finite difference approximation
         model_weights_ = tuple(self.model_.parameters())
@@ -82,12 +93,11 @@ class AutoLambda:
             for p, d in zip(self.model.parameters(), d_model):
                 p += eps * d
 
-        if type(train_x) == list:
-            train_pred = [self.model(x, t) for t, x in enumerate(train_x)]
-        else:
-            train_pred = self.model(train_x)
-        train_loss = self.model_fit(train_pred, train_y)
-        loss = sum([w * train_loss[i] for i, w in enumerate(self.meta_weights)])
+        train_pred = self.model(train_x, train_y)
+        # sum detection bbox_regression and cross-entropy
+        train_pred["detection"] = sum(loss for loss in train_pred["detection"].values())
+        train_loss_list = list(train_pred.values())
+        loss = sum([w * train_loss_list[i] for i, w in enumerate(self.meta_weights)])
         d_weight_p = torch.autograd.grad(loss, self.meta_weights)
 
         # \theta- = \theta - eps * d_model
@@ -95,12 +105,11 @@ class AutoLambda:
             for p, d in zip(self.model.parameters(), d_model):
                 p -= 2 * eps * d
 
-        if type(train_x) == list:
-            train_pred = [self.model(x, t) for t, x in enumerate(train_x)]
-        else:
-            train_pred = self.model(train_x)
-        train_loss = self.model_fit(train_pred, train_y)
-        loss = sum([w * train_loss[i] for i, w in enumerate(self.meta_weights)])
+        train_pred = self.model(train_x, train_y)
+        # sum detection bbox_regression and cross-entropy
+        train_pred["detection"] = sum(loss for loss in train_pred["detection"].values())
+        train_loss_list = list(train_pred.values())
+        loss = sum([w * train_loss_list[i] for i, w in enumerate(self.meta_weights)])
         d_weight_n = torch.autograd.grad(loss, self.meta_weights)
 
         # recover theta
@@ -115,12 +124,18 @@ class AutoLambda:
         """
         define task specific losses
         """
-        target_masks = tuple([target["masks"] for target in targets])
-        target_masks = plUtils.tuple_of_tensors_to_tensor(target_masks)
-        target_masks = target_masks.type(torch.float32).to(self.device)
+        target_masks = plUtils.tuple_of_tensors_to_tensor(tuple([target["masks"] for target in targets]))
 
-        criterion = torch.nn.BCEWithLogitsLoss()
-        seg_loss = criterion(pred["segmentation"], target_masks)
-        det_loss = sum(loss for loss in pred["detection"].values())
-        loss = [det_loss, seg_loss]
-        return loss
+        det_metrics = compute_metrics(
+            metric_box=MeanAveragePrecision(iou_type="bbox"),
+            preds=pred["detection"],
+            targets=targets,
+        )
+
+        seg_metrics = binary_jaccard_index(
+            preds=pred["segmentation"],
+            target=target_masks.type(torch.float32).to(self.device),
+            ignore_index=self.class_lookup["sseg"]["background"],
+        )
+
+        return [det_metrics["map"].requires_grad_().to(self.device), seg_metrics.requires_grad_()]

@@ -7,11 +7,18 @@ from src.pipeline.lightning_utils import plUtils
 
 
 class LossBalancing:
-    def __init__(self, config: dict, model_tasks: list[str], logger):
+    def __init__(
+        self, config: dict, model, device, lr_scheduler, optimizer, model_tasks: list[str], meta_dataloader, logger
+    ):
         self.config = config
         self.model_tasks = model_tasks
+        self.model = model
+        self.device = device
+        self.lr_scheduler = lr_scheduler
+        self.optimizer = optimizer
         self.task_count = len(model_tasks)
         self.log = logger
+        self.meta_dataloader = meta_dataloader
         self.nMinus1_loss = []
         self.nMinus2_loss = []
 
@@ -77,8 +84,11 @@ class LossBalancing:
 
     def update_meta_weights(self, train_image, train_target):
         if self.config["weight"] == "autol":
-            val_image, val_target = self.trainer.datamodule.meta_dataloader()._next_data()
+            val_image, val_target = self.meta_dataloader._next_data()
 
+            val_target = [{k: v.to(self.device) for k, v in val_dict.items()} for val_dict in val_target]
+
+            # format to [B,C,H,W] tensor
             if isinstance(val_image, tuple):
                 val_image = plUtils.tuple_of_tensors_to_tensor(val_image).to(self.device)
 

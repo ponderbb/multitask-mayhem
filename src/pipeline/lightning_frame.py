@@ -68,9 +68,6 @@ class mtlMayhemModule(pl.LightningModule):
         optim_config = self.config["optimizer"]
         lr_config = self.config["lr_scheduler"]
 
-        # loss balancing params
-        self.balancer = LossBalancing(config=self.config, model_tasks=self.model_tasks, logger=self.log)
-
         # choose optimizer
         if optim_config["name"] == "sgd":
             self.optimizer = torch.optim.SGD(
@@ -95,10 +92,20 @@ class mtlMayhemModule(pl.LightningModule):
                 step_size=lr_config["step_size"],
                 gamma=lr_config["gamma"],
             )
-        elif lr_config["name"] is None:
-            self.lr_scheduler = None
         else:
-            raise ModuleNotFoundError("Learning rate scheduler name can be [steplr or None].")
+            raise ModuleNotFoundError("Learning rate scheduler not found.")
+
+        # loss balancing params
+        self.balancer = LossBalancing(
+            config=self.config,
+            model_tasks=self.model_tasks,
+            model=self.model,
+            device=self.device,
+            lr_scheduler=self.lr_scheduler,
+            optimizer=self.optimizer,
+            meta_dataloader=self.trainer.datamodule.meta_dataloader(),
+            logger=self.log,
+        )
 
         return [self.optimizer], [self.lr_scheduler]
 

@@ -67,6 +67,8 @@ class SSDLiteHybridModel(SSD):
             num_classes=config["segmentation_classes"] - 1,
         )
 
+        self.segmentation_loss = nn.BCEWithLogitsLoss()
+
     def forward(
         self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None
     ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
@@ -161,7 +163,7 @@ class SSDLiteHybridModel(SSD):
             # output losses just like the detection module, if we provide targets
             target_masks = tuple([target["masks"] for target in targets_original])
             target_masks = plUtils.tuple_of_tensors_to_tensor(target_masks)
-            seg_output = self.segmenatition_loss(seg_output, target_masks.type(torch.float32))
+            seg_output = self.segmentation_loss(seg_output, target_masks.type(torch.float32))
 
         return {"detection": self.eager_outputs(losses, detections), "segmentation": seg_output}
 
