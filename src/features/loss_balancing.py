@@ -80,6 +80,13 @@ class LossBalancing:
         if self.config["weight"] == "autol":
             balanced_loss = [w * train_loss_list[i] for i, w in enumerate(self.autol.meta_weights)]
 
+            if self.config["logging"]:
+                self.log(
+                    "meta_weight",
+                    {"det": self.autol.meta_weights[0], "seg": self.autol.meta_weights[1]},
+                    on_epoch=True,
+                )
+
         return {"master": sum(balanced_loss), "det": balanced_loss[0], "seg": balanced_loss[1]}
 
     def update_meta_weights(self, train_image, train_target):

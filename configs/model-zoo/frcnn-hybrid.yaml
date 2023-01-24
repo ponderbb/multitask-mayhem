@@ -16,10 +16,12 @@ detection_classes: 5 # including background
 segmentation_classes: 2 # including background
 
 # training pipeline
-model_out_path: "/work3/s202821/models"
-model: "frcnn-hybrid" # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
-attribute: "mtl-v1" # optional description, can be left empty
-weight: "uncertainty" # [equal, uncertainty, dwa]
+model_out_path: /work3/s202821/models
+model: frcnn-hybrid # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
+attribute: dwa-graddrop # optional description, can be left empty
+weight: dynamic # [equal, constant, uncertainty, dynamic, autol]
+w_constant: [1.0, 1.0] # contant weighting values [detection, segmentation]
+grad_method: graddrop # [None, graddrop, pcgrad, cagrad]
 
 # callbacks
 optimizer:

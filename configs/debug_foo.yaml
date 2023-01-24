@@ -22,6 +22,7 @@ attribute: debug # optional description, can be left empty
 weight: equal # [equal, constant, uncertainty, dynamic, autol]
 w_constant: [1.0, 1.0] # contant weighting values [detection, segmentation]
 grad_method: None # [None, graddrop, pcgrad, cagrad]
+
 # callbacks
 optimizer:
   name: adam
