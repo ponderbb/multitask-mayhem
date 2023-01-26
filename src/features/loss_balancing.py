@@ -38,6 +38,9 @@ class LossBalancing:
                 self.autol = AutoLambda(self.model, self.device, self.model_tasks, self.model_tasks)
                 self.meta_optimizer = torch.optim.Adam([self.autol.meta_weights], lr=self.config["optimizer"]["lr"])
 
+            elif self.config["weight"] == "geometric":
+                pass
+
             else:
                 raise ValueError("Unknown loss balancing method.")
         else:
@@ -86,6 +89,10 @@ class LossBalancing:
                     {"det": self.autol.meta_weights[0], "seg": self.autol.meta_weights[1]},
                     on_epoch=True,
                 )
+
+        if self.config["weight"] == "geometric":
+            balanced_loss = [torch.sqrt(task_loss) for task_loss in train_loss_list]
+            return {"master": balanced_loss[0] * balanced_loss[1], "det": balanced_loss[0], "seg": balanced_loss[1]}
 
         return {"master": sum(balanced_loss), "det": balanced_loss[0], "seg": balanced_loss[1]}
 
