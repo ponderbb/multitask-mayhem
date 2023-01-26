@@ -30,7 +30,7 @@ class mtlMayhemModule(pl.LightningModule):
         self.config = utils.load_yaml(config_path)
         self.class_lookup = utils.load_yaml("configs/class_lookup.yaml")
 
-        if self.config["grad_method"] != "None":
+        if self.config["grad_method"] is not None:
             self.automatic_optimization = False
             self.customOptimizer = None
 
@@ -104,6 +104,16 @@ class mtlMayhemModule(pl.LightningModule):
                 step_size=lr_config["step_size"],
                 gamma=lr_config["gamma"],
             )
+        elif lr_config["name"] == "onplateau":
+            # assert not any([param == None for param in lr_config.values()]), "Missing params for learning rate scheduler."
+            self.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                self.optimizer,
+                factor=lr_config["gamma"],
+                patience=lr_config["patience"],
+                cooldown=lr_config["cooldown"],
+                verbose=True,
+            )
+
         else:
             raise ModuleNotFoundError("Learning rate scheduler not found.")
 
@@ -120,7 +130,7 @@ class mtlMayhemModule(pl.LightningModule):
         )
 
         # apply gradient methods
-        if self.config["grad_method"] != None:
+        if self.config["grad_method"] is not None:
             self.rng = np.random.default_rng()
             self.grad_dims = []
             for mm in self.model.shared_modules():
@@ -203,36 +213,25 @@ class mtlMayhemModule(pl.LightningModule):
                 batch_size=self.config["batch_size"],
             )
 
-        if self.config["grad_method"] != "None":
+        if self.config["grad_method"] is not None:
 
-            if self.config["grad_method"] == "graddrop":
-                for i in range(len(self.model_tasks)):
-                    self.manual_backward(loss=self.train_loss_tmp[i], retain_graph=True)
-                    grad2vec(self.model, self.grads, self.grad_dims, i)
-                    self.model.zero_grad_shared_modules()
-                g = graddrop(self.grads)
-                overwrite_grad(self.model, g, self.grad_dims, len(self.model_tasks))
-                self.optimizer.step()
+            """Manual gradient calculation with gradient clipping
 
-            elif self.config["grad_method"] == "pcgrad":
-                for i in range(len(self.model_tasks)):
-                    self.manual_backward(loss=self.train_loss_tmp[i], retain_graph=True)
-                    grad2vec(self.model, self.grads, self.grad_dims, i)
-                    self.model.zero_grad_shared_modules()
-                g = pcgrad(self.grads, self.rng, len(self.model_tasks))
-                overwrite_grad(self.model, g, self.grad_dims, len(self.model_tasks))
-                self.optimizer.step()
+            Within self.gradient_step():
+            - using self.manual_backward(loss)
+            - different gradient calculation for [graddrop, pcgrad, cagrad]
+            - overwrite model gradients
 
-            elif self.config["grad_method"] == "cagrad":
-                for i in range(len(self.model_tasks)):
-                    self.manual_backward(loss=self.train_loss_tmp[i], retain_graph=True)
-                    grad2vec(self.model, self.grads, self.grad_dims, i)
-                    self.model.zero_grad_shared_modules()
-                g = cagrad(self.grads, len(self.model_tasks), 0.4, rescale=1)
-                overwrite_grad(self.model, g, self.grad_dims, len(self.model_tasks))
-                self.optimizer.step()
+            """
 
-        return self.train_loss["master"]
+            self.optimizer.zero_grad()
+            self.gradient_step()
+            self.clip_gradients(self.optimizer, gradient_clip_val=0.5, gradient_clip_algorithm="norm")
+            self.optimizer.step()
+
+        else:
+
+            return self.train_loss["master"]
 
     def on_train_epoch_end(self) -> None:
         self.balancer.loss_balancing_epoch_end(train_loss=self.train_loss, epoch=self.epoch)
@@ -359,3 +358,18 @@ class mtlMayhemModule(pl.LightningModule):
 
             logging.info("Current validation: {:.6f}".format(self.current_result))
             logging.info("Best validation: {:.6f}".format(self.best_result))
+
+    def gradient_step(self):
+        for i in range(len(self.model_tasks)):
+            self.manual_backward(loss=self.train_loss_tmp[i], retain_graph=True)
+            grad2vec(self.model, self.grads, self.grad_dims, i)
+            self.model.zero_grad_shared_modules()
+
+        if self.config["grad_method"] == "graddrop":
+            g = graddrop(self.grads)
+        elif self.config["grad_method"] == "pcgrad":
+            g = pcgrad(self.grads, self.rng, len(self.model_tasks))
+        elif self.config["grad_method"] == "cagrad":
+            g = cagrad(self.grads, len(self.model_tasks), 0.4, rescale=1)
+
+        overwrite_grad(self.model, g, self.grad_dims, len(self.model_tasks))
