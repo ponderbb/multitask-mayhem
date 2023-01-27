@@ -105,7 +105,6 @@ class mtlMayhemModule(pl.LightningModule):
                 gamma=lr_config["gamma"],
             )
         elif lr_config["name"] == "onplateau":
-            # assert not any([param == None for param in lr_config.values()]), "Missing params for learning rate scheduler."
             self.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
                 self.optimizer,
                 factor=lr_config["gamma"],
@@ -228,6 +227,7 @@ class mtlMayhemModule(pl.LightningModule):
             self.gradient_step()
             self.clip_gradients(self.optimizer, gradient_clip_val=0.5, gradient_clip_algorithm="norm")
             self.optimizer.step()
+            self.lr_scheduler.step()
 
         else:
 
