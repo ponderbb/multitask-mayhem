@@ -44,6 +44,8 @@ class ModelLoader:
             model = cls._load_lraspp(config)
         elif config["model"] == "ssdlite-hybrid":
             model = cls._load_ssdlite_hybrid(config)
+        elif config["model"] == "lraspp-hybrid":
+            model = cls._load_ssdlite_hybrid(config)
         elif config["model"] == "frcnn-hybrid":
             model = cls._load_frcnn_hybrid(config)
         else:
@@ -61,16 +63,19 @@ class ModelLoader:
                 "detection": MeanAveragePrecision(iou_type="bbox", class_metrics=config["class_metrics"]),
                 "segmentation": None,
             }
+            
         elif config["model"] == "ssdlite":
             metrics = {"detection": "map"}
             losses = {
                 "detection": MeanAveragePrecision(iou_type="bbox", class_metrics=config["class_metrics"]),
                 "segmentation": None,
             }
+
         elif config["model"] in ["deeplabv3", "lraspp"]:
             metrics = {"segmentation": "miou"}
             losses = {"detection": None, "segmentation": torch.nn.BCEWithLogitsLoss()}
-        elif config["model"] in ["ssdlite-hybrid", "frcnn-hybrid"]:
+
+        elif config["model"] in ["ssdlite-hybrid", "frcnn-hybrid", "lraspp-hybrid"]:
             metrics = {"detection": "map", "segmentation": "miou"}
             losses = {
                 "detection": MeanAveragePrecision(iou_type="bbox", class_metrics=config["class_metrics"]),
