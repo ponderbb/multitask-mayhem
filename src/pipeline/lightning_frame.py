@@ -227,7 +227,6 @@ class mtlMayhemModule(pl.LightningModule):
             self.gradient_step()
             self.clip_gradients(self.optimizer, gradient_clip_val=0.5, gradient_clip_algorithm="norm")
             self.optimizer.step()
-            self.lr_scheduler.step()
 
         else:
 
@@ -235,6 +234,7 @@ class mtlMayhemModule(pl.LightningModule):
 
     def on_train_epoch_end(self) -> None:
         self.balancer.loss_balancing_epoch_end(train_loss=self.train_loss, epoch=self.epoch)
+        self.lr_scheduler.step()
 
     def on_validation_start(self) -> None:
         self.val_images = []

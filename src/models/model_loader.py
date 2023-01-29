@@ -14,8 +14,12 @@ from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.ssdlite import SSDLiteClassificationHead
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 from torchvision.models.mobilenetv3 import MobileNet_V3_Large_Weights
-from torchvision.models.segmentation import deeplabv3_mobilenet_v3_large
+from torchvision.models.segmentation import (
+    deeplabv3_mobilenet_v3_large,
+    lraspp_mobilenet_v3_large,
+)
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
+from torchvision.models.segmentation.lraspp import LRASPPHead
 
 from src.models.hybridDeepLabFasterRCNN import FRCNNHybridModel
 from src.models.hybridDeepLabSSD import SSDLiteHybridModel
@@ -36,6 +40,8 @@ class ModelLoader:
             model = cls._load_ssdlite(config)
         elif config["model"] == "deeplabv3":
             model = cls._load_deeplabv3(config)
+        elif config["model"] == "lraspp":
+            model = cls._load_lraspp(config)
         elif config["model"] == "ssdlite-hybrid":
             model = cls._load_ssdlite_hybrid(config)
         elif config["model"] == "frcnn-hybrid":
@@ -53,20 +59,17 @@ class ModelLoader:
             metrics = {"detection": "map"}
             losses = {
                 "detection": MeanAveragePrecision(iou_type="bbox", class_metrics=config["class_metrics"]),
-                "segmentation": None
+                "segmentation": None,
             }
         elif config["model"] == "ssdlite":
             metrics = {"detection": "map"}
             losses = {
                 "detection": MeanAveragePrecision(iou_type="bbox", class_metrics=config["class_metrics"]),
-                "segmentation": None
+                "segmentation": None,
             }
-        elif config["model"] == "deeplabv3":
+        elif config["model"] in ["deeplabv3", "lraspp"]:
             metrics = {"segmentation": "miou"}
-            losses = {
-                "detection": None,
-                "segmentation": torch.nn.BCEWithLogitsLoss()
-            }
+            losses = {"detection": None, "segmentation": torch.nn.BCEWithLogitsLoss()}
         elif config["model"] in ["ssdlite-hybrid", "frcnn-hybrid"]:
             metrics = {"detection": "map", "segmentation": "miou"}
             losses = {
@@ -86,7 +89,11 @@ class ModelLoader:
         if config["model"] == "frcnn-resnet":
             model = fasterrcnn_resnet50_fpn(pretrained=True, weights="DEFAULT")
         elif config["model"] == "frcnn":
-            model = fasterrcnn_mobilenet_v3_large_320_fpn(pretrained=True, weights="DEFAULT")
+            model = fasterrcnn_mobilenet_v3_large_320_fpn(
+                # pretrained=True,
+                # weights="DEFAULT",
+                weights_backbone=MobileNet_V3_Large_Weights.IMAGENET1K_V1
+            )
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, config["detection_classes"])
         return model
@@ -120,8 +127,27 @@ class ModelLoader:
     # SEGMENTATION BASELINES #
     @staticmethod
     def _load_deeplabv3(config):
-        model = deeplabv3_mobilenet_v3_large(pretrained=True, weights="DEFAULT")
+        model = deeplabv3_mobilenet_v3_large(
+            # pretrained=True,
+            # weights="DEFAULT",
+            weights_backbone=MobileNet_V3_Large_Weights.IMAGENET1K_V1  # TODO: CHANGED
+        )
         model.classifier = DeepLabHead(960, config["segmentation_classes"] - 1)
+        return model
+
+    @staticmethod
+    def _load_lraspp(config):
+        model = lraspp_mobilenet_v3_large(
+            # pretrained=True,
+            # weights="DEFAULT",
+            weights_backbone=MobileNet_V3_Large_Weights.IMAGENET1K_V1  # TODO: CHANGED
+        )
+        model.classifier = LRASPPHead(
+            low_channels=40,  # from C2 found in _lraspp_mobilenetv3 method
+            high_channels=960,  # from C5 found in _lraspp_mobilenetv3 method
+            num_classes=config["segmentation_classes"] - 1,
+            inter_channels=128,
+        )
         return model
 
     # Multi-task models #
