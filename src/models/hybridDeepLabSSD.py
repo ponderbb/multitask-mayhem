@@ -10,13 +10,17 @@ from torch.nn import functional as F
 from torchvision.models.detection import _utils as det_utils
 from torchvision.models.detection.anchor_utils import DefaultBoxGenerator
 from torchvision.models.detection.ssd import SSD
-from torchvision.models.detection.ssdlite import SSDLiteHead, _mobilenet_extractor
+from torchvision.models.detection.ssdlite import SSDLiteHead
 from torchvision.models.mobilenetv3 import (
     MobileNet_V3_Large_Weights,
     mobilenet_v3_large,
 )
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead
+from torchvision.models.segmentation.lraspp import LRASPPHead
 from torchvision.ops import boxes as box_ops
+
+from src.pipeline.lightning_utils import plUtils
+from src.models.SSD_utils import _mobilenet_extractor
 
 # IMAGE_SIZE = (640, 480)
 # IMAGENET_MEAN = [0.485, 0.456, 0.406]
@@ -36,7 +40,10 @@ class SSDLiteHybridModel(SSD):
 
         # backbone for detection
         detection_backbone = _mobilenet_extractor(
-            backbone, trainable_layers=6, norm_layer=norm_layer
+            backbone,
+            trainable_layers=6,
+            norm_layer=norm_layer,
+            c2_bool=True if config["model"] == "lraspp-hybrid" else False
         )  # constructs the extra SSD features on top of the mobilenet
 
         # detection head
@@ -44,6 +51,8 @@ class SSDLiteHybridModel(SSD):
         anchor_generator = DefaultBoxGenerator([[2, 3] for _ in range(6)], min_ratio=0.2, max_ratio=0.95)
         num_anchors = anchor_generator.num_anchors_per_location()
         in_features = det_utils.retrieve_out_channels(detection_backbone, size=size)
+        if config["model"] == "lraspp-hybrid":
+            in_features = in_features[1:]
         head = SSDLiteHead(
             in_channels=in_features,
             num_anchors=num_anchors,
@@ -60,10 +69,31 @@ class SSDLiteHybridModel(SSD):
         )
 
         # backbone for segmentation
-        self.segmentation_head = DeepLabHead(
-            in_channels=detection_backbone.features[1]._modules["3"].out_channels,
-            num_classes=config["segmentation_classes"] - 1,
-        )
+        if config["model"] == "ssdlite-hybrid":
+            self.segmentation_head = DeepLabHead(
+                in_channels=detection_backbone.features[1]._modules["3"].out_channels,
+                num_classes=config["segmentation_classes"] - 1,
+            )
+            self.lraspp_mode = False
+
+        elif config["model"] == "lraspp-hybrid":
+            self.segmentation_head = LRASPPHead(
+                low_channels=detection_backbone.features[0]._modules["4"].out_channels,
+                high_channels=detection_backbone.features[2]._modules["3"].out_channels,
+                num_classes=config["segmentation_classes"] - 1,
+                inter_channels=128,
+            )
+            self.lraspp_mode = True
+
+        self.segmentation_loss = nn.BCEWithLogitsLoss()
+        self.shared_backbone = [detection_backbone]
+
+    def shared_modules(self):
+        return self.shared_backbone  # FIXME: this is stupid
+
+    def zero_grad_shared_modules(self):
+        for mm in self.shared_modules():
+            mm.zero_grad()
 
     def forward(
         self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None
@@ -81,6 +111,8 @@ class SSDLiteHybridModel(SSD):
                         )
                     else:
                         torch._assert(False, f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+
+            targets_original = targets
 
         # get the original image sizes
         original_image_sizes: List[Tuple[int, int]] = []
@@ -111,10 +143,17 @@ class SSDLiteHybridModel(SSD):
 
         # get the features from the backbone
         features = self.backbone(images.tensors)
+
         if isinstance(features, torch.Tensor):
             features = OrderedDict([("0", features)])
 
+        if self.lraspp_mode:
+            lraspp_low_features = features["0"]
+            lraspp_high_features = features["2"]
+            features.pop("0")
+
         features = list(features.values())
+
 
         # compute the ssd heads outputs using the features
         head_outputs = self.head(features)
@@ -152,11 +191,39 @@ class SSDLiteHybridModel(SSD):
                 self._has_warned = True
             return losses, detections
 
-        seg_output = self.segmentation_decoder(features=features[1], input_shape=original_image_sizes[0])
+        if self.lraspp_mode:
+            seg_output = self.lraspp_decoder(
+                low_features=lraspp_low_features,
+                high_features=lraspp_high_features,
+                input_shape=original_image_sizes[0]
+            )
+        else:
+            seg_output = self.deeplabv3_decoder(
+                features=features[1],
+                input_shape=original_image_sizes[0]
+            )
+
+        if self.training:
+            # output losses just like the detection module, if we provide targets
+            target_masks = tuple([target["masks"] for target in targets_original])
+            target_masks = plUtils.tuple_of_tensors_to_tensor(target_masks)
+            seg_output = self.segmentation_loss(seg_output, target_masks.type(torch.float32))
 
         return {"detection": self.eager_outputs(losses, detections), "segmentation": seg_output}
 
-    def segmentation_decoder(self, features, input_shape):
+    def lraspp_decoder(self, low_features, high_features, input_shape):
+        x = self.segmentation_head.cbr(high_features)
+        s = self.segmentation_head.scale(high_features)
+        x = x*s
+        x = F.interpolate(x, size=low_features.shape[-2:], mode="bilinear", align_corners=False)
+
+        out = self.segmentation_head.low_classifier(low_features) + self.segmentation_head.high_classifier(x)
+
+        out = F.interpolate(out, size=input_shape, mode="bilinear", align_corners=False)
+
+        return out 
+
+    def deeplabv3_decoder(self, features, input_shape):
         x = self.segmentation_head(features)
         x = F.interpolate(x, size=input_shape, mode="bilinear", align_corners=False)
         return x

@@ -1,37 +1,40 @@
 # data
-dataset: "warehouse-nn"
-data_root: "/work3/s202821/data/interim"
+dataset: warehouse-nn
+data_root: /work3/s202821/data/interim
 collections: [
-  "2022-09-23-10-17-46",
-  "2022-09-23-10-39-51",
-  "2022-09-23-11-03-28",
-  "2022-09-23-11-09-28",
-  "2022-10-19-10-44-31",
-  "2022-10-19-11-07-11",
-  "2022-10-19-11-15-59",
-  "2022-10-19-11-20-39"
+  2022-09-23-10-17-46,
+  2022-09-23-10-39-51,
+  2022-09-23-11-03-28,
+  2022-09-23-11-09-28,
+  2022-10-19-10-44-31,
+  2022-10-19-11-07-11,
+  2022-10-19-11-15-59,
+  2022-10-19-11-20-39
 ]
 split_ratio: [0.7, 0.2, 0.1]
 detection_classes: 5 # including background
 segmentation_classes: 2 # including background
 
 # training pipeline
-model_out_path: "/work3/s202821/models"
-model: "ssdlite-hybrid" # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
-attribute: "dwa-e2etrained" # optional description, can be left empty
-weight: "dynamic" # [equal, uncertainty, dynamic, constant]
-w_constant: [1.0, 1.0] # detetion, segmentation
+model_out_path: /work3/s202821/models
+model: ssdlite-hybrid # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
+attribute: # optional description, can be left empty
+weight: equal # [equal, constant, uncertainty, dynamic, autol]
+w_constant: # contant weighting values [detection, segmentation]
+grad_method:  # [graddrop, pcgrad, cagrad]
 
 # callbacks
 optimizer:
-  name: "adam"
+  name: adam
   lr: 0.001
   momentum: 0.9
   weight_decay: 0.0001
 lr_scheduler:
-  name: "steplr" # can be None
+  name: steplr # can be None
   step_size: 8
   gamma: 0.1
+  patience: 3
+  cooldown: 2
 early_stop:
   delta: 0.0000
   patience: 10
@@ -55,17 +58,17 @@ normalize:
 
 
 # loader
-batch_size: 8 # minimum 2 for deeplabv3
-num_workers: 4
+batch_size: 2 # minimum 2 for deeplabv3
+num_workers: 2
 shuffle: True
 max_epochs: 50
 class_metrics: False
 
 # logging
 logging: True
-wandb_project: "multitask-mayhem"
-entity: "thesis-mayhem"
-local_logs: ".logging"
+wandb_project: multitask-mayhem
+entity: thesis-mayhem
+local_logs: .logging
 sanity_epoch: 5 # logging validation images every n epochs
 sanity_num: 5 # number of images to log
 

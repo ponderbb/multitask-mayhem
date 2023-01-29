@@ -33,7 +33,7 @@ class mtlDataModule(pl.LightningDataModule):
                 collections=self.config["collections"], data_root=self.config["data_root"], create_mask=False
             )
 
-        self.model_type, _ , _ = ModelLoader.get_type(self.config)
+        self.model_type, _, _ = ModelLoader.get_type(self.config)
 
     def prepare_data(self) -> None:
         # split manifest file
@@ -70,6 +70,18 @@ class mtlDataModule(pl.LightningDataModule):
             collate_fn=self.collate_fn,
             shuffle=self.config["shuffle"],
             drop_last=True,
+        )
+
+    def meta_dataloader(self):
+        return iter(
+            DataLoader(
+                self.train_dataset,
+                batch_size=self.config["batch_size"],
+                num_workers=self.config["num_workers"],
+                collate_fn=self.collate_fn,
+                shuffle=self.config["shuffle"],
+                drop_last=True,
+            )
         )
 
     def val_dataloader(self):

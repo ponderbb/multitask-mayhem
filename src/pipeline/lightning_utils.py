@@ -61,7 +61,7 @@ class plUtils:
         return model_name, path_dict
 
     @classmethod
-    def _log_validation_images(
+    def log_validation_images(
         cls,
         epoch,
         class_lookup,
@@ -260,3 +260,30 @@ class plUtils:
         predictions["labels"] = predictions["labels"][score_mask]
         predictions["scores"] = predictions["scores"][score_mask]
         return predictions
+
+    @staticmethod
+    def save_model(best_result, current_result, model, save_on: str, debug: bool, path_dict: dict, logger):
+        """save model on best validation result
+        DEBUG_MODE: model is not saved!
+        """
+
+        save_model = False
+        if save_on == "max":
+            save_model = best_result < current_result
+        if save_on == "min":
+            save_model = best_result > current_result
+
+        if save_model:
+            best_result = current_result
+            logger("best_val", best_result)
+
+            if not debug:
+                logging.info("Saving model weights.")
+                torch.save(
+                    model.state_dict(),
+                    path_dict["weights_path"] + "/best.pth",
+                )
+            else:
+                logging.warning("DEBUG MODE: model weights are not saved")
+
+        return best_result
