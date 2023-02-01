@@ -79,6 +79,7 @@ class mtlMayhemModule(pl.LightningModule):
         # configurations for optimizer and scheduler
         optim_config = self.config["optimizer"]
         lr_config = self.config["lr_scheduler"]
+        monitor = None
 
         # choose optimizer
         if optim_config["name"] == "sgd":
@@ -104,15 +105,17 @@ class mtlMayhemModule(pl.LightningModule):
                 step_size=lr_config["step_size"],
                 gamma=lr_config["gamma"],
             )
-        elif lr_config["name"] == "onplateau":
-            self.lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        elif lr_config["name"] == "cosineA":
+            self.lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                 self.optimizer,
-                factor=lr_config["gamma"],
-                patience=lr_config["patience"],
-                cooldown=lr_config["cooldown"],
-                verbose=True,
+                T_max=self.config["max_epochs"] / 10,
             )
-
+        elif lr_config["name"] == "multistep":
+            self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+                self.optimizer,
+                milestones=lr_config["milestones"],
+                gamma=lr_config["gamma"],
+            )
         else:
             raise ModuleNotFoundError("Learning rate scheduler not found.")
 
@@ -137,7 +140,11 @@ class mtlMayhemModule(pl.LightningModule):
                     self.grad_dims.append(param.data.numel())
             self.grads = torch.Tensor(sum(self.grad_dims), len(self.model_tasks)).to(self.device)
 
-        return [self.optimizer], [self.lr_scheduler]
+        return {
+            "optimizer": self.optimizer,
+            "lr_scheduler": self.lr_scheduler,
+            "monitor": monitor,
+        }
 
     def on_train_epoch_start(self) -> None:
         # initialize epoch counter
@@ -234,7 +241,9 @@ class mtlMayhemModule(pl.LightningModule):
 
     def on_train_epoch_end(self) -> None:
         self.balancer.loss_balancing_epoch_end(train_loss=self.train_loss, epoch=self.epoch)
-        self.lr_scheduler.step()
+
+        if self.config["grad_method"] is not None:
+            self.lr_scheduler.step()
 
     def on_validation_start(self) -> None:
         self.val_images = []
