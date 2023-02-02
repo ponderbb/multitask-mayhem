@@ -76,7 +76,7 @@ class LossBalancing:
                         self.difficulty[task] = self._calculate_ema(
                             x_i=torch.exp((n1 - n2) / n2),
                             x_imin1=self.difficulty[task],
-                            alpha=torch.FloatTensor([0.7], device=self.device),
+                            alpha=torch.tensor([0.7], device=self.device),
                         )
                     else:
                         self.difficulty[task] = torch.exp((n1 - n2) / n2)
@@ -89,13 +89,13 @@ class LossBalancing:
                         self.lambda_weight[task] = self._calculate_ema(
                             x_i=relative_difficulty,
                             x_imin1=self.lambda_weight[task],
-                            alpha=torch.FloatTensor([0.7], device=self.device),
+                            alpha=torch.tensor([0.7], device=self.device),
                         )
                     else:
                         self.lambda_weight[task] = torch.div(task_difficulty, difficulty_sum)
 
     @staticmethod
-    def _calculate_ema(x_i: torch.FloatTensor, x_imin1: torch.FloatTensor, alpha: torch.FloatTensor):
+    def _calculate_ema(x_i: torch.tensor, x_imin1: torch.tensor, alpha: torch.tensor):
         return alpha * x_i + (1 - alpha) * x_imin1
 
     def loss_balancing_step(self, train_loss: dict):
