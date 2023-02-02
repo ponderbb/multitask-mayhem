@@ -156,7 +156,7 @@ class mtlMayhemModule(pl.LightningModule):
                 on_epoch=True,
             )
 
-        if self.config["weight"] == "dynamic":
+        if self.config["weight"] in ["dynamic", "relative"]:
             self.balancer.calculate_lambda_weight(epoch=self.epoch)
 
     def training_step(self, batch, batch_idx, *args: Any, **kwargs: Any):

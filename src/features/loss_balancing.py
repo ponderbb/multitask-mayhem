@@ -31,6 +31,10 @@ class LossBalancing:
                 self.temperature = 2.0
                 self.lambda_weight = torch.ones(self.task_count)
 
+            elif self.config["weight"] == "relative":
+                self.lambda_weight = torch.ones(self.task_count) / self.task_count
+                self.difficulty = torch.zeros(self.task_count)
+
             elif self.config["weight"] == "constant":
                 self.lambda_weight = torch.Tensor(self.config["w_constant"])
 
@@ -49,12 +53,50 @@ class LossBalancing:
             return None
 
     def calculate_lambda_weight(self, epoch: int):
+
         if epoch > 2:
-            w = []
-            for n1, n2 in zip(self.nMinus1_loss, self.nMinus2_loss):
-                w.append(n1 / n2)
-            w = torch.softmax(torch.tensor(w) / self.temperature, dim=0)
-            self.lambda_weight = self.task_count * w.numpy()
+            if self.config["weight"] == "dynamic":
+                w = []
+                for n1, n2 in zip(self.nMinus1_loss, self.nMinus2_loss):
+                    w.append(n1 / n2)
+                w = torch.softmax(torch.tensor(w) / self.temperature, dim=0)
+                self.lambda_weight = self.task_count * w.numpy()
+
+            elif self.config["weight"] == "relative":
+                """
+                Calculate exponential moving average of difficulty and relative difficulty
+                X_hat = alpha * X_i + (1 - alpha) * X_imin1 where X= D or D_R
+                from Wenwen et al. 2020 https://doi.org/10.1016/j.neucom.2020.11.024
+                """
+
+                difficulty_sum = torch.zeros(1, device=self.device)
+
+                for task, (n1, n2) in enumerate(zip(self.nMinus1_loss, self.nMinus2_loss)):
+                    if epoch > 3:
+                        self.difficulty[task] = self._calculate_ema(
+                            x_i=torch.exp((n1 - n2) / n2),
+                            x_imin1=self.difficulty[task],
+                            alpha=torch.FloatTensor([0.7], device=self.device),
+                        )
+                    else:
+                        self.difficulty[task] = torch.exp((n1 - n2) / n2)
+
+                    difficulty_sum += self.difficulty[task]
+
+                for task, task_difficulty in enumerate(self.difficulty):
+                    if epoch > 3:
+                        relative_difficulty = torch.div(task_difficulty, difficulty_sum)
+                        self.lambda_weight[task] = self._calculate_ema(
+                            x_i=relative_difficulty,
+                            x_imin1=self.lambda_weight[task],
+                            alpha=torch.FloatTensor([0.7], device=self.device),
+                        )
+                    else:
+                        self.lambda_weight[task] = torch.div(task_difficulty, difficulty_sum)
+
+    @staticmethod
+    def _calculate_ema(x_i: torch.FloatTensor, x_imin1: torch.FloatTensor, alpha: torch.FloatTensor):
+        return alpha * x_i + (1 - alpha) * x_imin1
 
     def loss_balancing_step(self, train_loss: dict):
 
@@ -70,7 +112,7 @@ class LossBalancing:
                     on_epoch=True,
                 )
 
-        if self.config["weight"] in ["equal", "constant", "dynamic"]:
+        if self.config["weight"] in ["equal", "constant", "dynamic", "relative"]:
             balanced_loss = [w * train_loss_list[i] for i, w in enumerate(self.lambda_weight)]
 
             if self.config["logging"]:
@@ -78,6 +120,7 @@ class LossBalancing:
                     "lambda_weight",
                     {"det": self.lambda_weight[0], "seg": self.lambda_weight[1]},
                     on_epoch=True,
+                    on_step=True,
                 )
 
         if self.config["weight"] == "autol":
@@ -114,7 +157,7 @@ class LossBalancing:
             self.meta_optimizer.step()
 
     def loss_balancing_epoch_end(self, epoch, train_loss: dict):
-        if self.config["weight"] == "dynamic":
+        if self.config["weight"] in ["dynamic", "relative"]:
 
             train_loss_detached = {k: v.detach() for k, v in train_loss.items()}
             train_loss_detached.pop("master")
