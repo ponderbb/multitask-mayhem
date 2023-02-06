@@ -36,7 +36,7 @@ class LossBalancing:
                 self.difficulty = torch.zeros(self.task_count)
 
             elif self.config["weight"] == "constant":
-                self.lambda_weight = torch.Tensor(self.config["w_constant"])
+                self.lambda_weight = torch.tensor(self.config["w_constant"], device=self.device)
 
             elif self.config["weight"] == "autol":
                 self.autol = AutoLambda(self.model, self.device, self.model_tasks, self.model_tasks)
@@ -93,6 +93,8 @@ class LossBalancing:
                         )
                     else:
                         self.lambda_weight[task] = torch.div(task_difficulty, difficulty_sum)
+
+                    # self.lambda_weight[task] = self.lambda_weight[task] * torch.tensor([10.0], device=self.device)
 
     @staticmethod
     def _calculate_ema(x_i: torch.tensor, x_imin1: torch.tensor, alpha: torch.tensor):

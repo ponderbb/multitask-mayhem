@@ -1,6 +1,6 @@
 # data
 dataset: warehouse-nn
-data_root: data/interim
+data_root: /work3/s202821/data/interim
 collections: [
   # 2022-09-23-10-17-46,
   # 2022-09-23-10-39-51,
@@ -16,7 +16,7 @@ detection_classes: 5 # including background
 segmentation_classes: 2 # including background
 
 # training pipeline
-model_out_path: models
+model_out_path: /work3/s202821/models
 model: ssdlite-hybrid # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
 attribute: debug # optional description, can be left empty
 weight: equal # [equal, constant, uncertainty, dynamic, autol]
@@ -33,7 +33,7 @@ lr_scheduler:
   name: multistep # leave empty if not needed
   step_size: 5
   gamma: 0.1
-  milestones: [3,6,12,18,24,36]
+  milestones: [3,6,10,20,30,40]
 early_stop:
   delta: 0.000
   patience: 5
@@ -58,7 +58,7 @@ normalize:
 
 # loader
 batch_size: 2 # minimum 2 for deeplabv3
-num_workers: 0
+num_workers: 4
 shuffle: True
 max_epochs: 50
 class_metrics: False

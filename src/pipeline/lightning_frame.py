@@ -74,6 +74,7 @@ class mtlMayhemModule(pl.LightningModule):
         if self.config["logging"]:
             wandb.config["model_type"] = self.model_tasks
             wandb.config.update(self.config)
+            wandb.watch(models=self.model, log="all", log_graph=True)
 
     def configure_optimizers(self) -> Any:
         # configurations for optimizer and scheduler
@@ -108,7 +109,7 @@ class mtlMayhemModule(pl.LightningModule):
         elif lr_config["name"] == "cosineA":
             self.lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                 self.optimizer,
-                T_max=self.config["max_epochs"] / 10,
+                T_max=self.config["max_epochs"] / 5,
             )
         elif lr_config["name"] == "multistep":
             self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
@@ -330,6 +331,14 @@ class mtlMayhemModule(pl.LightningModule):
                 self.current_result = val_loss["master"]
 
             if self.config["logging"]:
+                if "det_class" in val_loss.keys():
+                    self.log(
+                        "class",
+                        val_loss["det_class"],
+                        on_epoch=True,
+                        batch_size=self.config["batch_size"],
+                    )
+                    val_loss.pop("det_class")
                 self.log(
                     "val_loss",
                     val_loss,

@@ -1,16 +1,19 @@
-from src.models.model_loader import ModelLoader
-import src.utils as utils
-import torch
-import numpy as np
-from tqdm import tqdm
 import logging
+
+import numpy as np
+import torch
+from tqdm import tqdm
+
+import src.utils as utils
+from src.models.model_loader import ModelLoader
 
 configs_list = [
     "configs/model-zoo/deeplabv3.yaml",
+    "configs/model-zoo/ssdlite.yaml",
+    "configs/model-zoo/frcnn.yaml",
+    "configs/model-zoo/frcnn-resnet.yaml",
     "configs/model-zoo/ssdlite-hybrid.yaml",
     "configs/model-zoo/frcnn-hybrid.yaml",
-    "configs/model-zoo/ssdlite.yaml",
-    "configs/model-zoo/frcnn-resnet.yaml",
     "configs/model-zoo/lraspp-hybrid.yaml",
 ]
 
@@ -21,13 +24,14 @@ for path in configs_list:
     model = ModelLoader.grab_model(config=config)
     device = torch.device("cuda")
     model.to(device)
-    dummy_input = torch.randn(1, 3,480,640, dtype=torch.float).to(device)
-    dummy_target = torch.randn(1, 1,480,640, dtype=torch.float).to(device)
+    dummy_input = torch.randn(1, 3, 480, 640, dtype=torch.float).to(device)
+    dummy_target = torch.randn(1, 1, 480, 640, dtype=torch.float).to(device)
+    logging.info(sum(p.numel() for p in model.parameters()) / 1e6)
     # INIT LOGGERS
     starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
     repetitions = 300
-    timings=np.zeros((repetitions,1))
-    #GPU-WARM-UP
+    timings = np.zeros((repetitions, 1))
+    # GPU-WARM-UP
     model.eval()
     for _ in range(10):
         _ = model(dummy_input)
