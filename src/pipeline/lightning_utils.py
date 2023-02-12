@@ -86,7 +86,7 @@ class plUtils:
 
             for (image, detection_pred, segmentation_pred, target) in sampled_batch:
 
-                image_tensor = image.mul(255).type(torch.uint8).squeeze(0)  # FIXME: naming is misleading
+                image_tensor = image.mul(255).type(torch.uint8).squeeze(0)
                 img = image.mul(255).permute(1, 2, 0).detach().cpu().numpy().astype(np.uint8)
 
                 if "detection" in model_type:

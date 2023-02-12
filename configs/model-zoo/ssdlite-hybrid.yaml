@@ -18,25 +18,24 @@ segmentation_classes: 2 # including background
 # training pipeline
 model_out_path: /work3/s202821/models
 model: ssdlite-hybrid # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
-attribute: # optional description, can be left empty
-weight: equal # [equal, constant, uncertainty, dynamic, autol]
+attribute: relative # optional description, can be left empty
+weight: relative # [equal, constant, uncertainty, dynamic, autol]
 w_constant: # contant weighting values [detection, segmentation]
 grad_method:  # [graddrop, pcgrad, cagrad]
 
 # callbacks
 optimizer:
   name: adam
-  lr: 0.001
+  lr: 0.001 
   momentum: 0.9
   weight_decay: 0.0001
 lr_scheduler:
-  name: steplr # can be None
+  name: multistep # can be None
   step_size: 8
   gamma: 0.1
-  patience: 3
-  cooldown: 2
+  milestones: [3,6,12,24,48,72]
 early_stop:
-  delta: 0.0000
+  delta: 0.000
   patience: 10
 
 # augmentation
@@ -58,10 +57,10 @@ normalize:
 
 
 # loader
-batch_size: 2 # minimum 2 for deeplabv3
-num_workers: 2
+batch_size: 8 # minimum 2 for deeplabv3
+num_workers: 4
 shuffle: True
-max_epochs: 50
+max_epochs: 100
 class_metrics: False
 
 # logging

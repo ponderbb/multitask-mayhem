@@ -27,13 +27,23 @@ class LossBalancing:
                 weights_init_tensor = torch.Tensor([-0.7] * self.task_count)
                 self.logsigma = torch.nn.parameter.Parameter(weights_init_tensor, requires_grad=True)
 
-            elif self.config["weight"] in ["dynamic", "equal"]:
-                self.temperature = 2.0
-                self.lambda_weight = torch.ones(self.task_count)
+            elif self.config["weight"] in ["dynamic", "equal", "bmtl"]:
+                self.temperature = torch.tensor(
+                    self.config["temperature"], device=self.device
+                )  # defining the smoothening of the softmax function
+
+                if self.config["w_constant"]:
+                    self.lambda_weight = torch.tensor(self.config["w_constant"], device=self.device)
+                else:
+                    self.lambda_weight = torch.ones(self.task_count) / self.task_count
 
             elif self.config["weight"] == "relative":
-                self.lambda_weight = torch.ones(self.task_count) / self.task_count
                 self.difficulty = torch.zeros(self.task_count)
+
+                if self.config["w_constant"]:
+                    self.lambda_weight = torch.tensor(self.config["w_constant"], device=self.device)
+                else:
+                    self.lambda_weight = torch.ones(self.task_count) / self.task_count
 
             elif self.config["weight"] == "constant":
                 self.lambda_weight = torch.tensor(self.config["w_constant"], device=self.device)
@@ -138,6 +148,9 @@ class LossBalancing:
         if self.config["weight"] == "geometric":
             balanced_loss = [torch.sqrt(task_loss) for task_loss in train_loss_list]
             return {"master": balanced_loss[0] * balanced_loss[1], "det": balanced_loss[0], "seg": balanced_loss[1]}
+
+        if self.config["weight"] == "bmtl":
+            balanced_loss = [torch.exp(task_loss / self.temperature) for task_loss in train_loss_list]
 
         return {"master": sum(balanced_loss), "det": balanced_loss[0], "seg": balanced_loss[1]}
 

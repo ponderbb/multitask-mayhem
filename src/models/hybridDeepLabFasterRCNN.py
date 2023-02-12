@@ -59,7 +59,7 @@ class FRCNNHybridModel(FasterRCNN):
         self.shared_backbone = [fastercnn_backbone]
 
     def shared_modules(self):
-        return self.shared_backbone  # FIXME: this is stupid
+        return self.shared_backbone
 
     def zero_grad_shared_modules(self):
         for mm in self.shared_modules():

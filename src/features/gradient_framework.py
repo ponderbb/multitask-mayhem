@@ -14,7 +14,7 @@ def graddrop(grads):
     P = 0.5 * (1.0 + grads.sum(1) / (grads.abs().sum(1) + 1e-8))
     U = torch.rand_like(grads[:, 0])
     M = P.gt(U).view(-1, 1) * grads.gt(0) + P.lt(U).view(-1, 1) * grads.lt(0)
-    g = (grads * M.float()).mean(1)
+    g = (grads * M.float()).sum(1)  # mean along the tasks
     return g
 
 

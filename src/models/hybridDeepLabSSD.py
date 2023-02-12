@@ -19,8 +19,8 @@ from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 from torchvision.models.segmentation.lraspp import LRASPPHead
 from torchvision.ops import boxes as box_ops
 
-from src.pipeline.lightning_utils import plUtils
 from src.models.SSD_utils import _mobilenet_extractor
+from src.pipeline.lightning_utils import plUtils
 
 # IMAGE_SIZE = (640, 480)
 # IMAGENET_MEAN = [0.485, 0.456, 0.406]
@@ -43,7 +43,7 @@ class SSDLiteHybridModel(SSD):
             backbone,
             trainable_layers=6,
             norm_layer=norm_layer,
-            c2_bool=True if config["model"] == "lraspp-hybrid" else False
+            c2_bool=True if config["model"] == "lraspp-hybrid" else False,
         )  # constructs the extra SSD features on top of the mobilenet
 
         # detection head
@@ -89,7 +89,7 @@ class SSDLiteHybridModel(SSD):
         self.shared_backbone = [detection_backbone]
 
     def shared_modules(self):
-        return self.shared_backbone  # FIXME: this is stupid
+        return self.shared_backbone
 
     def zero_grad_shared_modules(self):
         for mm in self.shared_modules():
@@ -154,7 +154,6 @@ class SSDLiteHybridModel(SSD):
 
         features = list(features.values())
 
-
         # compute the ssd heads outputs using the features
         head_outputs = self.head(features)
 
@@ -195,13 +194,10 @@ class SSDLiteHybridModel(SSD):
             seg_output = self.lraspp_decoder(
                 low_features=lraspp_low_features,
                 high_features=lraspp_high_features,
-                input_shape=original_image_sizes[0]
+                input_shape=original_image_sizes[0],
             )
         else:
-            seg_output = self.deeplabv3_decoder(
-                features=features[1],
-                input_shape=original_image_sizes[0]
-            )
+            seg_output = self.deeplabv3_decoder(features=features[1], input_shape=original_image_sizes[0])
 
         if self.training:
             # output losses just like the detection module, if we provide targets
@@ -214,14 +210,14 @@ class SSDLiteHybridModel(SSD):
     def lraspp_decoder(self, low_features, high_features, input_shape):
         x = self.segmentation_head.cbr(high_features)
         s = self.segmentation_head.scale(high_features)
-        x = x*s
+        x = x * s
         x = F.interpolate(x, size=low_features.shape[-2:], mode="bilinear", align_corners=False)
 
         out = self.segmentation_head.low_classifier(low_features) + self.segmentation_head.high_classifier(x)
 
         out = F.interpolate(out, size=input_shape, mode="bilinear", align_corners=False)
 
-        return out 
+        return out
 
     def deeplabv3_decoder(self, features, input_shape):
         x = self.segmentation_head(features)

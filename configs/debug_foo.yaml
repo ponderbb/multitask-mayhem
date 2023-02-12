@@ -17,11 +17,12 @@ segmentation_classes: 2 # including background
 
 # training pipeline
 model_out_path: /work3/s202821/models
-model: ssdlite-hybrid # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
+model: frcnn-hybrid # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
 attribute: debug # optional description, can be left empty
 weight: equal # [equal, constant, uncertainty, dynamic, autol]
 w_constant: # contant weighting values [detection, segmentation]
-grad_method: # [None, graddrop, pcgrad, cagrad]
+grad_method:  # [None, graddrop, pcgrad, cagrad]
+temperature: 0.2
 
 # callbacks
 optimizer:

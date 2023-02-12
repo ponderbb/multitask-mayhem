@@ -74,7 +74,7 @@ class mtlMayhemModule(pl.LightningModule):
         if self.config["logging"]:
             wandb.config["model_type"] = self.model_tasks
             wandb.config.update(self.config)
-            wandb.watch(models=self.model, log="all", log_graph=True)
+            wandb.watch(models=self.model, log="gradients", log_freq=100, log_graph=True)
 
     def configure_optimizers(self) -> Any:
         # configurations for optimizer and scheduler
@@ -109,7 +109,7 @@ class mtlMayhemModule(pl.LightningModule):
         elif lr_config["name"] == "cosineA":
             self.lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                 self.optimizer,
-                T_max=self.config["max_epochs"] / 5,
+                T_max=self.config["max_epochs"] / 20,
             )
         elif lr_config["name"] == "multistep":
             self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
@@ -322,7 +322,7 @@ class mtlMayhemModule(pl.LightningModule):
                     )
                     segmentation_losses.append(seg_loss)
 
-                segmentation_losses = torch.nan_to_num(torch.stack(segmentation_losses))  # FIXME: zeroed out NaNs
+                segmentation_losses = torch.nan_to_num(torch.stack(segmentation_losses))
                 val_loss["seg"] = torch.mean(segmentation_losses)
                 self.current_result = val_loss["seg"]
 
