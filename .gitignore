@@ -83,6 +83,9 @@ target/
 /data/rosbags/*
 /data/annotations/*
 /data/test/*
+/data/filt_test/*
+/data/test_land/*
+/reports/test/*
 /models/
 .logging/
 notebooks/*/*.png

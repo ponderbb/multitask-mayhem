@@ -28,9 +28,11 @@ class LossBalancing:
                 self.logsigma = torch.nn.parameter.Parameter(weights_init_tensor, requires_grad=True)
 
             elif self.config["weight"] in ["dynamic", "equal", "bmtl"]:
-                self.temperature = torch.tensor(
-                    self.config["temperature"], device=self.device
-                )  # defining the smoothening of the softmax function
+
+                if self.config["weight"] != "equal":
+                    self.temperature = torch.tensor(
+                        self.config["temperature"], device=self.device
+                    )  # defining the smoothening of the softmax function
 
                 if self.config["w_constant"]:
                     self.lambda_weight = torch.tensor(self.config["w_constant"], device=self.device)
