@@ -1,6 +1,7 @@
 # data
 dataset: warehouse-nn
 data_root: /work3/s202821/data/interim
+test_manifest: /work3/s202821/data/test/manifest.json
 collections: [
   # 2022-09-23-10-17-46,
   # 2022-09-23-10-39-51,
@@ -11,7 +12,7 @@ collections: [
   # 2022-10-19-11-15-59,
   # 2022-10-19-11-20-39
 ]
-split_ratio: [0.7, 0.2, 0.1]
+split_ratio: [0.8, 0.2]
 detection_classes: 5 # including background
 segmentation_classes: 2 # including background
 
@@ -31,13 +32,13 @@ optimizer:
   momentum: 0.9
   weight_decay: 0.0001
 lr_scheduler:
-  name: multistep # leave empty if not needed
-  step_size: 5
+  name: steplr # leave empty if not needed
+  step_size: 6
   gamma: 0.1
   milestones: [3,6,10,20,30,40]
 early_stop:
   delta: 0.000
-  patience: 5
+  patience: 8
 
 # augmentation
 vflip:
@@ -61,7 +62,7 @@ normalize:
 batch_size: 2 # minimum 2 for deeplabv3
 num_workers: 4
 shuffle: True
-max_epochs: 50
+max_epochs: 100
 class_metrics: False
 
 # logging
