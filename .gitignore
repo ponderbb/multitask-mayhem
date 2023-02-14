@@ -76,16 +76,7 @@ target/
 .ipynb_checkpoints/
 
 # exclude data from source control by default
-/data/raw/*
-/data/interim/*
-/data/external/*
-/data/processed/*
-/data/rosbags/*
-/data/annotations/*
-/data/test/*
-/data/filt_test/*
-/data/test_land/*
-/reports/test/*
+/data/
 /models/
 .logging/
 notebooks/*/*.png
