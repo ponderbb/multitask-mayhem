@@ -1,6 +1,7 @@
 # data
 dataset: warehouse-nn
 data_root: /work3/s202821/data/interim
+test_manifest: /work3/s202821/data/test/manifest.json
 collections: [
   2022-09-23-10-17-46,
   2022-09-23-10-39-51,
@@ -11,33 +12,32 @@ collections: [
   2022-10-19-11-15-59,
   2022-10-19-11-20-39
 ]
-split_ratio: [0.7, 0.2, 0.1]
+split_ratio: [0.8, 0.2]
 detection_classes: 5 # including background
 segmentation_classes: 2 # including background
 
 # training pipeline
 model_out_path: /work3/s202821/models
 model: lraspp-hybrid # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
-attribute: bmtl # optional description, can be left empty
-weight: bmtl # [equal, constant, uncertainty, dynamic, autol]
-w_constant: [1.0, 1.0] # starting constant values [detection, segmentation]
-grad_method:  # [graddrop, pcgrad, cagrad]
-temperature: 2.0
+attribute: equal # optional description, can be left empty
+weight: equal # [equal, constant, uncertainty, dynamic, autol]
+w_constant: # contant weighting values (float) [detection, segmentation]
+grad_method: # [None, graddrop, pcgrad, cagrad]
 
 # callbacks
 optimizer:
   name: adam
-  lr: 0.001 
+  lr: 0.001
   momentum: 0.9
   weight_decay: 0.0001
 lr_scheduler:
-  name: steplr # can be None
+  name: steplr # leave empty if not needed
   step_size: 8
   gamma: 0.1
-  milestones: [3,6,12,24,48,72]
+  milestones:
 early_stop:
   delta: 0.000
-  patience: 20
+  patience: 10
 
 # augmentation
 vflip:
@@ -58,10 +58,10 @@ normalize:
 
 
 # loader
-batch_size: 2 # minimum 2 for deeplabv3
-num_workers: 2
+batch_size: 8 # minimum 2 for deeplabv3
+num_workers: 4
 shuffle: True
-max_epochs: 50
+max_epochs: 100
 class_metrics: False
 
 # logging

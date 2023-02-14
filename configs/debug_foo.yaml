@@ -33,12 +33,12 @@ optimizer:
   weight_decay: 0.0001
 lr_scheduler:
   name: steplr # leave empty if not needed
-  step_size: 6
+  step_size: 8
   gamma: 0.1
-  milestones: [3,6,10,20,30,40]
+  milestones:
 early_stop:
   delta: 0.000
-  patience: 8
+  patience: 10
 
 # augmentation
 vflip:

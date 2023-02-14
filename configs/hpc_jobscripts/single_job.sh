@@ -3,7 +3,7 @@
 ### –- specify queue --
 #BSUB -q gpua100
 ### -- set the job Name --
-#BSUB -J graddropsum 
+#BSUB -J lraspphyb
 ### -- ask for number of cores (default: 1) --
 #BSUB -n 1
 ### -- Select the resources: 1 gpu in exclusive process mode --
@@ -30,6 +30,6 @@
 source ~/miniconda3/bin/activate
 conda activate multitask-mayhem
 
-python src/pipeline/train_model.py -c configs/model-zoo/frcnn-hybrid.yaml
+python src/pipeline/train_model.py -c configs/model-zoo/lraspp-hybrid.yaml
 
 ## submit by using: bsub < configs/hpc_jobscripts/single_job.sh 

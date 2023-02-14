@@ -1,6 +1,6 @@
 import argparse
-import logging
 import json
+import logging
 
 import albumentations as A
 import cv2
@@ -33,7 +33,6 @@ class mtlDataModule(pl.LightningDataModule):
             self.manifests = generate_manifest(
                 collections=self.config["collections"], data_root=self.config["data_root"], create_mask=False
             )
-            self.test_manifest = json.load(open(self.config["test_manifest"], "r"))
 
         self.model_type, _, _ = ModelLoader.get_type(self.config)
 
@@ -61,6 +60,8 @@ class mtlDataModule(pl.LightningDataModule):
             self.valid_dataset = self.datasetObject(self.valid_split, self._compose_transforms(eval=True))
 
         if stage == "test":
+            self.test_manifest = json.load(open(self.config["test_manifest"], "r"))
+
             self.test_dataset = self.datasetObject(self.test_manifest, self._compose_transforms(eval=True))
 
     def train_dataloader(self):
