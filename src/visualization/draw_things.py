@@ -10,6 +10,7 @@ import numpy as np
 import torch
 from PIL import Image, ImageColor, ImageDraw, ImageFont
 
+
 @torch.no_grad()
 def draw_bounding_boxes(
     image: torch.Tensor,
@@ -48,6 +49,8 @@ def draw_bounding_boxes(
     Returns:
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
     """
+
+    colors = [(0, 0, 255), (255, 0, 0), (127, 0, 255), (255, 128, 0)]
 
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"Tensor expected, got {type(image)}")
@@ -114,9 +117,10 @@ def draw_bounding_boxes(
 
         if label is not None:
             margin = width + 1
-            draw.text((bbox[0] + margin, bbox[1] + margin), label+f"_{score:.2f}", fill=color, font=txt_font)
+            draw.text((bbox[0] + margin, bbox[1] + margin), label + f"_{score:.2f}", fill=color, font=txt_font)
 
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
+
 
 def _generate_color_palette(num_objects: int):
     palette = torch.tensor([2**25 - 1, 2**15 - 1, 2**21 - 1])
