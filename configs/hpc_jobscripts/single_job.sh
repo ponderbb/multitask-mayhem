@@ -1,9 +1,9 @@
 #!/bin/sh
 ### General options
 ### –- specify queue --
-#BSUB -q gpua100
+#BSUB -q gpuv100
 ### -- set the job Name --
-#BSUB -J lraspphyb
+#BSUB -J jobname
 ### -- ask for number of cores (default: 1) --
 #BSUB -n 1
 ### -- Select the resources: 1 gpu in exclusive process mode --
@@ -11,7 +11,7 @@
 ### -- set walltime limit: hh:mm --  maximum 24 hours for GPU-queues right now
 #BSUB -W 24:00
 # request GB of system-memory
-#BSUB -R "rusage[mem=16GB]"
+#BSUB -R "rusage[mem=8GB]"
 ### -- set the email address --
 # please uncomment the following line and put in your e-mail address,
 # if you want to receive e-mail notifications on a non-default address
@@ -30,6 +30,6 @@
 source ~/miniconda3/bin/activate
 conda activate multitask-mayhem
 
-python src/pipeline/train_model.py -c configs/model-zoo/lraspp-hybrid.yaml
+python src/pipeline/train_model.py -c configs/model-zoo/frcnn-hybrid.yaml
 
 ## submit by using: bsub < configs/hpc_jobscripts/single_job.sh 

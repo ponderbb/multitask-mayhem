@@ -155,6 +155,7 @@ class mtlMayhemModule(pl.LightningModule):
                 "epoch_sanity",
                 torch.as_tensor(self.epoch, dtype=torch.float32),
                 on_epoch=True,
+                batch_size=self.config["batch_size"],
             )
 
         if self.config["weight"] in ["dynamic", "relative"]:

@@ -71,8 +71,8 @@ class LossBalancing:
                 w = []
                 for n1, n2 in zip(self.nMinus1_loss, self.nMinus2_loss):
                     w.append(n1 / n2)
-                w = torch.softmax(torch.tensor(w) / self.temperature, dim=0)
-                self.lambda_weight = self.task_count * w.numpy()
+                w = torch.softmax(torch.tensor(w, device=self.device) / self.temperature, dim=0)
+                self.lambda_weight = self.task_count * w.cpu().numpy()
 
             elif self.config["weight"] == "relative":
                 """
@@ -124,6 +124,8 @@ class LossBalancing:
                     "logsigma",
                     {"det": self.logsigma[0], "seg": self.logsigma[1]},
                     on_epoch=True,
+                    on_step=True,
+                    batch_size=self.config["batch_size"],
                 )
 
         if self.config["weight"] in ["equal", "constant", "dynamic", "relative"]:
@@ -135,6 +137,7 @@ class LossBalancing:
                     {"det": self.lambda_weight[0], "seg": self.lambda_weight[1]},
                     on_epoch=True,
                     on_step=True,
+                    batch_size=self.config["batch_size"],
                 )
 
         if self.config["weight"] == "autol":
@@ -145,6 +148,8 @@ class LossBalancing:
                     "meta_weight",
                     {"det": self.autol.meta_weights[0], "seg": self.autol.meta_weights[1]},
                     on_epoch=True,
+                    on_step=True,
+                    batch_size=self.config["batch_size"],
                 )
 
         if self.config["weight"] == "geometric":

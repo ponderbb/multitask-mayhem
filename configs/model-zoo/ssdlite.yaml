@@ -23,6 +23,7 @@ attribute: # optional description, can be left empty
 weight: # [equal, constant, uncertainty, dynamic, autol]
 w_constant: # contant weighting values (float) [detection, segmentation]
 grad_method: # [None, graddrop, pcgrad, cagrad]
+temperature:
 
 # callbacks
 optimizer:
@@ -62,7 +63,7 @@ batch_size: 8 # minimum 2 for deeplabv3
 num_workers: 4
 shuffle: True
 max_epochs: 100
-class_metrics: True
+class_metrics: False
 
 # logging
 logging: True
