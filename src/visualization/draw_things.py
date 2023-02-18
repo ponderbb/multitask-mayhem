@@ -50,8 +50,6 @@ def draw_bounding_boxes(
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
     """
 
-    colors = [(0, 0, 255), (255, 0, 0), (127, 0, 255), (255, 128, 0)]
-
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"Tensor expected, got {type(image)}")
     elif image.dtype != torch.uint8:

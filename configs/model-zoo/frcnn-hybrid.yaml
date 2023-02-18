@@ -19,10 +19,11 @@ segmentation_classes: 2 # including background
 # training pipeline
 model_out_path: /work3/s202821/models
 model: frcnn-hybrid # [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid]
-attribute: equal # optional description, can be left empty
-weight: equal # [equal, constant, uncertainty, dynamic, autol]
+attribute: bmtl-0.4 # optional description, can be left empty
+weight: bmtl # [equal, constant, uncertainty, dynamic, autol]
 w_constant: # contant weighting values (float) [detection, segmentation]
 grad_method: # [None, graddrop, pcgrad, cagrad]
+temperature: 0.4
 
 # callbacks
 optimizer:
@@ -62,7 +63,7 @@ batch_size: 8 # minimum 2 for deeplabv3
 num_workers: 4
 shuffle: True
 max_epochs: 100
-class_metrics: True
+class_metrics: False
 
 # logging
 logging: True
