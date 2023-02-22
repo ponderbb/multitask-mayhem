@@ -47,6 +47,8 @@ class FRCNNHybridModel(FasterRCNN):
             backbone=fastercnn_backbone,
             num_classes=config["detection_classes"],
             rpn_anchor_generator=AnchorGenerator(anchor_sizes, aspect_ratios),
+            min_size=480,
+            max_size=640,
         )
 
         # backbone for segmentation
