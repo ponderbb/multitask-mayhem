@@ -115,7 +115,10 @@ def draw_bounding_boxes(
 
         if label is not None:
             margin = width + 1
-            draw.text((bbox[0] + margin, bbox[1] + margin), label + f"_{score:.2f}", fill=color, font=txt_font)
+            if score is not None:
+                draw.text((bbox[0] + margin, bbox[1] + margin), label + f"_{score:.2f}", fill=color, font=txt_font)
+            else:
+                draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=color, font=txt_font)
 
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
 
