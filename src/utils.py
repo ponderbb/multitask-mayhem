@@ -177,3 +177,17 @@ def list_files_with_extension(path: str, extension: str, format: str) -> list:
     elif format == "name":
         files_list = [Path(file).name for file in files_list]
     return sorted(files_list)
+
+
+def change_paths_in_config(input_yaml:str, out_yaml:str, **kwargs):
+    config = load_yaml(input_yaml)
+    for key in kwargs:
+        if key in config.keys():
+            config[key] = kwargs[key]
+        else:
+            logging.info(f"{key} not in config")
+
+
+    with open(out_yaml, 'w') as outfile:
+        yaml.dump(config, outfile, default_flow_style=False)
+

@@ -18,7 +18,7 @@ from src.models.model_loader import ModelLoader
 
 
 class mtlDataModule(pl.LightningDataModule):
-    def __init__(self, config_path) -> None:
+    def __init__(self, config_path, test:bool=False) -> None:
         super().__init__()
 
         self.config = utils.load_yaml(config_path)
@@ -30,30 +30,32 @@ class mtlDataModule(pl.LightningDataModule):
             # load from manifest file
             raise NotImplementedError("Loading manifest for inference not implemented yet")
         else:
-            self.manifests = generate_manifest(
-                collections=self.config["collections"], data_root=self.config["data_root"], create_mask=False
-            )
+            if not test:
+                self.manifests = generate_manifest(
+                    collections=self.config["collections"], data_root=self.config["data_root"], create_mask=False
+                )
             self.test_manifest = json.load(open(self.config["test_manifest"], "r"))
 
         self.model_type, _, _ = ModelLoader.get_type(self.config)
 
-    def prepare_data(self) -> None:
-        # split manifest file
-        logging.info(
-            "Splitting dataset to train: {}% valid: {}%".format(
-                self.config["split_ratio"][0] * 100,
-                self.config["split_ratio"][1] * 100,
-            )
-        )
-        self.train_split, self.valid_split = random_split(self.manifests, self.config["split_ratio"])
+
+    def setup(self, stage) -> None:
 
         self.datasetObject = UniversalDataloader
 
         logging.info("Loading dataset object -> {}".format(self.datasetObject))
 
-    def setup(self, stage) -> None:
-
         if stage == "fit":
+            # split manifest file
+            logging.info(
+                "Splitting dataset to train: {}% valid: {}%".format(
+                    self.config["split_ratio"][0] * 100,
+                    self.config["split_ratio"][1] * 100,
+                )
+            )
+            self.train_split, self.valid_split = random_split(self.manifests, self.config["split_ratio"])
+
+
             self.train_dataset = self.datasetObject(self.train_split, self._compose_transforms())
             self.valid_dataset = self.datasetObject(self.valid_split, self._compose_transforms(eval=True))
 
@@ -62,6 +64,7 @@ class mtlDataModule(pl.LightningDataModule):
 
         if stage == "test":
             self.test_dataset = self.datasetObject(self.test_manifest, self._compose_transforms(eval=True))
+
 
     def train_dataloader(self):
         return DataLoader(

@@ -1,6 +1,9 @@
 import logging
 import os
-from typing import Any
+from typing import Any, Optional
+import shutil
+
+import csv
 
 import numpy as np
 import pytorch_lightning as pl
@@ -20,6 +23,10 @@ from src.features.loss_balancing import LossBalancing
 from src.features.metrics import compute_metrics
 from src.models.model_loader import ModelLoader
 from src.pipeline.lightning_utils import plUtils
+
+import torchvision.transforms as T
+from src.visualization.draw_things import draw_bounding_boxes
+from torchvision.utils import draw_segmentation_masks
 
 
 class mtlMayhemModule(pl.LightningModule):
@@ -70,11 +77,11 @@ class mtlMayhemModule(pl.LightningModule):
             else:
                 logging.info("No trained model found, strap in for the ride.")
 
-        # update configuration of hyperparams in wandb
-        if self.config["logging"]:
-            wandb.config["model_type"] = self.model_tasks
-            wandb.config.update(self.config)
-            wandb.watch(models=self.model, log="gradients", log_freq=100, log_graph=True)
+            # update configuration of hyperparams in wandb
+            if self.config["logging"]:
+                wandb.config["model_type"] = self.model_tasks
+                wandb.config.update(self.config)
+                wandb.watch(models=self.model, log="gradients", log_freq=100, log_graph=True)
 
     def configure_optimizers(self) -> Any:
         # configurations for optimizer and scheduler
@@ -392,3 +399,129 @@ class mtlMayhemModule(pl.LightningModule):
             g = cagrad(self.grads, len(self.model_tasks), 0.4, rescale=1)
 
         overwrite_grad(self.model, g, self.grad_dims, len(self.model_tasks))
+
+    def on_test_start(self) -> None:
+        self.test_images = []
+        self.test_targets = []
+        self.test_target_masks = []
+        self.test_losses = {}
+        self.test_preds = {"det": [], "seg": []}
+        self.metric_box = self.loss["detection"]
+        self.i = 0
+
+        self.test_outdir = f"reports/test_imgs/{self.model_name}"
+        if os.path.exists(self.test_outdir):
+            shutil.rmtree(self.test_outdir)
+        os.makedirs(self.test_outdir, exist_ok=True)
+
+        return super().on_test_start()
+
+
+    def test_step(self, batch, batch_idx, *args: Any, **kwargs: Any):
+        """forward pass and loss calculation
+        images: [B,C,H,W]
+        targets: dictionary with keys "boxes", "masks", "labels"
+        """
+        images, targets = batch
+
+        # format to [B,C,H,W] tensor
+        if isinstance(images, tuple):
+            images = plUtils.tuple_of_tensors_to_tensor(images)
+            # targets only contain masks as torch.BoolTensor
+            target_masks = tuple([target["masks"] for target in targets])
+            target_masks = plUtils.tuple_of_tensors_to_tensor(target_masks)
+
+        # validation pass if no target passed, no backpropagation
+        preds = self.model(images)
+
+        # if self.i % 25 == 0:
+
+        #     image = images.mul(255).type(torch.uint8).cpu()
+
+        #     if "detection" in self.val_metric.keys():
+        #         if isinstance(preds, list):
+        #             prediction = preds[0]
+        #         else:
+        #             prediction = preds["detection"][0]
+
+        #         score_mask = prediction["scores"] > 0.3
+        #         boxes = prediction["boxes"][score_mask]
+        #         labels = prediction["labels"][score_mask]
+        #         scores = prediction["scores"][score_mask]
+
+        #         label_names = [self.class_lookup["bbox_rev"][label.item()] for label in labels]
+
+        #         drawn_image = draw_bounding_boxes(image=image.squeeze(0), boxes=boxes, labels=label_names, scores=scores)
+
+        #     if "segmentation" in self.val_metric.keys():
+        #         mask = torch.sigmoid(preds["segmentation"]) > 0.5
+        #         drawn_image = draw_segmentation_masks(drawn_image, mask.squeeze(0), alpha=0.5, colors="green")
+
+        #     image_pil = T.ToPILImage()(drawn_image)
+        #     image_pil.save(self.test_outdir + f"/{self.i}.png")
+
+        # self.i += 1
+
+        # collect validation relevant objects
+        self.test_images.extend(images)
+        self.test_targets.extend(list(targets))
+        self.test_target_masks.extend(target_masks.long())
+
+        # collect validation outputs (different for MTL and single task)
+        if "detection" in self.val_metric.keys():
+            if len(self.model_tasks) == 1:
+                self.test_preds["det"].extend(preds)
+            else:
+                self.test_preds["det"].extend(preds["detection"])
+
+        # collect validation outputs (different for MTL and single task)
+        if "segmentation" in self.val_metric.keys():
+            if len(self.model_tasks) == 1:
+                self.test_preds["seg"].extend(preds["out"])
+            else:
+                self.test_preds["seg"].extend(preds["segmentation"])
+
+    def on_test_end(self) -> None:
+
+        if "detection" in self.model_tasks:
+            # compute metrics
+            results = compute_metrics(
+                metric_box=self.metric_box, preds=self.test_preds["det"], targets=self.test_targets
+            )
+
+            classes_map = results["map_per_class"].tolist()
+            out_dict = {
+                self.class_lookup["bbox_rev"][idx + 1]: map for idx, map in enumerate(classes_map)
+            }
+
+            out_dict["map"] = results["map"].item()
+
+        if "segmentation" in self.model_tasks:
+            segmentation_losses = []
+            for (pred, target) in zip(self.test_preds["seg"], self.test_target_masks):
+                seg_loss = binary_jaccard_index(
+                    preds=pred,
+                    target=target,
+                    ignore_index=self.class_lookup["sseg"]["background"],
+                )
+                segmentation_losses.append(seg_loss)
+
+            segmentation_losses = torch.nan_to_num(torch.stack(segmentation_losses))
+            out_dict["miou"] = torch.mean(segmentation_losses).item()
+
+        out_dict["name"] = self.model_name
+
+        columns = ["name", "miou", "map", "person", "forklift", "agv", "box"]
+    
+        try:
+            with open(self.test_outdir + "/metrics.csv", 'w') as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=columns)
+                writer.writeheader()
+                writer.writerow(out_dict)
+        except IOError:
+            print("I/O error")
+
+
+
+
+        return super().on_test_end()
