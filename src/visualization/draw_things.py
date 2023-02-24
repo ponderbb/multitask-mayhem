@@ -15,7 +15,7 @@ from PIL import Image, ImageColor, ImageDraw, ImageFont
 def draw_bounding_boxes(
     image: torch.Tensor,
     boxes: torch.Tensor,
-    scores: torch.Tensor,
+    scores: torch.Tensor = None,
     labels: Optional[List[str]] = None,
     colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
     fill: Optional[bool] = False,
@@ -105,6 +105,9 @@ def draw_bounding_boxes(
         draw = ImageDraw.Draw(img_to_draw, "RGBA")
     else:
         draw = ImageDraw.Draw(img_to_draw)
+
+    if scores is None:
+        scores = [None] * num_boxes
 
     for bbox, color, label, score in zip(img_boxes, colors, labels, scores):  # type: ignore[arg-type]
         if fill:

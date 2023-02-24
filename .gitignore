@@ -79,6 +79,7 @@ target/
 /data/
 /models/
 reports/test_imgs/
+reports/test_imgs_all/
 .logging/
 notebooks/*/*.png
 

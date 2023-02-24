@@ -434,7 +434,7 @@ class mtlMayhemModule(pl.LightningModule):
         # validation pass if no target passed, no backpropagation
         preds = self.model(images)
 
-        # if self.i % 25 == 0:
+        # if self.i % 10 == 0:
 
         #     image = images.mul(255).type(torch.uint8).cpu()
 
@@ -444,23 +444,35 @@ class mtlMayhemModule(pl.LightningModule):
         #         else:
         #             prediction = preds["detection"][0]
 
-        #         score_mask = prediction["scores"] > 0.3
+        #         score_mask = prediction["scores"] > 0.7
         #         boxes = prediction["boxes"][score_mask]
         #         labels = prediction["labels"][score_mask]
         #         scores = prediction["scores"][score_mask]
 
-        #         label_names = [self.class_lookup["bbox_rev"][label.item()] for label in labels]
+        #         gt_boxes = targets[0]["boxes"]
+        #         gt_labels = targets[0]["labels"]
 
-        #         drawn_image = draw_bounding_boxes(image=image.squeeze(0), boxes=boxes, labels=label_names, scores=scores)
+
+        #         label_names = [self.class_lookup["bbox_rev"][label.item()] for label in labels]
+        #         gt_label_names = [self.class_lookup["bbox_rev"][label.item()] for label in gt_labels]
+
+        #         drawn_image = draw_bounding_boxes(image=image.squeeze(0), boxes=gt_boxes, labels=gt_label_names, colors="blue")
+        #         drawn_image = draw_bounding_boxes(image=drawn_image, boxes=boxes, labels=label_names, scores=scores, colors="red")
 
         #     if "segmentation" in self.val_metric.keys():
-        #         mask = torch.sigmoid(preds["segmentation"]) > 0.5
+        #         if "out" in preds.keys():
+        #             prediction = preds["out"]
+        #             drawn_image = image.squeeze(0)
+        #         else:
+        #             prediction = preds["segmentation"]
+
+        #         mask = torch.sigmoid(prediction) > 0.5
         #         drawn_image = draw_segmentation_masks(drawn_image, mask.squeeze(0), alpha=0.5, colors="green")
 
         #     image_pil = T.ToPILImage()(drawn_image)
         #     image_pil.save(self.test_outdir + f"/{self.i}.png")
 
-        # self.i += 1
+        self.i += 1
 
         # collect validation relevant objects
         self.test_images.extend(images)
@@ -482,6 +494,7 @@ class mtlMayhemModule(pl.LightningModule):
                 self.test_preds["seg"].extend(preds["segmentation"])
 
     def on_test_end(self) -> None:
+        out_dict = {}
 
         if "detection" in self.model_tasks:
             # compute metrics

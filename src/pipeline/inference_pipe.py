@@ -56,9 +56,9 @@ def run_inference(config):
     utils.change_paths_in_config(
         input_yaml = config,
         out_yaml = config,
-        data_root = "data/interim",
-        test_manifest = "data/test/manifest.json",
-        model_out_path = "models/emp_models",
+        # data_root = "data/interim",
+        # test_manifest = "data/test/manifest.json",
+        # model_out_path = "models/emp_models",
         class_metrics = True
     )
 
