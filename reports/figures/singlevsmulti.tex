@@ -1,0 +1,19 @@
+\begin{table}[htbp]
+\centering
+\caption{Placeholder caption}
+\label{tab:singlevsmulti}
+\begin{tabular}{lcccc}
+\toprule
+ & mAP & mIoU & delta mAP & delta mIoU \\
+Name &  &  &  &  \\
+\midrule
+FRCNN-MTL & 60.36 & 95.17 & 0.00 & 0.00 \\
+frcnn-hybrid_equal & 60.33 & 95.17 & -0.03 & 0.00 \\
+frcnn & 51.77 & 0.00 & -8.59 & nan \\
+lraspp-hybrid_equal & 47.66 & 93.58 & -12.70 & -1.59 \\
+ssdlite-hybrid_equal & 47.08 & 93.80 & -13.28 & -1.37 \\
+ssdlite & 44.84 & 0.00 & -15.52 & nan \\
+deeplabv3 & 0.00 & 93.84 & nan & -1.33 \\
+\bottomrule
+\end{tabular}
+\end{table}

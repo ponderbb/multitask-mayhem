@@ -26,6 +26,7 @@ class LossBalancing:
             if self.config["weight"] == "uncertainty":
                 weights_init_tensor = torch.Tensor([-0.7] * self.task_count)
                 self.logsigma = torch.nn.parameter.Parameter(weights_init_tensor, requires_grad=True)
+                self.optimizer.param_groups.append({"params": self.logsigma})
 
             elif self.config["weight"] in ["dynamic", "equal", "bmtl"]:
 

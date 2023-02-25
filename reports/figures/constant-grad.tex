@@ -1,0 +1,17 @@
+\begin{table}[htbp]
+\centering
+\caption{Placeholder caption}
+\label{tab:constant-grad}
+\begin{tabular}{lcccc}
+\toprule
+ & mAP & mIoU & delta mAP & delta mIoU \\
+Name &  &  &  &  \\
+\midrule
+frcnn-hybrid_10v1 & 68.81 & 94.64 & 8.45 & -0.53 \\
+frcnn-hybrid_10v1-graddrop & 65.48 & 94.59 & 5.12 & -0.58 \\
+frcnn-hybrid_10v1-pcgrad & 64.45 & 93.61 & 4.09 & -1.56 \\
+frcnn-hybrid_10v1-cagrad & 63.52 & 94.26 & 3.16 & -0.91 \\
+FRCNN-MTL & 60.36 & 95.17 & 0.00 & 0.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
