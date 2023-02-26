@@ -1,0 +1,19 @@
+\begin{table}[htbp]
+\centering
+\caption{Inference time comparison on NVIDIA A100-PCI GPU}
+\label{tab:inf-time}
+\begin{tabular}{lccc}
+\toprule
+ & params & mean & std \\
+model &  &  &  \\
+\midrule
+deeplabv3 & 11.02 & 9.35 & 0.24 \\
+lraspp & 3.22 & 8.49 & 0.36 \\
+ssdlite & 3.76 & 17.86 & 0.20 \\
+frcnn & 18.89 & 21.89 & 0.23 \\
+lraspp-hybrid & 4.01 & 18.64 & 0.19 \\
+ssdlite-hybrid & 11.81 & 19.52 & 0.21 \\
+frcnn-hybrid & 27.02 & 22.25 & 0.45 \\
+\bottomrule
+\end{tabular}
+\end{table}

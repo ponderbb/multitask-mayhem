@@ -17,7 +17,7 @@ import src.utils as utils
 
 class unPackROSBag:
     def __init__(self, force: bool) -> None:
-        self.root_dir = "data/external/"
+        self.root_dir = "data/rosbags/"
         self.export_dir = "data/raw"
         self.extension = ".bag"
         self.force = force
