@@ -8,8 +8,6 @@ WORKDIR_HPC = "/work3/s202821/models/"
 OUTDIR_HPC = "/work3/s202821/emp_models/"
 
 RUNS_LIST = [
-    "frcnn-hybrid_10v1_480x640_23-02-22T123517",
-    "frcnn-hybrid_480x640_23-02-22T115457",
     "frcnn-hybrid_2v1_23-02-21T182529",
     "frcnn-hybrid_dwa-10v1-cagrad_23-02-21T182427",
     "frcnn-hybrid_dwa-10v1-graddrop_23-02-21T182345",
@@ -26,14 +24,10 @@ RUNS_LIST = [
     "frcnn-hybrid_dwa-pcgrad_23-02-16T235026",
     "frcnn-hybrid_dwa_23-02-16T234921",
     "frcnn-hybrid_dwa-graddrop_23-02-16T234854",
-    "frcnn-hybrid_uc-cagrad_23-02-16T140258",
-    "frcnn-hybrid_uc-pcgrad_23-02-16T013822",
     "frcnn-hybrid_relative_23-02-16T004645",
     "frcnn-hybrid_bmtl_23-02-16T003206",
     "frcnn-hybrid_5v1_23-02-16T001810",
     "frcnn-hybrid_10v1_23-02-16T001236",
-    "frcnn-hybrid_uc-graddrop_23-02-16T000240",
-    "frcnn-hybrid_uncertainty_23-02-16T000024",
     "frcnn-hybrid_cagrad_23-02-15T235953",
     "frcnn-hybrid_graddrop_23-02-15T235924",
     "frcnn-hybrid_pcgrad_23-02-15T155512",
@@ -43,19 +37,24 @@ RUNS_LIST = [
     "deeplabv3_23-02-14T235445",
     "ssdlite_23-02-14T235429",
     "frcnn_23-02-14T235417",
+    "lraspp_23-02-25T215937",
+    "frcnn-hybrid_uc-cagrad_23-02-25T204529",
+    "frcnn-hybrid_uc-pcgrad_23-02-25T204444",
+    "frcnn-hybrid_uc-graddrop_23-02-25T204407",
+    "frcnn-hybrid_uc_23-02-25T204205"
 ]
 
 def extract_runs(workdir: str , outdir: str , runs_list: list = RUNS_LIST, force_rewrite: bool = False):
 
-    # for run in tqdm(runs_list):
-    #     assert Path(workdir + run).exists(), f"{run} does not exist"
-    #     outdir_exists = Path(outdir + run).exists()
+    for run in tqdm(runs_list):
+        assert Path(workdir + run).exists(), f"{run} does not exist"
+        outdir_exists = Path(outdir + run).exists()
 
-    #     if force_rewrite or not(outdir_exists):
-    #         logging.info(f"Copy {run} to {outdir}")
-    #         shutil.copytree(workdir + run, outdir + run)
-    #     else:
-    #         logging.info(f"Skipping {run}")
+        if force_rewrite or not(outdir_exists):
+            logging.info(f"Copy {run} to {outdir}")
+            shutil.copytree(workdir + run, outdir + run)
+        else:
+            logging.info(f"Skipping {run}")
     
     df = pd.DataFrame(runs_list)
     df.to_csv(outdir+"runs_list.csv", header=["name"])
