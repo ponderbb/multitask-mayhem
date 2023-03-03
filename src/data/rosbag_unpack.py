@@ -25,6 +25,8 @@ class unPackROSBag:
         self.image_topics = [
             "/synchronized_l515_image",
             "/synchronized_l515_depth_image",
+            "/l515/color/image_raw",
+            "/prediction",
         ]
         self.imu_topics = {
             "gyro": "/synchronized_gyro_sample",

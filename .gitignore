@@ -81,7 +81,7 @@ target/
 reports/test_imgs/
 reports/test_imgs_all/
 .logging/
-notebooks/*/*.png
+notebooks/
 
 # Mac OS-specific storage files
 .DS_Store

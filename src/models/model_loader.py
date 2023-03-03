@@ -63,7 +63,7 @@ class ModelLoader:
                 "detection": MeanAveragePrecision(iou_type="bbox", class_metrics=config["class_metrics"]),
                 "segmentation": None,
             }
-            
+
         elif config["model"] == "ssdlite":
             metrics = {"detection": "map"}
             losses = {
@@ -94,11 +94,7 @@ class ModelLoader:
         if config["model"] == "frcnn-resnet":
             model = fasterrcnn_resnet50_fpn(pretrained=True, weights="DEFAULT")
         elif config["model"] == "frcnn":
-            model = fasterrcnn_mobilenet_v3_large_320_fpn(
-                # pretrained=True,
-                # weights="DEFAULT",
-                weights_backbone=MobileNet_V3_Large_Weights.IMAGENET1K_V1
-            )
+            model = fasterrcnn_mobilenet_v3_large_320_fpn(weights_backbone=MobileNet_V3_Large_Weights.IMAGENET1K_V1)
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, config["detection_classes"])
         return model
@@ -106,8 +102,6 @@ class ModelLoader:
     @staticmethod
     def _load_ssdlite(config):
         model = ssdlite320_mobilenet_v3_large(
-            # pretrained=True,
-            # weights="DEFAULT",
             weights_backbone=MobileNet_V3_Large_Weights.IMAGENET1K_V1  # TODO: CHANGED
         )
         model.transform = GeneralizedRCNNTransform(
@@ -132,21 +126,13 @@ class ModelLoader:
     # SEGMENTATION BASELINES #
     @staticmethod
     def _load_deeplabv3(config):
-        model = deeplabv3_mobilenet_v3_large(
-            # pretrained=True,
-            # weights="DEFAULT",
-            weights_backbone=MobileNet_V3_Large_Weights.IMAGENET1K_V1  # TODO: CHANGED
-        )
+        model = deeplabv3_mobilenet_v3_large(weights_backbone=MobileNet_V3_Large_Weights.IMAGENET1K_V1)  # TODO: CHANGED
         model.classifier = DeepLabHead(960, config["segmentation_classes"] - 1)
         return model
 
     @staticmethod
     def _load_lraspp(config):
-        model = lraspp_mobilenet_v3_large(
-            # pretrained=True,
-            # weights="DEFAULT",
-            weights_backbone=MobileNet_V3_Large_Weights.IMAGENET1K_V1  # TODO: CHANGED
-        )
+        model = lraspp_mobilenet_v3_large(weights_backbone=MobileNet_V3_Large_Weights.IMAGENET1K_V1)  # TODO: CHANGED
         model.classifier = LRASPPHead(
             low_channels=40,  # from C2 found in _lraspp_mobilenetv3 method
             high_channels=960,  # from C5 found in _lraspp_mobilenetv3 method

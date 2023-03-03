@@ -116,8 +116,9 @@ def main():
     rospy.init_node("mtl_bb")
 
     follower = ObjectDetector(video_topic="/l515/color/image_raw", model=model, device=device)
-    
+
     rospy.spin()
+
 
 if __name__ == "__main__":
     main()

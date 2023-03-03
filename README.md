@@ -1,11 +1,40 @@
-Multi-task learning for robust autonomy in mobile robots
+Multi-task learning with task balancing on the Lightning-AI framework
 ==============================
 
-A short description of the project.
+The repository if for the source code for the master thesis **"Multi-task learning for robust autonomy in mobile robotics"**. Relevant parts from the abstract:
+
+_This work investigates the application of lightweight multi-task learning  (MTL) for mobile robotics (...) the main focus of this project is state-of-the-art loss and gradient-based balancing methods for MTL architectures, particularly improvements in model performance and inference time. Compared to recent work, an extensive combination of balancing approaches is explored, and their benefits on a dataset from a real-world use case are proven. Results suggest 17.06\% mAP improvement for object detection using MTL with task-balancing, compared to the equivalent baseline method. (...)_
+
+The following table shows the improvement on a collected 2000 image dataset for a binary semantic segmentation task (mIoU) and a four class object detection task (mAP).
+
+<p align="center">
+  <img src="./reports/figures/singlevsmulti.png" />
+</p>
+
+The repository uses pre-trained `torchvision` models and combines them to multi-task architectures with the following naming:
+
+| Acronym     	| Explanation                              	|
+|-------------	|------------------------------------------	|
+| FRCNN       	| Faster-RCNN                              	|
+| FRCNN-MTL   	| Faster-RCNN + DeepLabv3 MTL architecture 	|
+| SSDLite-MTL 	| SSDLite + DeepLabv3 MTL architecture     	|
+| LRASPP-MTL  	| SSDLite + LRASPP MTL architecture        	|
+
+Moreover, the implementation includes the following task-balancing methods:
+
+| Abbreviation 	| Source                                                                                                                                                                      	|
+|--------------	|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------	|
+| DWA          	| Liu, S. et al. (2022). _Auto-Lambda: Disentangling Dynamic Task Relationships_                        	|
+| Uncertainty  	| Kendall, A. et al. (2017). _Multi-Task Learning Using Uncertainty to Weigh Losses for Scene Geometry and Semantics._	|
+| BMTL         	| Liang, S. et al. (2020). _A Simple General Approach to Balance Task Difficulty in Multi-Task Learning._                       	|
+| Graddrop     	| Yu, T. et al. _Gradient Surgery for Multi-Task Learning._         	|
+| CAGrad       	| Liu, B. et al. _Conflict-Averse Gradient Descent for Multi-task Learning_                  	|
+| PCGrad       	| Chen, Z.et al. _Just Pick a Sign: Optimizing Deep Multitask Models with Gradient Sign Dropout._ 	|
+
 
 Installation
 ------------
->[!Warning] I did not have too much time for this yet, please consult the Makefile!
+>[!Warning] I did not have too much time for this yet, please look trhough the Makefile!
 
 Start by automatcially generating an environment for *conda* or *venv* with the following command in the top directory:
 ```shell
@@ -31,11 +60,33 @@ Install logging with Weights & Biases and provide API key for your profil.
 ```shell
 $ wandb login
 ```
+---
+User guide for model training
+---
 
+### Callbacks
 
+Model training can be initialized and executed based on parameters in the provided configuration file, which defaults to `/configs/debug_foo.yaml`
 
+```shell
+$ python3 src/pipeline/train_model.py -c /configs/<your-config-file>.yaml
+```
 
-User guide
+Everything in the training pipeline is agnostic to models, tasks and hyper parameters, so training a new model, the only thing to change is the config `.yaml` file. `debug_foo.yaml` is commented for options and can be used as a template.
+
+Model and task balancing selection is in this block, consult `/src/models/model_loader.py` and `/src/features/loss_balancing.py` for their use.
+
+```YAML
+model: frcnn-hybrid # OPTIONS: [deeplabv3, ssdlite, frcnn(-resnet), frcnn-hybrid, ssdlite-hybrid, lraspp-hybrid]
+attribute: debug # OPTIONAL description, can be left empty
+weight: equal # OPTIONS: [equal, constant, uncertainty, dynamic, autol]
+w_constant: # starting contant (float) weighting values [detection, segmentation]
+grad_method:  # OPTIONS: [None, graddrop, pcgrad, cagrad]
+temperature: 0.2
+```
+
+---
+User guide for data handling
 ------------
 ### Unpacking the bagfiles from `/data/external` to `/data/raw/`
 
@@ -57,6 +108,7 @@ Passing `-d` will enable debug level logging information and limit the loop to t
 ```shell
 $ python src/data/filter_images.py -s 0.7
 ```
+---
 
 Issues
 ---
@@ -84,41 +136,19 @@ Project Organization
     │   ├── interim        <- Intermediate data that has been transformed.
     │   ├── processed      <- The final, canonical data sets for modeling.
     │   └── raw            <- The original, immutable data dump.
-    │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
-    │
     ├── models             <- Trained and serialized models, model predictions, or model summaries
-    │
-    ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
-    │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
+    ├── reports            <- Generated analysis as Png, LaTeX, etc.
     │   └── figures        <- Generated graphics and figures to be used in reporting
-    │
     ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
     │                         generated with `pip freeze > requirements.txt`
-    │
     ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
     ├── src                <- Source code for use in this project.
     │   ├── __init__.py    <- Makes src a Python module
-    │   │
-    │   ├── data           <- Scripts to download or generate data
-    │   │   └── make_dataset.py
-    │   │
-    │   ├── features       <- Scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
-    │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
-    │   │
+    │   ├── data           <- Scripts to download or generate data, plus Pytorch DataLoader definition
+    │   ├── features       <- Task balancing and other features
+    │   ├── models         <- Model constructor and multi-task architectures
+    │   ├── pipeline       <- Scripts to train and inference models
     │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
-    │
     └── tox.ini            <- tox file with settings for running tox; see tox.readthedocs.io
 
 
