@@ -5,20 +5,18 @@ The repository if for the source code for the master thesis **"Multi-task learni
 
 _This work investigates the application of lightweight multi-task learning  (MTL) for mobile robotics (...) the main focus of this project is state-of-the-art loss and gradient-based balancing methods for MTL architectures, particularly improvements in model performance and inference time. Compared to recent work, an extensive combination of balancing approaches is explored, and their benefits on a dataset from a real-world use case are proven. Results suggest 17.06\% mAP improvement for object detection using MTL with task-balancing, compared to the equivalent baseline method. (...)_
 
-The following table shows the improvement on a collected 2000 image dataset for a binary semantic segmentation task (mIoU) and a four class object detection task (mAP).
 
-<p align="center">
-  <img src="./reports/figures/singlevsmulti.png" />
+## SSDLite-based architecture
+
+<p align="left">
+  <img src="./reports/figures/ssdlite-hybrid-wh.png" />
 </p>
 
-The repository uses pre-trained `torchvision` models and combines them to multi-task architectures with the following naming:
+## FRCNN-based architecture
 
-| Acronym     	| Explanation                              	|
-|-------------	|------------------------------------------	|
-| FRCNN       	| Faster-RCNN                              	|
-| FRCNN-MTL   	| Faster-RCNN + DeepLabv3 MTL architecture 	|
-| SSDLite-MTL 	| SSDLite + DeepLabv3 MTL architecture     	|
-| LRASPP-MTL  	| SSDLite + LRASPP MTL architecture        	|
+<p align="left">
+  <img src="./reports/figures/frcnn-hybrid-wh.png" />
+</p>
 
 Moreover, the implementation includes the following task-balancing methods:
 
@@ -30,6 +28,22 @@ Moreover, the implementation includes the following task-balancing methods:
 | Graddrop     	| Yu, T. et al. _Gradient Surgery for Multi-Task Learning._         	|
 | CAGrad       	| Liu, B. et al. _Conflict-Averse Gradient Descent for Multi-task Learning_                  	|
 | PCGrad       	| Chen, Z.et al. _Just Pick a Sign: Optimizing Deep Multitask Models with Gradient Sign Dropout._ 	|
+
+
+The repository uses pre-trained `torchvision` models and combines them to multi-task architectures with the following naming:
+
+| Acronym     	| Explanation                              	|
+|-------------	|------------------------------------------	|
+| FRCNN       	| Faster-RCNN                              	|
+| FRCNN-MTL   	| Faster-RCNN + DeepLabv3 MTL architecture 	|
+| SSDLite-MTL 	| SSDLite + DeepLabv3 MTL architecture     	|
+| LRASPP-MTL  	| SSDLite + LRASPP MTL architecture        	|
+
+The following table shows the improvement of the multi-task learning (MTL) solutions on a collected 2000 image dataset for a binary semantic segmentation task (mIoU) and a four class object detection task (mAP).
+
+<p align="left">
+  <img src="./reports/figures/singlevsmulti.png" />
+</p>
 
 
 Installation
