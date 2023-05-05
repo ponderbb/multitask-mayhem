@@ -157,7 +157,6 @@ Project Organization
     │                         generated with `pip freeze > requirements.txt`
     ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
     ├── src                <- Source code for use in this project.
-    │   ├── __init__.py    <- Makes src a Python module
     │   ├── data           <- Scripts to download or generate data, plus Pytorch DataLoader definition
     │   ├── features       <- Task balancing and other features
     │   ├── models         <- Model constructor and multi-task architectures
